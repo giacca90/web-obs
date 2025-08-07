@@ -13,7 +13,12 @@
     "experimentalDecorators": true,
     "importHelpers": true,
     "target": "ES2022",
-    "module": "preserve"
+    "module": "preserve",
+    "paths": {
+      "web-obs": [
+        "./dist/web-obs"
+      ]
+    }
   },
   "angularCompilerOptions": {
     "enableI18nLegacyMessageIdFormat": false,
@@ -22,5 +27,19 @@
     "typeCheckHostBindings": true,
     "strictTemplates": true
   },
-  "files": []
+  "files": [],
+  "references": [
+    {
+      "path": "./projects/web-obs/tsconfig.lib.json"
+    },
+    {
+      "path": "./projects/web-obs/tsconfig.spec.json"
+    },
+    {
+      "path": "./projects/demo-app/tsconfig.app.json"
+    },
+    {
+      "path": "./projects/demo-app/tsconfig.spec.json"
+    }
+  ]
 }

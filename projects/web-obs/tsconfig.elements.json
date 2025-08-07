@@ -1,0 +1,7 @@
+{
+  "extends": "./tsconfig.lib.json",
+  "compilerOptions": {
+    "outDir": "../../../out-tsc/elements"
+  },
+  "include": ["src/lib/elements.ts", "src/lib/editor-webcam/**/*.ts"]
+}

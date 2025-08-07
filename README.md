@@ -1,59 +1,131 @@
-# WebObsWorkspace
+# 🎥 Angular WebComponent OBS-Like Studio
 
-This project was generated using [Angular CLI](https://github.com/angular/angular-cli) version 20.1.4.
+Una poderosa librería Angular exportada como **Web Component**, que trae capacidades de producción audiovisual directamente al navegador. Ideal para transmisiones en vivo, grabaciones y composiciones multimedia complejas, todo desde el frontend.
 
-## Development server
+---
 
-To start a local development server, run:
+## 🚀 Características Principales
 
-```bash
-ng serve
-```
+- 🎚️ **Control total de resolución y FPS**
+  - Define resoluciones personalizadas
+  - Control de frames por segundo para fluidez o eficiencia
 
-Once the server is running, open your browser and navigate to `http://localhost:4200/`. The application will automatically reload whenever you modify any of the source files.
+- 🖼️ **Manipulación avanzada de medios**
+  - Posicionamiento y escala de imágenes y videos
+  - Rotación, opacidad, brillo, contraste y más ajustes visuales
+  - Soporte para múltiples fuentes simultáneas
 
-## Code scaffolding
+- 🔊 **Procesamiento de audio**
+  - Control de volumen y mezcla de múltiples pistas
+  - Posible integración con Web Audio API para efectos avanzados
 
-Angular CLI includes powerful code scaffolding tools. To generate a new component, run:
+- ⚡ **Alto rendimiento**
+  - Diseñado para trabajar en tiempo real con múltiples elementos
+  - Renderizado optimizado para navegadores modernos
 
-```bash
-ng generate component component-name
-```
+- 🧩 **Completamente modular**
+  - Exportado como Web Component
+  - Fácil integración en proyectos Angular, React, Vue, o vanilla JS
 
-For a complete list of available schematics (such as `components`, `directives`, or `pipes`), run:
+---
 
-```bash
-ng generate --help
-```
+## 📦 Instalación
 
-## Building
-
-To build the project run:
-
-```bash
-ng build
-```
-
-This will compile your project and store the build artifacts in the `dist/` directory. By default, the production build optimizes your application for performance and speed.
-
-## Running unit tests
-
-To execute unit tests with the [Karma](https://karma-runner.github.io) test runner, use the following command:
+Puedes instalarlo vía npm:
 
 ```bash
-ng test
+npm install nombre-de-tu-paquete
 ```
 
-## Running end-to-end tests
+O usarlo directamente como Web Component:
 
-For end-to-end (e2e) testing, run:
-
-```bash
-ng e2e
+```html
+<script type="module" src="ruta/hacia/tu/webcomponent.js"></script>
 ```
 
-Angular CLI does not come with an end-to-end testing framework by default. You can choose one that suits your needs.
+---
 
-## Additional Resources
+## 🧪 Uso Básico
 
-For more information on using the Angular CLI, including detailed command references, visit the [Angular CLI Overview and Command Reference](https://angular.dev/tools/cli) page.
+```html
+<obs-studio
+  resolution="1280x720"
+  fps="30"
+  [sources]="[ ... ]"
+  [audioSettings]="{ ... }"
+></obs-studio>
+```
+
+### 📄 Ejemplo de configuración
+
+```ts
+sources = [
+  {
+    type: 'video',
+    src: 'video.mp4',
+    x: 100,
+    y: 150,
+    scale: 0.5,
+    brightness: 1.2,
+    contrast: 0.8
+  },
+  {
+    type: 'image',
+    src: 'logo.png',
+    x: 10,
+    y: 10,
+    scale: 0.3,
+    opacity: 0.9
+  }
+];
+
+audioSettings = {
+  gain: 0.8,
+  mute: false
+};
+```
+
+---
+
+## ⚙️ Opciones Avanzadas
+
+| Opción           | Tipo     | Descripción                                     |
+|------------------|----------|-------------------------------------------------|
+| `resolution`     | string   | Formato `"anchoxalto"` (ej. `"1920x1080"`)     |
+| `fps`            | number   | Cuadros por segundo                             |
+| `sources`        | array    | Lista de fuentes de video o imagen              |
+| `audioSettings`  | object   | Control de mezcla, volumen, muteo, etc.         |
+
+---
+
+## 💡 Casos de Uso
+
+- Streaming en vivo directamente desde el navegador
+- Aplicaciones de edición o presentación multimedia
+- Producción de contenido para plataformas educativas o e-learning
+- Captura y composición de video sin herramientas externas
+
+---
+
+## 🛠️ Requisitos
+
+- Navegador moderno con soporte para Web Components y WebRTC
+- Angular 12+ si se integra directamente como módulo (opcional)
+
+---
+
+## 🤝 Contribuciones
+
+¡Las contribuciones son bienvenidas! Si deseas reportar un bug, sugerir una mejora o enviar un PR, siéntete libre de hacerlo.
+
+---
+
+## 📄 Licencia
+
+MIT License
+
+---
+
+## 👨‍💻 Autor
+
+Desarrollado por [Tu Nombre o Empresa](https://tusitio.com)

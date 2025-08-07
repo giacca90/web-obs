@@ -1,0 +1,18 @@
+.audio-bar {
+  background: linear-gradient(to right, green, yellow, red);
+  position: relative;
+}
+
+.audio-level {
+  height: 100%;
+  position: absolute;
+  left: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  width: 0%;
+  transition: width 0.1s;
+}
+
+.ghost-video {
+  opacity: 0.8; /* Algo de transparencia para distinguirlo */
+  transform: scale(0.9); /* Un pequeño escalado si lo necesitas */
+}

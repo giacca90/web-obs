@@ -6,5 +6,150 @@
   },
   "newProjectRoot": "projects",
   "projects": {
+    "web-obs": {
+      "projectType": "library",
+      "root": "projects/web-obs",
+      "sourceRoot": "projects/web-obs/src",
+      "prefix": "lib",
+      "architect": {
+        "build": {
+          "builder": "@angular/build:ng-packagr",
+          "configurations": {
+            "production": {
+              "tsConfig": "projects/web-obs/tsconfig.lib.prod.json"
+            },
+            "development": {
+              "tsConfig": "projects/web-obs/tsconfig.lib.json"
+            }
+          },
+          "defaultConfiguration": "production"
+        },
+        "test": {
+          "builder": "@angular/build:karma",
+          "options": {
+            "tsConfig": "projects/web-obs/tsconfig.spec.json"
+          }
+        },
+        "elements": {
+          "builder": "@angular-devkit/build-angular:browser",
+          "options": {
+            "main": "projects/web-obs/src/lib/elements.ts",
+            "index": "projects/web-obs/src/lib/index.html",
+            "outputPath": "dist/web-obs/elements",
+            "tsConfig": "projects/web-obs/tsconfig.elements.json",
+            "polyfills": ["zone.js"],
+            "scripts": [],
+            "styles": ["projects/web-obs/src/lib/assets/tailwind.generated.css"]
+          },
+          "configurations": {
+            "production": {
+              "optimization": true,
+              "outputHashing": "all",
+              "sourceMap": false
+            }
+          },
+          "defaultConfiguration": "production"
+        },
+        "serve-elements": {
+          "builder": "@angular-devkit/build-angular:dev-server",
+          "options": {
+            "buildTarget": "web-obs:elements"
+          },
+          "configurations": {
+            "production": {
+              "buildTarget": "web-obs:elements:production"
+            }
+          },
+          "defaultConfiguration": "production"
+        }
+      }
+    },
+    "demo-app": {
+      "projectType": "application",
+      "root": "projects/demo-app",
+      "sourceRoot": "projects/demo-app/src",
+      "prefix": "app",
+      "architect": {
+        "build": {
+          "builder": "@angular-devkit/build-angular:browser",
+          "options": {
+            "outputPath": "dist/demo-app",
+            "index": "projects/demo-app/src/index.html",
+            "main": "projects/demo-app/src/main.ts",
+            "polyfills": ["zone.js"],
+            "tsConfig": "projects/demo-app/tsconfig.app.json",
+            "assets": [
+              {
+                "glob": "**/*",
+                "input": "projects/demo-app/public",
+                "output": "/"
+              }
+            ],
+            "scripts": [],
+            "styles": []
+          },
+          "configurations": {
+            "production": {
+              "budgets": [
+                {
+                  "type": "initial",
+                  "maximumWarning": "500kB",
+                  "maximumError": "1MB"
+                },
+                {
+                  "type": "anyComponentStyle",
+                  "maximumWarning": "4kB",
+                  "maximumError": "8kB"
+                }
+              ],
+              "outputHashing": "all"
+            },
+            "development": {
+              "optimization": false,
+              "extractLicenses": false,
+              "sourceMap": true
+            }
+          },
+          "defaultConfiguration": "production"
+        },
+        "serve": {
+          "builder": "@angular-devkit/build-angular:dev-server",
+          "options": {
+            "buildTarget": "demo-app:build"
+          },
+          "configurations": {
+            "production": {
+              "buildTarget": "demo-app:build:production"
+            },
+            "development": {
+              "buildTarget": "demo-app:build:development"
+            }
+          },
+          "defaultConfiguration": "development"
+        },
+        "extract-i18n": {
+          "builder": "@angular-devkit/build-angular:extract-i18n",
+          "options": {
+            "buildTarget": "demo-app:build"
+          }
+        },
+        "test": {
+          "builder": "@angular-devkit/build-angular:karma",
+          "options": {
+            "polyfills": ["zone.js", "zone.js/testing"],
+            "tsConfig": "projects/demo-app/tsconfig.spec.json",
+            "assets": [
+              {
+                "glob": "**/*",
+                "input": "projects/demo-app/public",
+                "output": "/"
+              }
+            ],
+            "scripts": [],
+            "styles": ["projects/demo-app/src/styles.css"]
+          }
+        }
+      }
+    }
   }
 }

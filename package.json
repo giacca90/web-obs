@@ -1,12 +1,26 @@
 {
-  "name": "web-obs-workspace",
-  "version": "0.0.0",
+  "name": "web-obs",
+  "version": "0.0.1",
   "scripts": {
     "ng": "ng",
-    "start": "ng serve",
-    "build": "ng build",
-    "watch": "ng build --watch --configuration development",
-    "test": "ng test"
+    "tailwind:build": "npx tailwindcss -i ./projects/web-obs/src/styles/tailwind.css -o ./projects/web-obs/src/lib/editor-webcam/assets/tailwind.generated.css --config ./tailwind.config.ts --minify",
+    "tailwind:watch": "npx tailwindcss -i ./projects/web-obs/src/styles/tailwind.css -o ./projects/web-obs/src/lib/editor-webcam/assets/tailwind.generated.css --config ./tailwind.config.ts --watch",
+    "build:lib": "npm run tailwind:build && ng build web-obs",
+    "build:lib:watch": "ng build web-obs --watch",
+    "build:elements": "ng run web-obs:elements",
+    "start:elements": "ng serve web-obs:serve-elements",
+    "start:demo": "ng serve demo-app",
+    "dev": "clear && concurrently \"npm run tailwind:watch\" \"npm run build:lib:watch\" \"npm run start:demo\"",
+    "build": "npm run build:lib && npm run build:elements",
+    "test": "ng test web-obs",
+    "lint": "ng lint",
+    "clean": "rimraf dist out-tsc",
+    "build:package": "npm run build:lib && npm run build:elements",
+    "pack": "npm run build:lib && cd dist/web-obs && npm pack",
+    "publish:web-obs": "npm run build:lib && cd dist/web-obs && npm publish --access public",
+    "release:patch": "npm version patch --workspaces && npm run publish:web-obs",
+    "release:minor": "npm version minor --workspaces && npm run publish:web-obs",
+    "release:major": "npm version major --workspaces && npm run publish:web-obs"
   },
   "prettier": {
     "overrides": [
@@ -20,25 +34,35 @@
   },
   "private": true,
   "dependencies": {
-    "@angular/common": "^20.1.0",
-    "@angular/compiler": "^20.1.0",
-    "@angular/core": "^20.1.0",
-    "@angular/forms": "^20.1.0",
-    "@angular/platform-browser": "^20.1.0",
-    "@angular/router": "^20.1.0",
+    "@angular/common": "^20.1.4",
+    "@angular/compiler": "^20.1.4",
+    "@angular/core": "^20.1.4",
+    "@angular/elements": "^20.1.4",
+    "@angular/forms": "^20.1.4",
+    "@angular/platform-browser": "^20.1.4",
+    "@angular/router": "^20.1.4",
     "rxjs": "~7.8.0",
-    "tslib": "^2.3.0"
+    "tslib": "^2.3.0",
+    "zone.js": "^0.15.1"
   },
   "devDependencies": {
+    "@angular-devkit/build-angular": "^20.1.4",
+    "@angular/build": "^20.1.4",
     "@angular/cli": "^20.1.4",
-    "@angular/compiler-cli": "^20.1.0",
+    "@angular/compiler-cli": "^20.1.4",
+    "@tailwindcss/postcss": "^4.1.11",
     "@types/jasmine": "~5.1.0",
+    "autoprefixer": "^10.4.21",
+    "concurrently": "^9.2.0",
     "jasmine-core": "~5.8.0",
     "karma": "~6.4.0",
     "karma-chrome-launcher": "~3.2.0",
     "karma-coverage": "~2.2.0",
     "karma-jasmine": "~5.1.0",
     "karma-jasmine-html-reporter": "~2.1.0",
-    "typescript": "~5.8.2"
+    "ng-packagr": "^20.1.0",
+    "postcss": "^8.5.6",
+    "tailwindcss": "^4.1.11",
+    "typescript": "~5.8.3"
   }
 }
