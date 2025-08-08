@@ -16,6 +16,8 @@ import {
 import { FormsModule } from '@angular/forms';
 import { Observable } from 'rxjs';
 import { AudioConnection } from './types/audio-connection.interface';
+import { AudioElement } from './types/audio-element.interface';
+import { Preset } from './types/preset.interface';
 import { VideoElement } from './types/video-element.interface';
 
 @Component({
@@ -30,10 +32,10 @@ import { VideoElement } from './types/video-element.interface';
   encapsulation: ViewEncapsulation.Emulated,
 })
 export class EditorWebcamComponent implements OnInit, AfterViewInit, OnDestroy {
-  canvasWidth = 1280;
-  canvasHeight = 720;
-  canvasFPS = 30;
-  isResolutionSelectorVisible = false;
+  canvasWidth = 1280; // Resolución por defecto de la emisión
+  canvasHeight = 720; // Resolución por defecto de la emisión
+  canvasFPS = 30; // FPS por defecto de la emisión
+  isResolutionSelectorVisible = false; // Indica si el selector de resolución está visible
   videoDevices: MediaDeviceInfo[] = []; // Lista de dispositivos de video
   streams: MediaStream[] = []; // Lista de streams para el destroy
   audioDevices: MediaDeviceInfo[] = []; // Lista de dispositivos de audio
@@ -43,45 +45,39 @@ export class EditorWebcamComponent implements OnInit, AfterViewInit, OnDestroy {
   capturas: MediaStream[] = []; // Lista de capturas
   staticContent: File[] = []; // Lista de archivos estáticos
   videosElements: VideoElement[] = []; // Lista de elementos de video
-  audiosElements: {
-    id: string;
-    ele: GainNode | MediaStreamAudioDestinationNode;
-  }[] = []; // Lista de elementos de audio
+  audiosElements: AudioElement[] = []; // Lista de elementos de audio
   audiosConnections: AudioConnection[] = []; // Lista de conexiones de audio
   dragVideo: VideoElement | null = null; // Video que se está arrastrando
-  canvas: HTMLCanvasElement | null = null;
-  context: CanvasRenderingContext2D | null = null;
+  canvas!: HTMLCanvasElement; // El elemento canvas
+  context!: CanvasRenderingContext2D; // El contexto de canvas
   editandoDimensiones = false; // Indica si se está editando las dimensiones de un video
-  presets = new Map<string, { elements: VideoElement[]; shortcut: string }>(); // Presets
+  presets = new Map<string, Preset>(); // Presets
   private fileUrlCache = new Map<File, string>(); // Cache de URLs de archivos
   audioContext = new AudioContext(); // Contexto de audio
   mixedAudioDestination: MediaStreamAudioDestinationNode =
     this.audioContext.createMediaStreamDestination(); //Audio de grabación
-  emitiendo: boolean = false;
-  tiempoGrabacion: string = '00:00:00';
+  emitiendo: boolean = false; // Indica si se está emitiendo
+  tiempoGrabacion: string = '00:00:00'; // Tiempo de grabación
   ready: boolean | undefined;
   private drawInterval: any;
   selectedVideoForFilter: VideoElement | null = null;
   @ViewChildren('videoElement') videoElements!: QueryList<
     ElementRef<HTMLVideoElement>
   >;
-  @Input() savedFiles?: File[] | null; // Files guardados del usuario
-  @Input() savedPresets?: Map<
-    string,
-    { elements: VideoElement[]; shortcut: string }
-  > | null; //Presets guardados del usuario
-  @Input() readyObserve?: Observable<boolean>;
+  @Input() savedFiles?: File[] | null; // Files guardados del usuario (opcional)
+  @Input() savedPresets?: Map<string, Preset> | null; //Presets guardados del usuario (opcional)
+  @Input() readyObserve?: Observable<boolean>; // Avisa cuando está listo para emitir (opcional)
   @Output() emision: EventEmitter<MediaStream | null> = new EventEmitter(); // Emisión de video y audio
-  @Output() savePresets: EventEmitter<
-    Map<string, { elements: VideoElement[]; shortcut: string }>
-  > = new EventEmitter(); // Guardar presets
+  @Output() savePresets: EventEmitter<Map<string, Preset>> = new EventEmitter(); // Guardar presets (opcional)
 
+  // Evento de redimensionado de la ventana
   @HostListener('window:resize')
   onResize(): void {
     this.calculatePreset();
     this.drawAudioConnections();
   }
 
+  // Método para inicializar la aplicación
   async ngOnInit() {
     try {
       // Solicitar permisos para cámara y micrófono
@@ -137,10 +133,12 @@ export class EditorWebcamComponent implements OnInit, AfterViewInit, OnDestroy {
     }
   }
 
+  // Método para inicializar la aplicación después de la vista
   ngAfterViewInit(): void {
     this.canvas = document.getElementById('salida') as HTMLCanvasElement;
-    this.context = this.canvas.getContext('2d');
+    this.context = this.canvas.getContext('2d')!;
 
+    // Función para dibujar el canvas
     const drawFrame = () => {
       if (!this.canvas || !this.context) return;
       this.context.clearRect(0, 0, this.canvas.width, this.canvas.height);
@@ -194,6 +192,7 @@ export class EditorWebcamComponent implements OnInit, AfterViewInit, OnDestroy {
         });
     };
 
+    // Refresca el canvas a la tasa de fotogramas requerida
     this.drawInterval = setInterval(drawFrame, 1000 / this.canvasFPS);
 
     // Inicia a mostrar el audio de grabación
@@ -228,6 +227,7 @@ export class EditorWebcamComponent implements OnInit, AfterViewInit, OnDestroy {
 
     const dataArray = new Uint8Array(analyser.frequencyBinCount);
 
+    // Función para actualizar el nivel de volumen del audio
     function updateAudioLevel() {
       analyser.getByteFrequencyData(dataArray);
       const volume = Math.max(...dataArray) / 255;
@@ -235,7 +235,7 @@ export class EditorWebcamComponent implements OnInit, AfterViewInit, OnDestroy {
       audioGrabacion.style.width = `${percentage}%`; // Ajustar el ancho de la barra
       requestAnimationFrame(updateAudioLevel);
     }
-
+    // Actualiza el nivel de volumen del audio
     updateAudioLevel();
 
     // Escuchar eventos de teclado
@@ -258,6 +258,7 @@ export class EditorWebcamComponent implements OnInit, AfterViewInit, OnDestroy {
     }, 2000);
   }
 
+  // Evento para destruir la aplicación
   ngOnDestroy(): void {
     // Detener todos los flujos de video
     this.streams.forEach((stream) => {
@@ -752,10 +753,10 @@ export class EditorWebcamComponent implements OnInit, AfterViewInit, OnDestroy {
           (v) => v.id !== stream.id
         );
         this.audiosElements = this.audiosElements.filter(
-          (element) => element.id !== stream.id
+          (element: AudioElement) => element.id !== stream.id
         );
         this.audiosConnections = this.audiosConnections.filter(
-          (element) =>
+          (element: AudioConnection) =>
             element.idEntrada !== stream.id || element.idSalida !== stream.id
         );
         this.drawAudioConnections();
@@ -1940,10 +1941,10 @@ export class EditorWebcamComponent implements OnInit, AfterViewInit, OnDestroy {
               (t) => t.id !== track.id
             );
             this.audiosElements = this.audiosElements.filter(
-              (element) => element.id !== track.id
+              (element: AudioElement) => element.id !== track.id
             );
             this.audiosConnections = this.audiosConnections.filter(
-              (element) =>
+              (element: AudioConnection) =>
                 element.idEntrada !== track.id || element.idSalida !== track.id
             );
             this.drawAudioConnections();
@@ -1955,10 +1956,11 @@ export class EditorWebcamComponent implements OnInit, AfterViewInit, OnDestroy {
         (track) => track.id !== ele.id
       );
       this.audiosElements = this.audiosElements.filter(
-        (element) => element.id !== ele.id
+        (element: AudioElement) => element.id !== ele.id
       );
       this.audiosConnections = this.audiosConnections.filter(
-        (element) => element.idEntrada !== ele.id || element.idSalida !== ele.id
+        (element: AudioConnection) =>
+          element.idEntrada !== ele.id || element.idSalida !== ele.id
       );
     } else if (ele instanceof File) {
       this.staticContent = this.staticContent.filter((file) => file !== ele);
@@ -1966,10 +1968,10 @@ export class EditorWebcamComponent implements OnInit, AfterViewInit, OnDestroy {
         (file) => file !== ele.name
       );
       this.audiosElements = this.audiosElements.filter(
-        (element) => element.id !== ele.name
+        (element: AudioElement) => element.id !== ele.name
       );
       this.audiosConnections = this.audiosConnections.filter(
-        (element) =>
+        (element: AudioConnection) =>
           element.idEntrada !== ele.name || element.idSalida !== ele.name
       );
     }
@@ -2238,7 +2240,7 @@ export class EditorWebcamComponent implements OnInit, AfterViewInit, OnDestroy {
         return;
       }
       presetDiv.innerHTML = '';
-      this.presets.get(key)?.elements.forEach((element) => {
+      this.presets.get(key)?.elements.forEach((element: VideoElement) => {
         let ele;
         let width;
         let height;
@@ -2612,10 +2614,10 @@ export class EditorWebcamComponent implements OnInit, AfterViewInit, OnDestroy {
       //console.log('elemento final: ', idElementoFinal);
 
       const startElement = this.audiosElements.find(
-        (element) => element.id === idElementoStrart
+        (element: AudioElement) => element.id === idElementoStrart
       );
       const endElement = this.audiosElements.find(
-        (element) => element.id === idElementoFinal
+        (element: AudioElement) => element.id === idElementoFinal
       );
       if (
         typeof startElement === 'undefined' ||
