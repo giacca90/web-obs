@@ -70,14 +70,18 @@ export class EditorWebcamComponent implements OnInit, AfterViewInit, OnDestroy {
   @Output() emision: EventEmitter<MediaStream | null> = new EventEmitter(); // Emisión de video y audio
   @Output() savePresets: EventEmitter<Map<string, Preset>> = new EventEmitter(); // Guardar presets (opcional)
 
-  // Evento de redimensionado de la ventana
+  /**
+   * Método para inicializar la aplicación
+   */
   @HostListener('window:resize')
   onResize(): void {
     this.calculatePreset();
     this.drawAudioConnections();
   }
 
-  // Método para inicializar la aplicación
+  /**
+   * Método para inicializar la aplicación
+   */
   async ngOnInit() {
     try {
       // Solicitar permisos para cámara y micrófono
@@ -133,14 +137,19 @@ export class EditorWebcamComponent implements OnInit, AfterViewInit, OnDestroy {
     }
   }
 
-  // Método para inicializar la aplicación después de la vista
+  /**
+   * Método para inicializar la aplicación después de la vista
+   */
   ngAfterViewInit(): void {
     this.canvas = document.getElementById('salida') as HTMLCanvasElement;
     this.context = this.canvas.getContext('2d')!;
 
     // Función para dibujar el canvas
     const drawFrame = () => {
-      if (!this.canvas || !this.context) return;
+      if (!this.canvas || !this.context) {
+        console.error('Canvas o contexto no encontrado');
+        return;
+      }
       this.context.clearRect(0, 0, this.canvas.width, this.canvas.height);
       this.videosElements
         .filter(
@@ -258,8 +267,10 @@ export class EditorWebcamComponent implements OnInit, AfterViewInit, OnDestroy {
     }, 2000);
   }
 
-  // Evento para destruir la aplicación
-  ngOnDestroy(): void {
+  /**
+   * Evento para destruir la aplicación
+   */
+  ngOnDestroy() {
     // Detener todos los flujos de video
     this.streams.forEach((stream) => {
       stream.getTracks().forEach((track) => track.stop());
@@ -277,7 +288,10 @@ export class EditorWebcamComponent implements OnInit, AfterViewInit, OnDestroy {
     window.removeEventListener('keydown', this.handleKeydown.bind(this));
   }
 
-  // Método para manejar eventos de teclado
+  /**
+   * Método para manejar eventos de teclado
+   * @param event Evento de teclado (KeyboardEvent)
+   */
   handleKeydown(event: KeyboardEvent) {
     // Verificar si se presionó Ctrl + un número
     if (event.ctrlKey && !isNaN(Number(event.key))) {
@@ -292,6 +306,10 @@ export class EditorWebcamComponent implements OnInit, AfterViewInit, OnDestroy {
     }
   }
 
+  /**
+   * Método para iniciar los flujos de video y audio
+   * @param devices Lista de dispositivos de audio y video (MediaDeviceInfo[])
+   */
   async startMedias(devices: MediaDeviceInfo[]) {
     // Asignar el video stream a cada dispositivo de video
     const videoPromises: Promise<void>[] = [];
@@ -327,6 +345,9 @@ export class EditorWebcamComponent implements OnInit, AfterViewInit, OnDestroy {
     this.drawAudioConnections();
   }
 
+  /**
+   * Método para actualizar los dispositivos de audio y video
+   */
   async updateDevices() {
     try {
       // Enumerar nuevamente los dispositivos disponibles
@@ -427,7 +448,11 @@ export class EditorWebcamComponent implements OnInit, AfterViewInit, OnDestroy {
     }
   }
 
-  async getVideoStream(deviceId: string): Promise<void> {
+  /**
+   * Método para obtener el flujo de video
+   * @param deviceId ID del dispositivo de video (string)
+   */
+  async getVideoStream(deviceId: string) {
     try {
       let stream = await navigator.mediaDevices.getUserMedia({
         video: { deviceId: { exact: deviceId } },
@@ -483,33 +508,24 @@ export class EditorWebcamComponent implements OnInit, AfterViewInit, OnDestroy {
 
       // Encontrar el elemento <video> con el mismo ID que el dispositivo
       const div = document.getElementById('div-' + deviceId);
-      if (!div) return;
+      if (!div) {
+        console.error('No se encontró el elemento div-' + deviceId);
+        return;
+      }
       const resolution = div.querySelector('#resolution');
-      if (!resolution) return;
-      resolution.innerHTML = `${settings.width}x${settings.height} ${settings.frameRate}fps`;
-
-      const videoElement = this.videoElements.find(
-        (el) => el.nativeElement.id === deviceId
-      );
-      if (videoElement) {
-        videoElement.nativeElement.srcObject = stream; // Asignar el stream al video
-        const ele: VideoElement = {
-          id: deviceId,
-          element: videoElement.nativeElement,
-          painted: false,
-          scale: 1,
-          position: null,
-        };
-        this.videosElements.push(ele);
-        div.style.filter = ele.filters
-          ? `brightness(${ele.filters.brightness}%) contrast(${ele.filters.contrast}%) saturate(${ele.filters.saturation}%)`
-          : '';
+      if (!resolution) {
+        console.error('No se encontró el elemento #resolution');
+        return;
       }
     } catch (error) {
       console.error('Error al obtener el stream de video:', error);
     }
   }
 
+  /**
+   * Método para obtener el flujo de audio
+   * @param deviceId ID del dispositivo de audio (string)
+   */
   async getAudioStream(deviceId: string): Promise<void> {
     try {
       const stream = await navigator.mediaDevices.getUserMedia({
@@ -562,6 +578,10 @@ export class EditorWebcamComponent implements OnInit, AfterViewInit, OnDestroy {
     }
   }
 
+  /**
+   * Función para obtener el flujo de salida de audio
+   * @param device
+   */
   async getAudioOutputStream(device: MediaDeviceInfo) {
     try {
       const audio = new Audio() as HTMLAudioElement & {
@@ -639,6 +659,11 @@ export class EditorWebcamComponent implements OnInit, AfterViewInit, OnDestroy {
     }
   }
 
+  /**
+   * Función para visualizar el nivel de audio
+   * @param stream Flujo de audio (MediaStream)
+   * @param audioLevel Elemento HTML para visualizar el nivel de audio (HTMLDivElement)
+   */
   async visualizeAudio(stream: MediaStream, audioLevel: HTMLDivElement) {
     const analyser = this.audioContext.createAnalyser();
     const source = this.audioContext.createMediaStreamSource(stream);
@@ -659,6 +684,9 @@ export class EditorWebcamComponent implements OnInit, AfterViewInit, OnDestroy {
     updateAudioLevel();
   }
 
+  /**
+   * Función para agregar un flujo de pantalla
+   */
   async addScrean() {
     try {
       // Solicitar al usuario que seleccione una ventana, aplicación o pantalla
@@ -766,7 +794,9 @@ export class EditorWebcamComponent implements OnInit, AfterViewInit, OnDestroy {
     }
   }
 
-  // Función para añadir archivos y configurar el enrutamiento de audio
+  /**
+   * Función para añadir archivos y configurar el enrutamiento de audio
+   */
   async addFiles() {
     const input: HTMLInputElement = document.createElement('input');
     input.type = 'file';
@@ -789,6 +819,10 @@ export class EditorWebcamComponent implements OnInit, AfterViewInit, OnDestroy {
     input.click();
   }
 
+  /**
+   * Función para cargar archivos
+   * @param files Archivos a cargar (File[])
+   */
   private loadFiles(files: File[]) {
     files.forEach((file) => {
       const div = document.getElementById('div-' + file.name);
@@ -929,10 +963,22 @@ export class EditorWebcamComponent implements OnInit, AfterViewInit, OnDestroy {
         const progress = audioDiv.querySelector(
           '#progress'
         ) as HTMLInputElement;
-        if (!audioDiv || !playPause || !restart || !loop || !time || !progress)
+        if (
+          !audioDiv ||
+          !playPause ||
+          !restart ||
+          !loop ||
+          !time ||
+          !progress
+        ) {
+          console.error('Missing elements');
           return;
+        }
         playPause.onclick = () => {
-          if (!audioDiv) return;
+          if (!audioDiv) {
+            console.error('Missing audioDiv');
+            return;
+          }
           if (audio.paused) {
             audio.play();
             play.style.display = 'none';
@@ -944,12 +990,18 @@ export class EditorWebcamComponent implements OnInit, AfterViewInit, OnDestroy {
           }
         };
         restart.onclick = () => {
-          if (!audioDiv) return;
+          if (!audioDiv) {
+            console.error('Missing audioDiv');
+            return;
+          }
           audio.currentTime = 0;
         };
 
         loop.onclick = () => {
-          if (!audioDiv) return;
+          if (!audioDiv) {
+            console.error('Missing audioDiv');
+            return;
+          }
           if (audio.loop) {
             audio.loop = false;
             loopOff.style.display = 'block';
@@ -967,7 +1019,10 @@ export class EditorWebcamComponent implements OnInit, AfterViewInit, OnDestroy {
           const timeStart = this.formatTime(audio.currentTime);
           time.innerText = `${timeStart} / ${duration}`;
           audio.ontimeupdate = () => {
-            if (!audioDiv) return;
+            if (!audioDiv) {
+              console.error('Missing audioDiv');
+              return;
+            }
             const percentage = (audio.currentTime / audio.duration) * 100;
             progress.value = percentage.toString();
             // Mostrar el tiempo actual y la duración
@@ -975,7 +1030,10 @@ export class EditorWebcamComponent implements OnInit, AfterViewInit, OnDestroy {
             time.innerText = `${currentTime} / ${duration}`;
 
             progress.oninput = () => {
-              if (!audioDiv) return;
+              if (!audioDiv) {
+                console.error('Missing audioDiv');
+                return;
+              }
               const newTime = (parseInt(progress.value) / 100) * audio.duration;
               audio.currentTime = newTime;
 
@@ -1014,13 +1072,20 @@ export class EditorWebcamComponent implements OnInit, AfterViewInit, OnDestroy {
     });
   }
 
+  /**
+   * Función para pintar el audio
+   * @param file Archivo de audio (File)
+   */
   async pintaAudio(file: File) {
     const arrayBuffer = await file.arrayBuffer();
     const audioBuffer = await this.audioContext.decodeAudioData(arrayBuffer);
     const container: HTMLDivElement | null | undefined = document
       .getElementById('div-' + file.name)
       ?.querySelector('#audio-stream');
-    if (!container) return;
+    if (!container) {
+      console.error('No se encontró el elemento con id div-' + file.name);
+      return;
+    }
     const canvasWidth = container.offsetWidth;
     const canvasHeight = container.offsetHeight;
     const sampleDataLeft = audioBuffer.getChannelData(0); // Canal izquierdo
@@ -1067,6 +1132,11 @@ export class EditorWebcamComponent implements OnInit, AfterViewInit, OnDestroy {
     }
   }
 
+  /**
+   * Función para obtener la URL de un archivo utilizando la caché
+   * @param file Archivo (File)
+   * @returns URL del archivo (string)
+   */
   getFileUrl(file: File): string {
     if (!this.fileUrlCache.has(file)) {
       const url = URL.createObjectURL(file);
@@ -1075,10 +1145,22 @@ export class EditorWebcamComponent implements OnInit, AfterViewInit, OnDestroy {
     return this.fileUrlCache.get(file) as string;
   }
 
+  /**
+   * Método para cambiar la resolución de la emisión
+   * @param $event Evento de cambio de resolución (Event)
+   * @param res Resolución seleccionada (string)
+   */
   cambiarResolucion($event: Event, res: string) {
     const selected = document.getElementById('selected') as HTMLDivElement;
+    if (!selected) {
+      console.error('Missing selected element');
+      return;
+    }
     const value = selected.querySelector('#value');
-    if (!selected || !value) return;
+    if (!value) {
+      console.error('Missing value element');
+      return;
+    }
     const string = ($event.target as HTMLDivElement).innerHTML;
     const [width, height] = res.split('x');
     this.canvasWidth = parseInt(width);
@@ -1087,6 +1169,11 @@ export class EditorWebcamComponent implements OnInit, AfterViewInit, OnDestroy {
     this.isResolutionSelectorVisible = false;
   }
 
+  /**
+   * Método para cambiar el FPS de la emisión
+   * @param fps FPS seleccionada (string)
+   */
+  // TODO: Revisar si se puede eliminar
   cambiarFPS(fps: string) {
     this.canvasFPS = parseInt(fps);
     if (this.drawInterval) {
@@ -1094,10 +1181,18 @@ export class EditorWebcamComponent implements OnInit, AfterViewInit, OnDestroy {
     }
 
     const drawFrame = () => {
-      if (!this.canvas || !this.context) return;
+      if (!this.canvas || !this.context) {
+        console.error('Missing canvas or context');
+        return;
+      }
       this.context.clearRect(0, 0, this.canvas.width, this.canvas.height);
       this.videosElements.forEach((elemento) => {
-        if (!elemento.painted || !elemento.position || !this.context) return;
+        if (!elemento.painted || !elemento.position || !this.context) {
+          console.error(
+            'Missing elemento.painted, elemento.position or this.context'
+          );
+          return;
+        }
         if (elemento.element instanceof HTMLVideoElement) {
           const videoWidth = elemento.element.videoWidth * elemento.scale;
           const videoHeight = elemento.element.videoHeight * elemento.scale;
@@ -1124,8 +1219,13 @@ export class EditorWebcamComponent implements OnInit, AfterViewInit, OnDestroy {
     this.drawInterval = setInterval(drawFrame, 1000 / this.canvasFPS);
   }
 
-  // Empieza el arrastre de un elemento
-  mousedown(event: MouseEvent, deviceId: string): void {
+  /**
+   *Empieza el arrastre de un elemento
+   *
+   * @param event Evento de arrastre (MouseEvent)
+   * @param deviceId ID del elemento arrastrado (string)
+   */
+  mousedown(event: MouseEvent, deviceId: string) {
     event.preventDefault();
 
     const videoElement = document.getElementById(deviceId) as HTMLVideoElement;
@@ -1369,7 +1469,10 @@ export class EditorWebcamComponent implements OnInit, AfterViewInit, OnDestroy {
           upEvent.clientY
         );
         // Guardar datos en el objeto VideoElement
-        if (!result) return;
+        if (!result) {
+          console.error('Missing result');
+          return;
+        }
         this.dragVideo.scale = result.scale;
         this.dragVideo.position = result.position;
         this.dragVideo.painted = result.painted;
@@ -1397,7 +1500,11 @@ export class EditorWebcamComponent implements OnInit, AfterViewInit, OnDestroy {
     document.addEventListener('mouseup', mouseup);
   }
 
-  // Método para mostrar el menú de filtros
+  /**
+   * Método para mostrar el menú de filtros
+   * @param event Evento de clic (MouseEvent)
+   * @param ele Elemento con filtros (VideoElement)
+   */
   showFilterMenu(event: MouseEvent, ele: VideoElement) {
     event.preventDefault(); // Bloquea el menú contextual del navegador
     event.stopPropagation();
@@ -1411,7 +1518,10 @@ export class EditorWebcamComponent implements OnInit, AfterViewInit, OnDestroy {
     }
 
     const filterMenu = document.querySelector('#filterMenu') as HTMLDivElement;
-    if (!filterMenu) return;
+    if (!filterMenu) {
+      console.error('No se encontró el elemento con id filterMenu');
+      return;
+    }
 
     // Mostrar el menú
     filterMenu.style.display = 'flex';
@@ -1454,12 +1564,19 @@ export class EditorWebcamComponent implements OnInit, AfterViewInit, OnDestroy {
     }, 0);
   }
 
+  /**
+   * Método para mover el elemento arrastrado en el canvas
+   * @param event Evento de movimiento (MouseEvent)
+   */
   canvasMouseMove(event: MouseEvent) {
     event.preventDefault();
     const canvasContainer = document.getElementById(
       'canvas-container'
     ) as HTMLDivElement;
-    if (!this.canvas || !canvasContainer || this.editandoDimensiones) return;
+    if (!this.canvas || !canvasContainer || this.editandoDimensiones) {
+      console.error('Missing canvas, canvasContainer or editandoDimensiones');
+      return;
+    }
 
     const rect = this.canvas.getBoundingClientRect();
     // Obtener las coordenadas relativas al tamaño visible del canvas
@@ -1515,7 +1632,10 @@ export class EditorWebcamComponent implements OnInit, AfterViewInit, OnDestroy {
           });
         });
 
-        if (!ghostDiv) return;
+        if (!ghostDiv) {
+          console.error('Missing ghostDiv');
+          return;
+        }
         ghostDiv.id = 'marco-' + video.id;
         canvasContainer.appendChild(ghostDiv);
       }
@@ -1581,6 +1701,9 @@ export class EditorWebcamComponent implements OnInit, AfterViewInit, OnDestroy {
     });
   }
 
+  /**
+   * Método para soltar el elemento arrastrado en el canvas
+   */
   canvasMouseLeave() {
     const rendered = this.videosElements.filter((video) => video.painted);
     if (rendered.length > 0) {
@@ -1593,6 +1716,10 @@ export class EditorWebcamComponent implements OnInit, AfterViewInit, OnDestroy {
     }
   }
 
+  /**
+   * Método para redimensionar el elemento arrastrado en el canvas
+   * @param $event Evento de redimensionamiento (MouseEvent)
+   */
   redimensionado($event: MouseEvent) {
     const canvasContainer = document.getElementById(
       'canvas-container'
@@ -1600,14 +1727,23 @@ export class EditorWebcamComponent implements OnInit, AfterViewInit, OnDestroy {
     const tiradorId = ($event.target as HTMLElement).id; // ID del tirador
     const ghostId = ($event.target as HTMLElement).parentElement?.id; // ID del padre
     const posicionInicial = { x: $event.clientX, y: $event.clientY };
-    if (!tiradorId || !ghostId || !canvasContainer || !this.canvas) return;
+    if (!tiradorId || !ghostId || !canvasContainer || !this.canvas) {
+      console.error('Missing tiradorId, ghostId, canvasContainer or canvas');
+      return;
+    }
     const ghostDiv = document.getElementById(ghostId);
-    if (!ghostDiv) return;
+    if (!ghostDiv) {
+      console.error('Missing ghostDiv');
+      return;
+    }
 
     this.editandoDimensiones = true;
     // Añadir la cruz de posicionamiento
     const cross = document.getElementById('cross') as HTMLDivElement;
-    if (!cross) return;
+    if (!cross) {
+      console.error('Missing cross');
+      return;
+    }
     cross.style.display = 'block';
     let intersecciones = this.colisiones(ghostDiv);
 
@@ -1631,7 +1767,10 @@ export class EditorWebcamComponent implements OnInit, AfterViewInit, OnDestroy {
     const mouseMove = ($event2: MouseEvent) => {
       const difX = $event2.clientX - posicionInicial.x;
       const difY = $event2.clientY - posicionInicial.y;
-      if (!this.canvas) return;
+      if (!this.canvas) {
+        console.error('Missing canvas');
+        return;
+      }
       this.canvas.style.border = '2px solid #1d4ed8';
       const elementos = canvasContainer.querySelectorAll(
         '[id^="marco"]'
@@ -1647,7 +1786,10 @@ export class EditorWebcamComponent implements OnInit, AfterViewInit, OnDestroy {
         const linea1: HTMLDivElement | null = ghostDiv.querySelector('#line1');
         const linea2: HTMLDivElement | null = ghostDiv.querySelector('#line2');
 
-        if (!linea1 || !linea2) return;
+        if (!linea1 || !linea2) {
+          console.error('Missing linea1 or linea2');
+          return;
+        }
 
         // Calcular la longitud de la línea diagonal (de esquina superior izquierda a inferior derecha)
         const diagonalLength = Math.sqrt(
@@ -1745,11 +1887,17 @@ export class EditorWebcamComponent implements OnInit, AfterViewInit, OnDestroy {
 
     // Evento mouseup
     const mouseup = () => {
-      if (!this.canvas) return;
+      if (!this.canvas) {
+        console.error('Missing canvas');
+        return;
+      }
       const elemento: VideoElement | undefined = this.videosElements.find(
         (el) => el.id === ghostId.substring(6)
       );
-      if (!elemento || !elemento.element) return;
+      if (!elemento || !elemento.element) {
+        console.error('Missing elemento or elemento.element');
+        return;
+      }
       const ghostRect = ghostDiv.getBoundingClientRect();
       const result: VideoElement | undefined = this.paintInCanvas(
         elemento.element,
@@ -1759,7 +1907,10 @@ export class EditorWebcamComponent implements OnInit, AfterViewInit, OnDestroy {
         ghostRect.top + ghostRect.height / 2
       );
       // Guardar datos en el objeto VideoElement
-      if (!result) return;
+      if (!result) {
+        console.error('Missing result');
+        return;
+      }
       elemento.position = result.position;
       elemento.scale = result.scale; // Escala que garantiza el tamaño correcto en el canvas
       elemento.painted = true; // Marcamos el video como "pintado"
@@ -1783,6 +1934,14 @@ export class EditorWebcamComponent implements OnInit, AfterViewInit, OnDestroy {
     canvasContainer.addEventListener('mouseup', mouseup);
   }
 
+  /**
+   * Función para pintar un elemento en el canvas
+   * @param element Elemento a pintar (HTMLElement)
+   * @param widthElement Ancho del elemento (number)
+   * @param heightElement Alto del elemento (number)
+   * @param positionX Posición horizontal del elemento (number)
+   * @param positionY Posición vertical del elemento (number)
+   */
   paintInCanvas(
     element: HTMLElement,
     widthElement: number,
@@ -1790,7 +1949,10 @@ export class EditorWebcamComponent implements OnInit, AfterViewInit, OnDestroy {
     positionX: number,
     positionY: number
   ) {
-    if (!this.canvas) return;
+    if (!this.canvas) {
+      console.error('Missing canvas');
+      return;
+    }
     const rect = this.canvas.getBoundingClientRect();
 
     // Relación de escala entre el tamaño visual y el interno del canvas
@@ -1839,6 +2001,10 @@ export class EditorWebcamComponent implements OnInit, AfterViewInit, OnDestroy {
     return videoElement;
   }
 
+  /**
+   * Función para detectar las colisiones entre elementos
+   * @param principal Elemento principal (HTMLElement)
+   */
   colisiones(principal: HTMLElement): HTMLElement[] {
     const rect = principal.getBoundingClientRect();
     const elementosIntersecados: HTMLElement[] = [];
@@ -1875,12 +2041,21 @@ export class EditorWebcamComponent implements OnInit, AfterViewInit, OnDestroy {
     return elementosIntersecados;
   }
 
+  /**
+   * Función para formatear el tiempo de grabación
+   * @param seconds segundos transcurridos (number)
+   * @returns el tiempo en formato hh:mm:ss (string)
+   */
+  // TODO: Revisar si se puede sustituir por algo en el front
   private formatTime(seconds: number): string {
     const mins = Math.floor(seconds / 60);
     const secs = Math.floor(seconds % 60);
     return `${mins}:${secs < 10 ? '0' : ''}${secs}`;
   }
 
+  /**
+   * Método para guardar un preset
+   */
   guardaPreset() {
     const name = prompt(
       'Introduce el nombre del preset \n(El mismo nombre sobrescribe el preset) ',
@@ -1915,6 +2090,10 @@ export class EditorWebcamComponent implements OnInit, AfterViewInit, OnDestroy {
     }
   }
 
+  /**
+   * Método para detener un elemento
+   * @param ele Elemento a detener (MediaDeviceInfo | MediaStream | File)
+   */
   stopElemento(ele: MediaDeviceInfo | MediaStream | File) {
     if (ele instanceof MediaDeviceInfo) {
       const div = document.getElementById('div-' + ele.deviceId);
@@ -1978,6 +2157,10 @@ export class EditorWebcamComponent implements OnInit, AfterViewInit, OnDestroy {
     this.drawAudioConnections();
   }
 
+  /**
+   * Método para convertir un elemento en pantalla completa
+   * @param ele Elemento a convertir (MediaDeviceInfo | MediaStream | File)
+   */
   fullscreen(ele: MediaDeviceInfo | MediaStream | File) {
     let elemento: VideoElement | undefined;
     if (ele instanceof MediaDeviceInfo) {
@@ -1986,8 +2169,14 @@ export class EditorWebcamComponent implements OnInit, AfterViewInit, OnDestroy {
       elemento = this.videosElements.find((el) => el.id === ele.id);
     } else if (ele instanceof File) {
       elemento = this.videosElements.find((el) => el.id === ele.name);
-    } else return;
-    if (!elemento || !elemento.element || !this.canvas) return;
+    } else {
+      console.error('Tipo desconocido');
+      return;
+    }
+    if (!elemento || !elemento.element || !this.canvas) {
+      console.error('Missing elemento or elemento.element or canvas');
+      return;
+    }
     const rect = this.canvas.getBoundingClientRect();
     const x = rect.x + rect.width / 2;
     const y = rect.y + rect.height / 2;
@@ -2006,6 +2195,10 @@ export class EditorWebcamComponent implements OnInit, AfterViewInit, OnDestroy {
     }
   }
 
+  /**
+   * Método para agregar una capa al elemento cuando se emite
+   * @param elemento Elemento a agregar la capa (VideoElement)
+   */
   addCapa(elemento: VideoElement) {
     const div = document.getElementById('div-' + elemento.id);
     if (div) {
@@ -2020,7 +2213,10 @@ export class EditorWebcamComponent implements OnInit, AfterViewInit, OnDestroy {
         '#buttonxcapa'
       ) as HTMLButtonElement;
       X.onclick = () => {
-        if (!elemento) return;
+        if (!elemento) {
+          console.error('Missing elemento');
+          return;
+        }
         elemento.painted = false;
         elemento.position = null;
         elemento.scale = 1;
@@ -2033,7 +2229,10 @@ export class EditorWebcamComponent implements OnInit, AfterViewInit, OnDestroy {
 
       // Botón para cambiar de posición el elemento
       const moveElement = capa.querySelector('#moveElement') as HTMLDivElement;
-      if (!moveElement) return;
+      if (!moveElement) {
+        console.error('Missing moveElement');
+        return;
+      }
       moveElement.classList.remove('hidden');
       const moveElementUp = moveElement.querySelector(
         '#moveElementUp'
@@ -2041,7 +2240,10 @@ export class EditorWebcamComponent implements OnInit, AfterViewInit, OnDestroy {
       const moveElementDown = moveElement.querySelector(
         '#moveElementDown'
       ) as HTMLButtonElement;
-      if (!moveElementUp || !moveElementDown) return;
+      if (!moveElementUp || !moveElementDown) {
+        console.error('Missing moveElementUp or moveElementDown');
+        return;
+      }
       moveElementUp.onclick = () => {
         this.moveElementUp(elemento);
       };
@@ -2058,11 +2260,17 @@ export class EditorWebcamComponent implements OnInit, AfterViewInit, OnDestroy {
         const control = document
           .getElementById('control')
           ?.cloneNode(true) as HTMLDivElement;
-        if (!control) return;
+        if (!control) {
+          console.error('Missing control');
+          return;
+        }
         const controllers = capa.querySelector(
           '#controllers'
         ) as HTMLDivElement;
-        if (!controllers) return;
+        if (!controllers) {
+          console.error('Missing controllers');
+          return;
+        }
         control.id = 'control-' + elemento.id;
         control.style.display = 'block';
         const playPause = control.querySelector(
@@ -2078,7 +2286,10 @@ export class EditorWebcamComponent implements OnInit, AfterViewInit, OnDestroy {
         const time = control.querySelector('#time') as HTMLSpanElement;
 
         playPause.onclick = () => {
-          if (!elemento) return;
+          if (!elemento) {
+            console.error('Missing elemento');
+            return;
+          }
           if ((elemento.element as HTMLVideoElement).paused) {
             (elemento.element as HTMLVideoElement).play();
             play.style.display = 'none';
@@ -2091,12 +2302,18 @@ export class EditorWebcamComponent implements OnInit, AfterViewInit, OnDestroy {
         };
 
         restart.onclick = () => {
-          if (!elemento) return;
+          if (!elemento) {
+            console.error('Missing elemento');
+            return;
+          }
           (elemento.element as HTMLVideoElement).currentTime = 0;
         };
 
         loop.onclick = () => {
-          if (!elemento) return;
+          if (!elemento) {
+            console.error('Missing elemento');
+            return;
+          }
           if ((elemento.element as HTMLVideoElement).loop) {
             (elemento.element as HTMLVideoElement).loop = false;
             loopOff.style.display = 'block';
@@ -2110,7 +2327,10 @@ export class EditorWebcamComponent implements OnInit, AfterViewInit, OnDestroy {
 
         /* Barra de progreso */
         elemento.element.ontimeupdate = () => {
-          if (!elemento) return;
+          if (!elemento) {
+            console.error('Missing elemento');
+            return;
+          }
           const percentage =
             ((elemento.element as HTMLVideoElement).currentTime /
               (elemento.element as HTMLVideoElement).duration) *
@@ -2126,7 +2346,10 @@ export class EditorWebcamComponent implements OnInit, AfterViewInit, OnDestroy {
           time.innerText = `${currentTime} / ${duration}`;
 
           progress.oninput = () => {
-            if (!elemento) return;
+            if (!elemento) {
+              console.error('Missing elemento');
+              return;
+            }
             const newTime =
               (parseInt(progress.value) / 100) *
               (elemento.element as HTMLVideoElement).duration;
@@ -2145,7 +2368,10 @@ export class EditorWebcamComponent implements OnInit, AfterViewInit, OnDestroy {
 
         /* Tiempo de reproducción */
         elemento.element.addEventListener('timeupdate', () => {
-          if (!elemento) return;
+          if (!elemento) {
+            console.error('Missing elemento');
+            return;
+          }
           const currentTime = this.formatTime(
             (elemento.element as HTMLVideoElement).currentTime
           );
@@ -2174,13 +2400,26 @@ export class EditorWebcamComponent implements OnInit, AfterViewInit, OnDestroy {
     }
   }
 
+  /**
+   * Método para mover la cruz de posicionamiento
+   * @param eventX Posición horizontal de la cruz (number)
+   * @param eventY Posición vertical de la cruz (number)
+   * @param intersecciones Lista de elementos de intersección (HTMLElement[])
+   */
   moverCruzPosicionamiento(
     eventX: number,
     eventY: number,
     intersecciones: HTMLElement[]
   ) {
     const cross = document.getElementById('cross') as HTMLDivElement;
-    if (!cross || !this.canvas) return;
+    if (!cross) {
+      console.error('Missing cross');
+      return;
+    }
+    if (!this.canvas) {
+      console.error('Missing canvas');
+      return;
+    }
     const rect = this.canvas.getBoundingClientRect();
     const orizontal = cross.querySelector('#orizontal') as HTMLDivElement;
     orizontal.style.display = 'none';
@@ -2231,6 +2470,9 @@ export class EditorWebcamComponent implements OnInit, AfterViewInit, OnDestroy {
     orizontal.style.top = `${eventY - rect.top}px`;
   }
 
+  /**
+   * Método para calcular los presets
+   */
   async calculatePreset() {
     const keysArray = Array.from(this.presets.keys());
     keysArray.forEach((key) => {
@@ -2270,11 +2512,17 @@ export class EditorWebcamComponent implements OnInit, AfterViewInit, OnDestroy {
           ele.alt = element.element.id;
           width = element.element.naturalWidth;
           height = element.element.naturalHeight;
-        } else return;
+        } else {
+          console.error('Tipo desconocido');
+          return;
+        }
 
         // Calculamos la escala y posición en el div respecto al canvas
         const divRect = presetDiv.getBoundingClientRect();
-        if (!this.canvas || !element.position) return;
+        if (!this.canvas || !element.position) {
+          console.error('Missing this.canvas or element.position');
+          return;
+        }
         // Relación de escala entre el tamaño interno del canvas y el tamaño del div
         const scaleX = this.canvas.width / divRect.width;
         const scaleY = this.canvas.height / divRect.height;
@@ -2289,13 +2537,20 @@ export class EditorWebcamComponent implements OnInit, AfterViewInit, OnDestroy {
     });
   }
 
+  /**
+   * Método para aplicar un preset
+   * @param name Nombre del preset (string)
+   */
   aplicaPreset(name: string) {
     // Primero, quitamos todas las capas
     // quitamos las capas de cada elemento pintado
     const elementosDiv = document.getElementById(
       'elementosDiv'
     ) as HTMLDivElement;
-    if (!elementosDiv) return;
+    if (!elementosDiv) {
+      console.error('Missing elementosDiv');
+      return;
+    }
     this.videosElements.forEach((elemento) => {
       const capa = elementosDiv.querySelector(
         '#capa-' + CSS.escape(elemento.id)
@@ -2316,7 +2571,10 @@ export class EditorWebcamComponent implements OnInit, AfterViewInit, OnDestroy {
 
     // Borramos todo el contenido del canvas
     const preset = this.presets.get(name);
-    if (!preset) return;
+    if (!preset) {
+      console.error('Missing preset');
+      return;
+    }
     this.videosElements.forEach((elemento) => {
       elemento.painted = false;
       elemento.scale = 1;
@@ -2326,7 +2584,10 @@ export class EditorWebcamComponent implements OnInit, AfterViewInit, OnDestroy {
     // Pintamo cada elemento del preset
     preset.elements.forEach((element) => {
       const ele = this.videosElements.find((el) => el.id === element.id);
-      if (!ele) return;
+      if (!ele) {
+        console.error('Missing ele');
+        return;
+      }
 
       ele.scale = element.scale;
       ele.position = element.position;
@@ -2349,8 +2610,15 @@ export class EditorWebcamComponent implements OnInit, AfterViewInit, OnDestroy {
 
     // Añadir capa al preset activado
     const capaBase = document.getElementById('capa') as HTMLDivElement;
+    if (!capaBase) {
+      console.error('Missing capaBase');
+      return;
+    }
     const presetDiv = document.getElementById('preset-' + name);
-    if (!capaBase || !presetDiv) return;
+    if (!presetDiv) {
+      console.error('Missing presetDiv');
+      return;
+    }
     const parentDiv = presetDiv.parentElement as HTMLDivElement;
     const capa = capaBase.cloneNode(true) as HTMLDivElement;
     capa.id = 'capa-' + name;
@@ -2369,6 +2637,10 @@ export class EditorWebcamComponent implements OnInit, AfterViewInit, OnDestroy {
     });
   }
 
+  /**
+   * Método para mover un elemento hacia abajo en el orden de pintado
+   * @param elemento Elemento a mover (VideoElement)
+   */
   moveElementDown(elemento: VideoElement) {
     const index = this.videosElements.findIndex((el) => el.id === elemento.id);
     if (index > 0) {
@@ -2379,6 +2651,10 @@ export class EditorWebcamComponent implements OnInit, AfterViewInit, OnDestroy {
     }
   }
 
+  /**
+   * Método para mover un elemento hacia arriba en el orden de pintado
+   * @param elemento Elemento a mover (VideoElement)
+   */
   moveElementUp(elemento: VideoElement) {
     const index = this.videosElements.findIndex((el) => el.id === elemento.id);
     if (index < this.videosElements.length - 1) {
@@ -2389,7 +2665,9 @@ export class EditorWebcamComponent implements OnInit, AfterViewInit, OnDestroy {
     }
   }
 
-  // Función para dibujar las conexiones de audio
+  /**
+   * Función para dibujar las conexiones de audio
+   */
   drawAudioConnections() {
     setTimeout(() => {
       if (this.audiosElements.length === 0) return;
@@ -2398,21 +2676,25 @@ export class EditorWebcamComponent implements OnInit, AfterViewInit, OnDestroy {
       const audiosList = document.getElementById(
         'audios-list'
       ) as HTMLDivElement;
+      if (!audiosList) {
+        console.error('Missing audiosList');
+        return;
+      }
       const conexionesIzquierda = document.getElementById(
         'conexiones-izquierda'
       ) as HTMLDivElement;
+      if (!conexionesIzquierda) {
+        console.error('Missing conexionesIzquierda');
+        return;
+      }
       const conexionesDerecha = document.getElementById(
         'conexiones-derecha'
       ) as HTMLDivElement;
-      if (!conexionesIzquierda || !conexionesDerecha || !audios) {
-        console.error(
-          'No se encontró el elemento con id ' +
-            'conexiones-izquierda' +
-            ' o ' +
-            'conexiones-derecha'
-        );
+      if (!conexionesDerecha) {
+        console.error('Missing conexionesDerecha');
         return;
       }
+
       conexionesIzquierda.innerHTML = '';
       conexionesDerecha.innerHTML = '';
       conexionesIzquierda.style.width = `${
@@ -2426,23 +2708,15 @@ export class EditorWebcamComponent implements OnInit, AfterViewInit, OnDestroy {
         const audioEntrada = document.getElementById(
           'audio-level-' + elemento.idEntrada
         ) as HTMLDivElement;
+        if (!audioEntrada) {
+          console.error('Missing audioEntrada');
+          return;
+        }
         const audioSalida = document.getElementById(
           'audio-level-' + elemento.idSalida
         ) as HTMLDivElement;
-        if (!audioEntrada) {
-          console.error(
-            'No se encontró el elemento con id ' +
-              'audio-level-' +
-              elemento.idEntrada
-          );
-          return;
-        }
         if (!audioSalida) {
-          console.error(
-            'No se encontró el elemento con id ' +
-              'audio-level-' +
-              elemento.idSalida
-          );
+          console.error('Missing audioSalida');
           return;
         }
 
@@ -2521,22 +2795,33 @@ export class EditorWebcamComponent implements OnInit, AfterViewInit, OnDestroy {
     }, 100);
   }
 
+  /**
+   * Método para acabar el de crear el enlace de audio
+   * @param $event Evento de arrastre (MouseEvent)
+   */
   audioDown($event: MouseEvent): void {
     if ($event.target instanceof HTMLInputElement) return;
 
     const conexionesIzquierda = document.getElementById(
       'conexiones-izquierda'
     ) as HTMLDivElement;
+    if (!conexionesIzquierda) {
+      console.error('Missing conexionesIzquierda');
+      return;
+    }
 
     const audios = document.getElementById('audios') as HTMLDivElement;
-    if (!audios || !conexionesIzquierda) return;
+    if (!audios) {
+      console.error('Missing audios');
+      return;
+    }
 
     const audiosRect = audios.getBoundingClientRect();
     const elementoStart = document.elementFromPoint(
       $event.clientX,
       $event.clientY
     );
-    //(elementoStart);
+
     const initialScrollTop = audios.scrollTop; // 📌 Guardamos el scroll al inicio
 
     const startX = $event.clientX - audiosRect.left;
@@ -2589,8 +2874,14 @@ export class EditorWebcamComponent implements OnInit, AfterViewInit, OnDestroy {
         $event3.clientX + offsetX,
         $event3.clientY
       );
-
-      if (!elementoFinal || !elementoStart) return;
+      if (!elementoFinal) {
+        console.error('Missing elementoFinal');
+        return;
+      }
+      if (!elementoStart) {
+        console.error('Missing elementoStart');
+        return;
+      }
       let idElementoStrart = elementoStart.id;
       if (idElementoStrart.startsWith('audio-level-')) {
         idElementoStrart = idElementoStrart.substring(12);
@@ -2598,7 +2889,10 @@ export class EditorWebcamComponent implements OnInit, AfterViewInit, OnDestroy {
         idElementoStrart = idElementoStrart.substring(6);
       } else if (idElementoStrart.startsWith('volume-')) {
         idElementoStrart = idElementoStrart.substring(7);
-      } else return;
+      } else {
+        console.error('Tipo desconocido');
+        return;
+      }
       let idElementoFinal = elementoFinal.id;
       if (idElementoFinal.startsWith('audio-level-')) {
         idElementoFinal = idElementoFinal.substring(12);
@@ -2606,12 +2900,12 @@ export class EditorWebcamComponent implements OnInit, AfterViewInit, OnDestroy {
         idElementoFinal = idElementoFinal.substring(6);
       } else if (idElementoFinal.startsWith('volume-')) {
         idElementoFinal = idElementoFinal.substring(7);
-      } else return;
+      } else {
+        console.error('Tipo desconocido');
+        return;
+      }
 
       if (idElementoStrart === idElementoFinal) return;
-
-      //('elemento inicial: ', idElementoStrart);
-      //console.log('elemento final: ', idElementoFinal);
 
       const startElement = this.audiosElements.find(
         (element: AudioElement) => element.id === idElementoStrart
@@ -2643,8 +2937,14 @@ export class EditorWebcamComponent implements OnInit, AfterViewInit, OnDestroy {
     audios.addEventListener('mouseup', audioUp);
   }
 
+  /**
+   * Método para empezar a emitir
+   */
   emitir() {
-    if (!this.canvas) return;
+    if (!this.canvas) {
+      console.error('Missing canvas');
+      return;
+    }
     const videoStream = this.canvas
       .captureStream(this.canvasFPS)
       .getVideoTracks()[0];
@@ -2662,6 +2962,9 @@ export class EditorWebcamComponent implements OnInit, AfterViewInit, OnDestroy {
     }
   }
 
+  /**
+   * Método para detener la emisión
+   */
   detenerEmision() {
     this.emitiendo = false;
     if (this.emision) {
@@ -2669,6 +2972,9 @@ export class EditorWebcamComponent implements OnInit, AfterViewInit, OnDestroy {
     }
   }
 
+  /**
+   * Método para calcular el tiempo de grabación
+   */
   async calculaTiempoGrabacion() {
     let tiempo = -1;
     const updateTimer = () => {
@@ -2681,10 +2987,18 @@ export class EditorWebcamComponent implements OnInit, AfterViewInit, OnDestroy {
     updateTimer();
   }
 
+  /**
+   * Método para guardar los presets
+   */
   savePresetsFunction() {
     this.savePresets.emit(this.presets);
   }
 
+  /**
+   * Método para mostrar el menú contextual del elemento
+   * @param $event Evento de clic (MouseEvent)
+   * @param deviceId ID del elemento (string)
+   */
   onContextMenu($event: MouseEvent, deviceId: string) {
     $event.preventDefault();
     const videoElement = document.getElementById(deviceId) as HTMLVideoElement;
@@ -2701,12 +3015,21 @@ export class EditorWebcamComponent implements OnInit, AfterViewInit, OnDestroy {
     this.showFilterMenu($event, ele);
   }
 
+  /**
+   * Método para actualizar el estilo del elemento
+   */
   updateStyleElement() {
-    if (!this.selectedVideoForFilter) return;
+    if (!this.selectedVideoForFilter) {
+      console.error('Missing this.selectedVideoForFilter');
+      return;
+    }
     const videoElement = document.getElementById(
       this.selectedVideoForFilter.id
     ) as HTMLVideoElement;
-    if (!videoElement) return;
+    if (!videoElement) {
+      console.error('Missing videoElement');
+      return;
+    }
     if (this.selectedVideoForFilter.filters) {
       videoElement.style.filter = `brightness(${this.selectedVideoForFilter.filters.brightness}%) contrast(${this.selectedVideoForFilter.filters.contrast}%) saturate(${this.selectedVideoForFilter.filters.saturation}%)`;
     } else {
