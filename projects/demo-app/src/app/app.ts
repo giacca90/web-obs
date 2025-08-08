@@ -5,9 +5,6 @@ import { EditorWebcamComponent } from '../../../web-obs/src/public-api';
   selector: 'app-root',
   standalone: true,
   imports: [EditorWebcamComponent],
-  template: `
-    <h1 class="text-4xl w-full text-center font-bold text-blue-600">WebOBS</h1>
-    <WebOBS></WebOBS>
-  `,
+  templateUrl: './app.html',
 })
 export class AppComponent {}

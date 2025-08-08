@@ -19,7 +19,7 @@ import { AudioConnection } from './types/audio-connection.interface';
 import { VideoElement } from './types/video-element.interface';
 
 @Component({
-  selector: 'WebOBS',
+  selector: 'web-obs',
   standalone: true,
   imports: [FormsModule, CommonModule],
   templateUrl: './editor-webcam.component.html',
@@ -27,7 +27,7 @@ import { VideoElement } from './types/video-element.interface';
     './editor-webcam.component.css',
     './assets/tailwind.generated.css',
   ],
-  encapsulation: ViewEncapsulation.None,
+  encapsulation: ViewEncapsulation.Emulated,
 })
 export class EditorWebcamComponent implements OnInit, AfterViewInit, OnDestroy {
   canvasWidth = 1280;

@@ -39,7 +39,9 @@
             "tsConfig": "projects/web-obs/tsconfig.elements.json",
             "polyfills": ["zone.js"],
             "scripts": [],
-            "styles": ["projects/web-obs/src/lib/assets/tailwind.generated.css"]
+            "styles": [
+              "projects/web-obs/src/lib/editor-webcam/assets/tailwind.generated.css"
+            ]
           },
           "configurations": {
             "production": {
