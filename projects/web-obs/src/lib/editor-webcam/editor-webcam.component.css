@@ -16,3 +16,28 @@
   opacity: 0.8; /* Algo de transparencia para distinguirlo */
   transform: scale(0.9); /* Un pequeño escalado si lo necesitas */
 }
+
+.mi-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(45%, 1fr));
+  gap: 0.5rem; /* gap-2 en Tailwind */
+}
+
+.mi-group {
+  position: relative; /* relative */
+  cursor: pointer; /* cursor-pointer */
+  border-radius: 0.5rem; /* rounded-lg = 8px */
+  border: 1px solid black; /* border border-black */
+  background-color: white; /* bg-white */
+  max-height: 33vh; /* max-h-[33vh] */
+  aspect-ratio: 16 / 9 !important; /* aspect-video! (with !important) */
+  transition: border-width 0.2s ease; /* para suavizar hover */
+
+  /* dark mode border */
+  /* Tendrías que manejar con JS o clases, aquí sólo CSS puro */
+}
+
+.mi-group:hover {
+  border-width: 2px; /* hover:border-2 */
+  border-color: black; /* hover:border-black */
+}
