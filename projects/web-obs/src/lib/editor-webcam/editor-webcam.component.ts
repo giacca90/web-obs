@@ -11,7 +11,6 @@ import {
   Output,
   QueryList,
   ViewChildren,
-  ViewEncapsulation,
 } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Observable } from 'rxjs';
@@ -29,7 +28,6 @@ import { VideoElement } from './types/video-element.interface';
     './editor-webcam.component.css',
     './assets/tailwind.generated.css',
   ],
-  encapsulation: ViewEncapsulation.Emulated,
 })
 export class EditorWebcamComponent implements OnInit, AfterViewInit, OnDestroy {
   canvasWidth = 1280; // Resolución por defecto de la emisión
@@ -509,13 +507,32 @@ export class EditorWebcamComponent implements OnInit, AfterViewInit, OnDestroy {
       // Encontrar el elemento <video> con el mismo ID que el dispositivo
       const div = document.getElementById('div-' + deviceId);
       if (!div) {
-        console.error('No se encontró el elemento div-' + deviceId);
+        console.log('No se encontró el elemento div-' + deviceId);
         return;
       }
       const resolution = div.querySelector('#resolution');
       if (!resolution) {
         console.error('No se encontró el elemento #resolution');
         return;
+      }
+      resolution.innerHTML = `${settings.width}x${settings.height} ${settings.frameRate}fps`;
+
+      const videoElement = this.videoElements.find(
+        (el) => el.nativeElement.id === deviceId
+      );
+      if (videoElement) {
+        videoElement.nativeElement.srcObject = stream; // Asignar el stream al video
+        const ele: VideoElement = {
+          id: deviceId,
+          element: videoElement.nativeElement,
+          painted: false,
+          scale: 1,
+          position: null,
+        };
+        this.videosElements.push(ele);
+        div.style.filter = ele.filters
+          ? `brightness(${ele.filters.brightness}%) contrast(${ele.filters.contrast}%) saturate(${ele.filters.saturation}%)`
+          : '';
       }
     } catch (error) {
       console.error('Error al obtener el stream de video:', error);
