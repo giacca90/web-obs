@@ -1125,7 +1125,7 @@ export class EditorWebcamComponent implements OnInit, AfterViewInit, OnDestroy {
       const barHeightLeft = amplitudeLeft * canvasHeight;
 
       const barLeft = document.createElement('div');
-      barLeft.classList.add('absolute');
+      barLeft.style.position = 'absolute';
       barLeft.style.left = `${i}px`;
       barLeft.style.width = '1px';
       if (audioBuffer.numberOfChannels === 1) {
@@ -1143,7 +1143,7 @@ export class EditorWebcamComponent implements OnInit, AfterViewInit, OnDestroy {
         const amplitudeRight = Math.abs(sampleDataRight[sampleIndexRight]);
         const barHeightRight = amplitudeRight * canvasHeight;
         const barRight = document.createElement('div');
-        barRight.classList.add('absolute');
+        barRight.style.position = 'absolute';
         barRight.style.left = `${i}px`;
         barRight.style.width = '1px';
         barRight.style.height = `${barHeightRight / 2}px`;
@@ -2559,7 +2559,7 @@ export class EditorWebcamComponent implements OnInit, AfterViewInit, OnDestroy {
         const scaleX = this.canvas.width / divRect.width;
         const scaleY = this.canvas.height / divRect.height;
         // Calculamos la posición en el div
-        ele.classList.add('absolute');
+        ele.style.position = 'absolute';
         ele.style.left = `${element.position.x / scaleX}px`;
         ele.style.top = `${element.position.y / scaleY}px`;
         ele.style.width = `${(width * element.scale) / scaleX}px`;
@@ -2659,7 +2659,7 @@ export class EditorWebcamComponent implements OnInit, AfterViewInit, OnDestroy {
       capa.remove();
     };
     capa.classList.remove('hidden');
-    capa.classList.add('z-10');
+    capa.style.zIndex = '10';
     parentDiv.appendChild(capa);
 
     // Añadir capa a cada elemento pintado
@@ -2771,16 +2771,49 @@ export class EditorWebcamComponent implements OnInit, AfterViewInit, OnDestroy {
             audios.scrollTop,
         };
         const square = document.createElement('div');
-        square.classList.add(
-          'absolute',
-          'border-l-2',
-          'group',
-          'border-t-2',
-          'border-b-2',
-          'hover:border-l-4',
-          'hover:border-t-4',
-          'hover:border-b-4'
-        );
+
+        square.style.position = 'absolute';
+        square.style.border = '2px solid';
+        square.style.borderRightWidth = '0px';
+
+        //square.style.transition = 'border-width 0.3s ease'; // para hover suave
+
+        // Crear botón para eliminar la conexión
+        const deleteButton = document.createElement('button');
+        deleteButton.innerText = 'X';
+        deleteButton.style.position = 'absolute';
+        deleteButton.style.left = '-2px';
+        deleteButton.style.top = '0';
+        deleteButton.style.width = '1rem'; // w-4 = 1rem = 16px
+        deleteButton.style.height = '1rem'; // h-4 = 1rem
+        deleteButton.style.borderRadius = '9999px'; // rounded-full
+        deleteButton.style.display = 'none'; // hidden
+        deleteButton.style.alignItems = 'center'; // flex + items-center + justify-center
+        deleteButton.style.justifyContent = 'center';
+        deleteButton.style.top = '0';
+        deleteButton.style.right = '0';
+        deleteButton.onclick = () => {
+          // Eliminar la conexión de la lista
+          this.audiosConnections.splice(index, 1);
+          // Desconectar los nodos de audio
+          elemento.entrada.disconnect(elemento.salida);
+          // Eliminar el elemento visual
+          square.remove();
+        };
+
+        square.addEventListener('mouseenter', () => {
+          square.style.borderLeftWidth = '4px';
+          square.style.borderTopWidth = '4px';
+          square.style.borderBottomWidth = '4px';
+          deleteButton.style.display = 'flex';
+        });
+
+        square.addEventListener('mouseleave', () => {
+          square.style.borderLeftWidth = '2px';
+          square.style.borderTopWidth = '2px';
+          square.style.borderBottomWidth = '2px';
+          deleteButton.style.display = 'none';
+        });
 
         const letters = '0123456789ABCDEF';
         let color = '#';
@@ -2795,31 +2828,6 @@ export class EditorWebcamComponent implements OnInit, AfterViewInit, OnDestroy {
         square.style.height = `${end.y - start.y}px`;
         square.style.zIndex = (500 - (index + 1) * 10).toString();
 
-        // Crear botón para eliminar la conexión
-        const deleteButton = document.createElement('button');
-        deleteButton.innerText = 'X';
-        deleteButton.classList.add(
-          'absolute',
-          'hidden',
-          'left-[-2px]',
-          'group-hover:block',
-          'rounded-full',
-          'w-4',
-          'h-4',
-          'flex',
-          'items-center',
-          'justify-center'
-        );
-        deleteButton.style.top = '0';
-        deleteButton.style.right = '0';
-        deleteButton.onclick = () => {
-          // Eliminar la conexión de la lista
-          this.audiosConnections.splice(index, 1);
-          // Desconectar los nodos de audio
-          elemento.entrada.disconnect(elemento.salida);
-          // Eliminar el elemento visual
-          square.remove();
-        };
         square.appendChild(deleteButton);
 
         conexionesIzquierda.appendChild(square);
@@ -2860,15 +2868,11 @@ export class EditorWebcamComponent implements OnInit, AfterViewInit, OnDestroy {
     const startY = $event.clientY - audiosRect.top + initialScrollTop; // ✅ Se guarda con el scroll inicial
 
     const conexionTemp = document.createElement('div');
-    conexionTemp.classList.add(
-      'absolute',
-      'border-l-2',
-      'border-t-2',
-      'border-b-2',
-      'border-dashed',
-      'border-black'
-    );
-
+    conexionTemp.style.position = 'absolute';
+    conexionTemp.style.border = '2px solid';
+    conexionTemp.style.borderRightWidth = '0px';
+    conexionTemp.style.borderStyle = 'dashed';
+    conexionTemp.style.borderColor = 'black';
     conexionTemp.style.left = `${startX}px`;
     conexionTemp.style.top = `${startY}px`;
     conexionTemp.style.width = `1px`;
