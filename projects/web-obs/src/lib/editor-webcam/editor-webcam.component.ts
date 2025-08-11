@@ -144,8 +144,12 @@ export class EditorWebcamComponent implements OnInit, AfterViewInit, OnDestroy {
 
     // Función para dibujar el canvas
     const drawFrame = () => {
-      if (!this.canvas || !this.context) {
+      if (!this.canvas) {
         console.error('Canvas o contexto no encontrado');
+        return;
+      }
+      if (!this.context) {
+        console.error('Missing context');
         return;
       }
       this.context.clearRect(0, 0, this.canvas.width, this.canvas.height);
@@ -873,6 +877,7 @@ export class EditorWebcamComponent implements OnInit, AfterViewInit, OnDestroy {
           };
           this.videosElements.push(elemento);
           // Añadir el control de audio
+          // TODO: Revisar si se puede confirmar si el audio existe
           this.audiosArchivos.push(file.name);
           const gainNode = this.audioContext.createGain();
           this.audiosElements.push({ id: file.name, ele: gainNode });
@@ -2190,10 +2195,20 @@ export class EditorWebcamComponent implements OnInit, AfterViewInit, OnDestroy {
       console.error('Tipo desconocido');
       return;
     }
-    if (!elemento || !elemento.element || !this.canvas) {
-      console.error('Missing elemento or elemento.element or canvas');
+
+    if (!elemento) {
+      console.error('No se encontro el elemento');
       return;
     }
+    if (!elemento.element) {
+      console.error('No se encontro el elemento.element');
+      return;
+    }
+    if (!this.canvas) {
+      console.error('No se encontro el canvas');
+      return;
+    }
+
     const rect = this.canvas.getBoundingClientRect();
     const x = rect.x + rect.width / 2;
     const y = rect.y + rect.height / 2;
