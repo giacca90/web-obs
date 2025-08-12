@@ -501,17 +501,17 @@ export class EditorWebcamComponent implements OnInit, AfterViewInit, OnDestroy {
       this.streams.push(stream);
       videoTrack = stream.getVideoTracks()[0];
       settings = videoTrack.getSettings();
-      console.log(
+      /*   console.log(
         'New Current Settings:',
         settings.width,
         'x',
         settings.height
-      );
+      ); */
 
       // Encontrar el elemento <video> con el mismo ID que el dispositivo
       const div = document.getElementById('div-' + deviceId);
       if (!div) {
-        console.log('No se encontró el elemento div-' + deviceId);
+        console.error('No se encontró el elemento div-' + deviceId);
         return;
       }
       const resolution = div.querySelector('#resolution');
@@ -558,7 +558,7 @@ export class EditorWebcamComponent implements OnInit, AfterViewInit, OnDestroy {
       const audioTrack = stream.getAudioTracks()[0];
       const settings = audioTrack.getSettings();
 
-      console.log('Audio Settings:', settings);
+      //console.log('Audio Settings:', settings);
 
       // Añade un controlador de volumen al dispositivo
       const volume = document.getElementById(
@@ -792,7 +792,7 @@ export class EditorWebcamComponent implements OnInit, AfterViewInit, OnDestroy {
 
       // Manejar el fin de la captura
       stream.getVideoTracks()[0].onended = () => {
-        console.log('La captura ha terminado');
+        //console.log('La captura ha terminado');
         this.capturas = this.capturas.filter((s) => s !== stream);
         this.audiosCapturas = this.audiosCapturas.filter(
           (t) => t.id !== stream.id
@@ -2488,7 +2488,6 @@ export class EditorWebcamComponent implements OnInit, AfterViewInit, OnDestroy {
       !cursorPosition.isAbove &&
       !cursorPosition.isBelow
     ) {
-      console.log('orizontal');
       orizontal.style.display = 'block';
     }
     if (
@@ -2496,12 +2495,10 @@ export class EditorWebcamComponent implements OnInit, AfterViewInit, OnDestroy {
       !cursorPosition.isLeft &&
       !cursorPosition.isRight
     ) {
-      console.log('vertical');
       vertical.style.display = 'block';
     }
 
     if (isMouseOverCanvas) {
-      console.log('orizontal + vertical');
       orizontal.style.display = 'block';
       vertical.style.display = 'block';
     }
@@ -2996,7 +2993,7 @@ export class EditorWebcamComponent implements OnInit, AfterViewInit, OnDestroy {
     const videoStream = this.canvas
       .captureStream(this.canvasFPS)
       .getVideoTracks()[0];
-    console.log('Constrain: ' + videoStream.getSettings().frameRate);
+    //console.log('Constrain: ' + videoStream.getSettings().frameRate);
     const audioStream = this.mixedAudioDestination.stream.getAudioTracks()[0];
     this.emision.emit(new MediaStream([videoStream, audioStream]));
     if (this.ready !== undefined) {
