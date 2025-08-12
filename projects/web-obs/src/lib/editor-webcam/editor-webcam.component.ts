@@ -501,12 +501,7 @@ export class EditorWebcamComponent implements OnInit, AfterViewInit, OnDestroy {
       this.streams.push(stream);
       videoTrack = stream.getVideoTracks()[0];
       settings = videoTrack.getSettings();
-      /*   console.log(
-        'New Current Settings:',
-        settings.width,
-        'x',
-        settings.height
-      ); */
+      /*   console.log('New Current Settings:', settings.width, 'x', settings.height); */
 
       // Encontrar el elemento <video> con el mismo ID que el dispositivo
       const div = document.getElementById('div-' + deviceId);
@@ -1309,7 +1304,7 @@ export class EditorWebcamComponent implements OnInit, AfterViewInit, OnDestroy {
       const elementWidth = element.offsetWidth;
       const elementHeight = element.offsetHeight;
       const offsetX = elementWidth / 2;
-      const offsetY = elementHeight / 2;
+      const offsetY = elementHeight / 2 - window.scrollY;
 
       ghost.style.left = `${x - offsetX}px`;
       ghost.style.top = `${y - offsetY}px`;
@@ -1377,6 +1372,10 @@ export class EditorWebcamComponent implements OnInit, AfterViewInit, OnDestroy {
       return;
     }
     cross.style.display = 'block';
+    const vertical = cross.querySelector('#vertical') as HTMLDivElement;
+    const horizontal = cross.querySelector('#orizontal') as HTMLDivElement;
+    if (vertical) vertical.style.display = 'none';
+    if (horizontal) horizontal.style.display = 'none';
 
     const mousemove = (moveEvent: MouseEvent) => {
       try {
@@ -1460,6 +1459,9 @@ export class EditorWebcamComponent implements OnInit, AfterViewInit, OnDestroy {
               elemento.style.visibility = 'visible';
             }
           });
+        } else {
+          vertical.style.display = 'none';
+          horizontal.style.display = 'none';
         }
       } catch (error) {
         console.error('Error al mover el video: ', error);
