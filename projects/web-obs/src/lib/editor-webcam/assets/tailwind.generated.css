@@ -237,9 +237,6 @@
   .left-2 {
     left: calc(var(--spacing) * 2);
   }
-  .left-\[-2px\] {
-    left: -2px;
-  }
   .left-\[50\%\] {
     left: 50%;
   }
@@ -305,9 +302,6 @@
   }
   .flex {
     display: flex;
-  }
-  .grid {
-    display: grid;
   }
   .hidden {
     display: none;
@@ -463,9 +457,6 @@
   .appearance-none {
     appearance: none;
   }
-  .grid-cols-\[repeat\(auto-fill\,minmax\(45\%\,1fr\)\)\] {
-    grid-template-columns: repeat(auto-fill,minmax(45%,1fr));
-  }
   .grid-cols-\[repeat\(auto-fill\,minmax\(45\\\\\%\,1fr\)\)\] {
     grid-template-columns: repeat(auto-fill,minmax(45\\%,1fr));
   }
@@ -514,22 +505,6 @@
   .border-2 {
     border-style: var(--tw-border-style);
     border-width: 2px;
-  }
-  .border-t-2 {
-    border-top-style: var(--tw-border-style);
-    border-top-width: 2px;
-  }
-  .border-b-2 {
-    border-bottom-style: var(--tw-border-style);
-    border-bottom-width: 2px;
-  }
-  .border-l-2 {
-    border-left-style: var(--tw-border-style);
-    border-left-width: 2px;
-  }
-  .border-dashed {
-    --tw-border-style: dashed;
-    border-style: dashed;
   }
   .border-black {
     border-color: var(--color-black);
@@ -684,30 +659,6 @@
       @media (hover: hover) {
         border-style: var(--tw-border-style);
         border-width: 2px;
-      }
-    }
-  }
-  .hover\:border-t-4 {
-    &:hover {
-      @media (hover: hover) {
-        border-top-style: var(--tw-border-style);
-        border-top-width: 4px;
-      }
-    }
-  }
-  .hover\:border-b-4 {
-    &:hover {
-      @media (hover: hover) {
-        border-bottom-style: var(--tw-border-style);
-        border-bottom-width: 4px;
-      }
-    }
-  }
-  .hover\:border-l-4 {
-    &:hover {
-      @media (hover: hover) {
-        border-left-style: var(--tw-border-style);
-        border-left-width: 4px;
       }
     }
   }

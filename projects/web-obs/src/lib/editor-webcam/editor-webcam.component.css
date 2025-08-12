@@ -41,3 +41,31 @@
   border-width: 2px; /* hover:border-2 */
   border-color: black; /* hover:border-black */
 }
+
+.cross-container {
+  pointer-events: none;
+  position: absolute;
+  inset: 0;
+}
+
+.cross-vertical {
+  position: absolute;
+  top: 0;
+  left: 50%;
+  height: 100%;
+  width: 2px;
+  transform: translateX(-50%);
+  display: none;
+  background-color: #b91c1c;
+}
+
+.cross-horizontal {
+  position: absolute;
+  top: 50%;
+  left: 0;
+  height: 2px;
+  width: 100%;
+  transform: translateY(-50%);
+  display: none;
+  background-color: #b91c1c;
+}

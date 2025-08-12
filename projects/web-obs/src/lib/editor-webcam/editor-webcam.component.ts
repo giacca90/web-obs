@@ -1373,7 +1373,7 @@ export class EditorWebcamComponent implements OnInit, AfterViewInit, OnDestroy {
     ) as HTMLDivElement;
     const cross = document.getElementById('cross') as HTMLDivElement;
     if (!canvasContainer || !cross) {
-      console.error('No se pudo crear el elemento de la cruz');
+      console.error('No se pudo obtener el elemento de la cruz');
       return;
     }
     cross.style.display = 'block';
@@ -2454,10 +2454,19 @@ export class EditorWebcamComponent implements OnInit, AfterViewInit, OnDestroy {
     }
     const rect = this.canvas.getBoundingClientRect();
     const orizontal = cross.querySelector('#orizontal') as HTMLDivElement;
+    if (!orizontal) {
+      console.error('Missing orizontal');
+      return;
+    }
     orizontal.style.display = 'none';
     orizontal.style.backgroundColor = '#1d4ed8';
     orizontal.style.width = rect.width + 'px';
+
     const vertical = cross.querySelector('#vertical') as HTMLDivElement;
+    if (!vertical) {
+      console.error('Missing vertical');
+      return;
+    }
     vertical.style.display = 'none';
     vertical.style.backgroundColor = '#1d4ed8';
     vertical.style.height = rect.height + 'px';
@@ -2479,6 +2488,7 @@ export class EditorWebcamComponent implements OnInit, AfterViewInit, OnDestroy {
       !cursorPosition.isAbove &&
       !cursorPosition.isBelow
     ) {
+      console.log('orizontal');
       orizontal.style.display = 'block';
     }
     if (
@@ -2486,10 +2496,12 @@ export class EditorWebcamComponent implements OnInit, AfterViewInit, OnDestroy {
       !cursorPosition.isLeft &&
       !cursorPosition.isRight
     ) {
+      console.log('vertical');
       vertical.style.display = 'block';
     }
 
     if (isMouseOverCanvas) {
+      console.log('orizontal + vertical');
       orizontal.style.display = 'block';
       vertical.style.display = 'block';
     }
