@@ -6,5 +6,6 @@ import { EditorWebcamComponent } from '../../../web-obs/src/public-api';
   standalone: true,
   imports: [EditorWebcamComponent],
   templateUrl: './app.html',
+  styleUrls: ['./app.css'],
 })
 export class AppComponent {}

@@ -1,0 +1,9 @@
+.title {
+  /* text-4xl w-full text-center font-bold text-blue-600 */
+  font-size: 2.25rem; /* equivale a text-4xl en Tailwind */
+  line-height: 2.5rem; /* line-height asociado a 4xl */
+  width: 100%; /* w-full */
+  text-align: center; /* text-center */
+  font-weight: 700; /* font-bold */
+  color: #2563eb; /* text-blue-600 */
+}
