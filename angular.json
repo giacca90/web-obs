@@ -31,7 +31,7 @@
           }
         },
         "elements": {
-          "builder": "@angular-devkit/build-angular:browser",
+          "builder": "ngx-build-plus:browser",
           "options": {
             "main": "projects/web-obs/src/lib/elements.ts",
             "index": "projects/web-obs/src/lib/index.html",
@@ -39,12 +39,12 @@
             "tsConfig": "projects/web-obs/tsconfig.elements.json",
             "polyfills": ["zone.js"],
             "scripts": [],
-            "styles": [
-              "projects/web-obs/src/lib/editor-webcam/assets/tailwind.generated.css"
-            ]
+            "styles": ["projects/web-obs/src/lib/editor-webcam/assets/tailwind.generated.css"],
+            "singleBundle": true
           },
           "configurations": {
             "production": {
+              "aot": true,
               "optimization": true,
               "outputHashing": "all",
               "sourceMap": false

@@ -1,12 +1,12 @@
+// projects/web-obs/src/lib/elements.ts
 import { CommonModule } from '@angular/common';
 import { importProvidersFrom } from '@angular/core';
-import { createCustomElement } from '@angular/elements';
 import { bootstrapApplication } from '@angular/platform-browser';
 import { WebObs } from './web-obs';
 
+// Inyecta estilos compartidos si no existen
 function injectSharedStyle(href: string) {
-  const exists = !!document.querySelector(`link[href="${href}"]`);
-  if (!exists) {
+  if (!document.querySelector(`link[href="${href}"]`)) {
     const link = document.createElement('link');
     link.rel = 'stylesheet';
     link.href = href;
@@ -14,13 +14,17 @@ function injectSharedStyle(href: string) {
   }
 }
 
-// Aquí usa la ruta correcta según tu build
-injectSharedStyle('./styles/tailwind.generated.css');
+// Ajusta la ruta según tu build
+injectSharedStyle('./tailwind.generated.css');
 
+// Bootstrapping standalone y registro como webcomponent
 bootstrapApplication(WebObs, {
   providers: [importProvidersFrom(CommonModule)],
 }).then((appRef) => {
   const injector = appRef.injector;
-  const element = createCustomElement(WebObs, { injector });
-  customElements.define('editor-webcam', element);
+  // Define el custom element solo si no existe
+  if (!customElements.get('editor-webcam')) {
+    const element = document.createElement('editor-webcam');
+    customElements.define('editor-webcam', element.constructor as CustomElementConstructor);
+  }
 });
