@@ -5,4 +5,4 @@ import { EditorWebcamComponent } from './editor-webcam/editor-webcam.component';
   imports: [EditorWebcamComponent],
   exports: [EditorWebcamComponent],
 })
-export class WebObsModule {}
+export class WebObsWrapperModule {}

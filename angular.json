@@ -11,9 +11,13 @@
       "root": "projects/web-obs",
       "sourceRoot": "projects/web-obs/src",
       "prefix": "lib",
-      "architect": {
+      "targets": {
         "build": {
-          "builder": "@angular/build:ng-packagr",
+          "builder": "@angular-devkit/build-angular:ng-packagr",
+          "options": {
+            "tsConfig": "projects/web-obs/tsconfig.lib.json",
+            "project": "projects/web-obs/ng-package.json"
+          },
           "configurations": {
             "production": {
               "tsConfig": "projects/web-obs/tsconfig.lib.prod.json"
@@ -25,13 +29,13 @@
           "defaultConfiguration": "production"
         },
         "test": {
-          "builder": "@angular/build:karma",
+          "builder": "@angular-devkit/build-angular:karma",
           "options": {
             "tsConfig": "projects/web-obs/tsconfig.spec.json"
           }
         },
         "elements": {
-          "builder": "ngx-build-plus:browser",
+          "builder": "@angular-devkit/build-angular:browser",
           "options": {
             "main": "projects/web-obs/src/lib/elements.ts",
             "index": "projects/web-obs/src/lib/index.html",
@@ -39,15 +43,26 @@
             "tsConfig": "projects/web-obs/tsconfig.elements.json",
             "polyfills": ["zone.js"],
             "scripts": [],
-            "styles": ["projects/web-obs/src/lib/editor-webcam/assets/tailwind.generated.css"],
-            "singleBundle": true
+            "styles": ["projects/web-obs/src/lib/editor-webcam/assets/tailwind.generated.css"]
           },
           "configurations": {
             "production": {
-              "aot": true,
               "optimization": true,
-              "outputHashing": "all",
-              "sourceMap": false
+              "aot": true,
+              "outputHashing": "none",
+              "sourceMap": false,
+              "namedChunks": false,
+              "vendorChunk": false,
+              "buildOptimizer": true
+            },
+            "development": {
+              "optimization": false,
+              "aot": true,
+              "outputHashing": "none",
+              "sourceMap": true,
+              "namedChunks": true,
+              "vendorChunk": true,
+              "buildOptimizer": false
             }
           },
           "defaultConfiguration": "production"
@@ -57,12 +72,7 @@
           "options": {
             "buildTarget": "web-obs:elements"
           },
-          "configurations": {
-            "production": {
-              "buildTarget": "web-obs:elements:production"
-            }
-          },
-          "defaultConfiguration": "production"
+          "defaultConfiguration": "development"
         }
       }
     },
@@ -71,7 +81,7 @@
       "root": "projects/demo-app",
       "sourceRoot": "projects/demo-app/src",
       "prefix": "app",
-      "architect": {
+      "targets": {
         "build": {
           "builder": "@angular-devkit/build-angular:browser",
           "options": {
@@ -88,7 +98,7 @@
               }
             ],
             "scripts": [],
-            "styles": []
+            "styles": ["projects/demo-app/src/styles.css"]
           },
           "configurations": {
             "production": {

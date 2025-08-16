@@ -1,6 +1,22 @@
 {
   "name": "web-obs",
   "version": "0.0.1",
+  "description": "Web-Obs es una librería de Angular 20 y un WebComponent que permite crear broadcasts de video y audio directamente ne el navegador.",
+  "keywords": [
+    "angular",
+    "web-obs",
+    "obs",
+    "video",
+    "audio",
+    "broadcast",
+    "live-streaming",
+    "streaming",
+    "web-component"
+  ],
+  "author": {
+    "name": "Giacca90",
+    "email": "giacca90mobile@protonmail.com"
+  },
   "scripts": {
     "ng": "ng",
     "tailwind:build": "npx tailwindcss -i ./projects/web-obs/src/styles/tailwind.css -o ./projects/web-obs/src/lib/editor-webcam/assets/tailwind.generated.css --config ./tailwind.config.ts --minify",

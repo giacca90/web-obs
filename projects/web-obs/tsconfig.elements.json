@@ -1,7 +1,14 @@
 {
   "extends": "./tsconfig.lib.json",
   "compilerOptions": {
-    "outDir": "../../../out-tsc/elements"
+    "outDir": "../../out-tsc/elements",
+    "target": "es2020",
+    "types": [],
+    "allowJs": true
   },
-  "include": ["src/lib/elements.ts", "src/lib/editor-webcam/**/*.ts"]
+  "files": ["src/lib/elements.ts"],
+  "angularCompilerOptions": {
+    "enableIvy": true,
+    "compilationMode": "full"
+  }
 }
