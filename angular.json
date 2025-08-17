@@ -35,34 +35,31 @@
           }
         },
         "elements": {
-          "builder": "@angular-devkit/build-angular:browser",
+          "builder": "@angular-devkit/build-angular:browser-esbuild",
           "options": {
             "main": "projects/web-obs/src/lib/elements.ts",
             "index": "projects/web-obs/src/lib/index.html",
             "outputPath": "dist/web-obs/elements",
             "tsConfig": "projects/web-obs/tsconfig.elements.json",
-            "polyfills": ["zone.js"],
-            "scripts": [],
-            "styles": ["projects/web-obs/src/lib/editor-webcam/assets/tailwind.generated.css"]
+            "polyfills": [],
+            "inlineStyleLanguage": "css",
+            "assets": []
           },
           "configurations": {
             "production": {
-              "optimization": true,
+              "optimization": {
+                "scripts": true,
+                "styles": true
+              },
               "aot": true,
-              "outputHashing": "none",
               "sourceMap": false,
-              "namedChunks": false,
-              "vendorChunk": false,
-              "buildOptimizer": true
+              "outputHashing": "none"
             },
             "development": {
               "optimization": false,
               "aot": true,
-              "outputHashing": "none",
               "sourceMap": true,
-              "namedChunks": true,
-              "vendorChunk": true,
-              "buildOptimizer": false
+              "outputHashing": "none"
             }
           },
           "defaultConfiguration": "production"

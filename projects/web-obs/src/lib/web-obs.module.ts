@@ -1,8 +1,8 @@
 import { NgModule } from '@angular/core';
-import { EditorWebcamComponent } from './editor-webcam/editor-webcam.component';
+import { WebOBS } from './editor-webcam/web-obs';
 
 @NgModule({
-  imports: [EditorWebcamComponent],
-  exports: [EditorWebcamComponent],
+  imports: [WebOBS],
+  exports: [WebOBS],
 })
-export class WebObsWrapperModule {}
+export class WebOBSModule {}

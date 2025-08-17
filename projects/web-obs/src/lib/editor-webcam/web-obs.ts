@@ -11,10 +11,10 @@ import { VideoElement } from './types/video-element.interface';
   selector: 'web-obs',
   standalone: true,
   imports: [FormsModule, CommonModule],
-  templateUrl: './editor-webcam.component.html',
-  styleUrls: ['./editor-webcam.component.css', './assets/tailwind.generated.css'],
+  templateUrl: './web-obs.html',
+  styleUrls: ['./web-obs.css', './assets/tailwind.generated.css'],
 })
-export class EditorWebcamComponent implements OnInit, AfterViewInit, OnDestroy {
+export class WebOBS implements OnInit, AfterViewInit, OnDestroy {
   canvasWidth = 1280; // Resolución por defecto de la emisión
   canvasHeight = 720; // Resolución por defecto de la emisión
   canvasFPS = 30; // FPS por defecto de la emisión

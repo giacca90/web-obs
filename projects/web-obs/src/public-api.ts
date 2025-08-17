@@ -1,4 +1,4 @@
-export * from './lib/editor-webcam/editor-webcam.component';
+export * from './lib/editor-webcam/web-obs';
 export * from './lib/web-obs.module';
 
 export * from './lib/editor-webcam/types/audio-connection.interface';

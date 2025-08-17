@@ -2,7 +2,7 @@
   "extends": "./tsconfig.lib.json",
   "compilerOptions": {
     "outDir": "../../out-tsc/elements",
-    "target": "es2020",
+    "target": "es2022",
     "types": [],
     "allowJs": true
   },
