@@ -1,6 +1,27 @@
 {
   "name": "web-obs",
   "version": "0.0.1",
+  "description": "Web-OBS es una librería de Angular 20 que permite crear broadcasts de video y audio directamente ne el navegador.",
+  "keywords": [
+    "angular",
+    "web-obs",
+    "obs",
+    "video",
+    "audio",
+    "broadcast",
+    "live-streaming",
+    "streaming",
+    "web-component"
+  ],
+  "author": {
+    "name": "Giacca90",
+    "email": "giacca90mobile@protonmail.com"
+  },
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/giacca90/web-obs.git"
+  },
   "peerDependencies": {
     "@angular/common": "^20.1.0",
     "@angular/core": "^20.1.0"

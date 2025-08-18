@@ -17,6 +17,10 @@
     "name": "Giacca90",
     "email": "giacca90mobile@protonmail.com"
   },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/giacca90/web-obs.git"
+  },
   "scripts": {
     "ng": "ng",
     "tailwind:build": "npx tailwindcss -i ./projects/web-obs/src/styles/tailwind.css -o ./projects/web-obs/src/lib/editor-webcam/assets/tailwind.generated.css --config ./tailwind.config.ts --minify",

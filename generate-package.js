@@ -8,8 +8,9 @@ const rootPkg = require("./package.json");
 const wcPkg = {
   name: "web-obs-wc",
   version: rootPkg.version,
-  description: rootPkg.description + " (Web Component build)",
+  description: "Web-OBS-wc es un WebComponent que permite crear broadcasts de video y audio directamente ne el navegador.",
   author: rootPkg.author,
+  repository: rootPkg.repository,
   keywords: [...(rootPkg.keywords || []), "webcomponent"],
   license: rootPkg.license,
   repository: rootPkg.repository,
