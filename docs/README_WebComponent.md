@@ -11,13 +11,13 @@
 |_________________________________________________________________________________|
 ```
 
-# Web-OBS
+# Web-OBS-wc (WebComponent)
 
 ## Una alternativa sencilla a OBS para el navegador
 
-### ¿Qué es Web-OBS?
+### ¿Qué es Web-OBS-wc?
 
-Web-OBS es una librería de Angular 20 y un WebComponent que permite crear broadcasts de video y audio directamente ne el navegador.
+Web-OBS-wc es un WebComponent que permite crear broadcasts de video y audio directamente ne el navegador.
 
 ### ¿Cómo funciona?
 
@@ -27,12 +27,24 @@ Te permite utilizar las funciónes principales de OBS, pero en el navegador.
 
 ### ¿Cómo se utiliza?
 
-Está disponible en npm, en dos versiones:
+1. Instalar la libreria:
 
-- Componente Angular 20
-- Componente Web
+```bash
+npm install web-obs-wc
+```
 
-Para saber como utilizar cada una, puedes ver los READMEs de cada una en la carpeta `docs`.
+2. Añadimos la librería al html:
+
+```html
+/*Cambia la ruta según la versión que uses. */
+<script type="module" src="https://unpkg.com/web-obs-wc@0.0.1/dist/web-obs/elements/web-obs.js"></script>
+```
+
+3. Utilizar la librería en el componente:
+
+```html
+<web-obs></web-obs>
+```
 
 ### DEMOS
 
@@ -79,6 +91,7 @@ También puede emitir los siguentes eventos:
 Ejemplo completo:
 
 ```
+
 <WebOBS
 (emision)="emiteWebcam($event)"
 (savePresets)="savePresets($event)"
