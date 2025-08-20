@@ -1,0 +1,33 @@
+{
+  "name": "web-obs-wc",
+  "version": "0.0.1",
+  "description": "Web-OBS-wc es un WebComponent que permite crear broadcasts de video y audio directamente ne el navegador.",
+  "author": {
+    "name": "Giacca90",
+    "email": "giacca90mobile@protonmail.com"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/giacca90/web-obs.git"
+  },
+  "keywords": [
+    "angular",
+    "web-obs",
+    "obs",
+    "video",
+    "audio",
+    "broadcast",
+    "live-streaming",
+    "streaming",
+    "web-component",
+    "webcomponent"
+  ],
+  "main": "main.js",
+  "module": "main.js",
+  "files": [
+    "*"
+  ],
+  "peerDependencies": {
+    "zone.js": "^0.15.1"
+  }
+}
