@@ -17,13 +17,13 @@
 
 ### ¿Qué es Web-OBS?
 
-Web-OBS es una librería de Angular 20 y un WebComponent que permite crear broadcasts de video y audio directamente ne el navegador.
+Web-OBS es una librería de Angular 20 y un WebComponent que permite crear broadcasts de video y audio directamente en el navegador.
 
 ### ¿Cómo funciona?
 
 Utilizando las capacidades de los navegadores modernos, permite capturar la webcam, el micrófono, compartir imágenes, videos y audios, compartir pantalla...
 Y permite acomodar cada elemento, crear presets, acceder a presets con atajos de teclado, etc.
-Te permite utilizar las funciónes principales de OBS, pero en el navegador.
+Te permite utilizar las funciones principales de OBS, pero en el navegador.
 
 ### ¿Cómo se utiliza?
 
@@ -34,7 +34,9 @@ Está disponible en npm, en dos versiones:
 
 Para saber como utilizar cada una, puedes ver los READMEs de cada una en la carpeta `docs`.
 
-### DEMOS
+### DEMO
+
+<https://giacca90.github.io/web-obs/>
 
 <div style="display: flex; flex-wrap: wrap; justify-content: center; gap: 20px; text-align: center;">
   <div style="flex: 1 1 200px; max-width: 200px;">
@@ -65,13 +67,13 @@ Para saber como utilizar cada una, puedes ver los READMEs de cada una en la carp
 
 ### Parametros
 
-El componente puede recibir los siguentes parametros:
+El componente puede recibir los siguientes parametros:
 
 - `savedFiles`: Archivos guardados del usuario (opcional). Type: `File[]`
 - `savedPresets`: Presets guardados del usuario (opcional). Type: `Map<string, Preset>`
 - `readyObserve`: Avisa cuando el componente padre está listo para emitir (opcional) Type: `Observable<boolean>`
 
-También puede emitir los siguentes eventos:
+También puede emitir los siguientes eventos:
 
 - `emision`: Emite el video y audio (opcional) Type: `EventEmitter<MediaStream | null>`
 - `savePresets`: Los presets para guardar (opcional) Type: `EventEmitter<Map<string, Preset>>`
