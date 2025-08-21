@@ -1,6 +1,6 @@
 {
   "name": "web-obs-wc",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "Web-OBS-wc es un WebComponent que permite crear broadcasts de video y audio directamente ne el navegador.",
   "author": {
     "name": "Giacca90",
