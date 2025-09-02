@@ -19,23 +19,28 @@
 
 .mi-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(45%, 1fr));
-  gap: 0.5rem; /* gap-2 en Tailwind */
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 0.5rem;
+  max-height: 100%;
+  overflow-y: auto; /* scroll vertical si hace falta */
 }
 
 .mi-group {
-  position: relative; /* relative */
-  cursor: pointer; /* cursor-pointer */
-  border-radius: 0.5rem; /* rounded-lg = 8px */
-  border: 1px solid black; /* border border-black */
-  background-color: white; /* bg-white */
-  max-height: 33vh; /* max-h-[33vh] */
-  aspect-ratio: 16 / 9 !important; /* aspect-video! (with !important) */
-  transition: border-width 0.2s ease; /* para suavizar hover */
-
-  /* dark mode border */
-  /* Tendrías que manejar con JS o clases, aquí sólo CSS puro */
+  position: relative;
+  display: flex;
+  cursor: pointer;
+  border-radius: 0.5rem; /* rounded-lg */
+  border: 1px solid black; /* border-black */
+  background-color: white;
+  width: 100%;
+  height: auto; /* deja que se ajuste según el ancho */
+  aspect-ratio: 16/9 !important;
+  transition: border-width 0.2s ease; /* para hover sobre el elemento */
 }
+
+/* "group cursor-pointer relative flex aspect-video! max-h-[33vh] h-auto 
+items-center justify-between overflow-hidden rounded-lg border border-black bg-gray-400 px-2 text-black hover:border-2">
+ */
 
 .mi-group:hover {
   border-width: 2px; /* hover:border-2 */

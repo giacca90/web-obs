@@ -43,6 +43,8 @@ export class WebOBS implements OnInit, AfterViewInit, OnDestroy {
   ready: boolean | undefined;
   private drawInterval: any;
   selectedVideoForFilter: VideoElement | null = null;
+  private boundCanvasMouseMove = this.canvasMouseMove.bind(this);
+
   @ViewChildren('videoElement') videoElements!: QueryList<ElementRef<HTMLVideoElement>>;
   @Input() savedFiles?: File[] | null; // Files guardados del usuario (opcional)
   @Input() savedPresets?: Map<string, Preset> | null; //Presets guardados del usuario (opcional)
@@ -51,7 +53,7 @@ export class WebOBS implements OnInit, AfterViewInit, OnDestroy {
   @Output() savePresets: EventEmitter<Map<string, Preset>> = new EventEmitter(); // Guardar presets (opcional)
 
   /**
-   * Método para inicializar la aplicación
+   * Evento que se emite cuando se cambia el tamaño de la ventana
    */
   @HostListener('window:resize')
   onResize(): void {
@@ -1375,8 +1377,21 @@ export class WebOBS implements OnInit, AfterViewInit, OnDestroy {
   canvasMouseMove(event: MouseEvent) {
     event.preventDefault();
     const canvasContainer = document.getElementById('canvas-container') as HTMLDivElement;
-    if (!this.canvas || !canvasContainer || this.editandoDimensiones) {
-      console.error('Missing canvas, canvasContainer or editandoDimensiones');
+    if (!this.canvas) {
+      console.error('Missing canvas');
+      this.canvas = document.getElementById('salida') as HTMLCanvasElement;
+      if (!this.canvas) {
+        console.error('No se pudo obtener el canvas');
+        return;
+      }
+      return;
+    }
+    if (!canvasContainer) {
+      console.error('Missing canvasContainer');
+      return;
+    }
+    if (this.editandoDimensiones) {
+      //console.error('editandoDimensiones');
       return;
     }
 
@@ -1394,8 +1409,14 @@ export class WebOBS implements OnInit, AfterViewInit, OnDestroy {
     const internalMouseY = mousey * scaleY;
 
     // Obtener las coordenadas de cada video renderizado
-    const rendered = this.videosElements.filter((video) => video.painted);
+    // TODO: revisar para que encuentre el elemento que está encima
+    const rendered = this.videosElements
+      .filter((video) => video.painted)
+      .slice() // clona
+      .reverse(); // invierte
     const originalGhost = document.getElementById('marco') as HTMLDivElement;
+    console.log('Elementos detectados: ' + rendered.length + ' ' + new Date());
+    let finded = false;
     rendered.forEach((video) => {
       let videoWidth: number = 0;
       let videoHeight: number = 0;
@@ -1430,11 +1451,13 @@ export class WebOBS implements OnInit, AfterViewInit, OnDestroy {
           console.error('Missing ghostDiv');
           return;
         }
+
         ghostDiv.id = 'marco-' + video.id;
         canvasContainer.appendChild(ghostDiv);
       }
 
-      if (isMouseOverVideo) {
+      if (isMouseOverVideo && !finded) {
+        console.log(video.id);
         // Calcular la posición y tamaño del "ghost" en el espacio visible del canvas
         const ghostLeft = videoLeft / scaleX; // Convertir a coordenadas internas del canvas
         const ghostTop = videoTop / scaleY; // Convertir a coordenadas internas del canvas
@@ -1465,6 +1488,8 @@ export class WebOBS implements OnInit, AfterViewInit, OnDestroy {
           }
         };
 
+        ghostDiv.addEventListener('mousemove', this.boundCanvasMouseMove);
+
         // Calcular la longitud de la línea diagonal (de esquina superior izquierda a inferior derecha)
         const diagonalLength = Math.sqrt(Math.pow(ghostDiv.clientWidth, 2) + Math.pow(ghostDiv.clientHeight, 2));
 
@@ -1480,9 +1505,11 @@ export class WebOBS implements OnInit, AfterViewInit, OnDestroy {
         // Colocar la línea en la esquina superior derecha
         line2.style.right = '0px';
         line2.style.top = '0px';
+        finded = true;
       } else {
         // Eliminar el elemento del "ghost" si ya no está sobre el video
         ghostDiv.style.visibility = 'hidden';
+        ghostDiv.removeEventListener('mousemove', this.boundCanvasMouseMove);
       }
     });
   }
@@ -1792,11 +1819,15 @@ export class WebOBS implements OnInit, AfterViewInit, OnDestroy {
    * @param seconds segundos transcurridos (number)
    * @returns el tiempo en formato hh:mm:ss (string)
    */
-  // TODO: Revisar si se puede sustituir por algo en el front
   private formatTime(seconds: number): string {
-    const mins = Math.floor(seconds / 60);
+    if (isNaN(seconds) || !isFinite(seconds)) {
+      return '00:00:00';
+    }
+    const hrs = Math.floor(seconds / 3600);
+    const mins = Math.floor((seconds % 3600) / 60);
     const secs = Math.floor(seconds % 60);
-    return `${mins}:${secs < 10 ? '0' : ''}${secs}`;
+
+    return `${hrs.toString().padStart(2, '0')}:` + `${mins.toString().padStart(2, '0')}:` + `${secs.toString().padStart(2, '0')}`;
   }
 
   /**
@@ -2443,7 +2474,7 @@ export class WebOBS implements OnInit, AfterViewInit, OnDestroy {
   }
 
   /**
-   * Método para acabar el de crear el enlace de audio
+   * Método para acabar de crear el enlace de audio
    * @param $event Evento de arrastre (MouseEvent)
    */
   audioDown($event: MouseEvent): void {
@@ -2482,7 +2513,7 @@ export class WebOBS implements OnInit, AfterViewInit, OnDestroy {
 
     conexionesIzquierda.appendChild(conexionTemp);
 
-    // 🔹 Evento para mover y actualizar el tamaño del cuadrado
+    // Evento para mover y actualizar el tamaño del cuadrado
     const audioMove = ($event2: MouseEvent) => {
       const actualX = $event2.clientX - audiosRect.left;
       const actualY = $event2.clientY - audiosRect.top + audios.scrollTop; // ✅ Se ajusta dinámicamente con el scroll actual
@@ -2499,7 +2530,7 @@ export class WebOBS implements OnInit, AfterViewInit, OnDestroy {
       }
     };
 
-    // 🔹 Evento para finalizar el dibujo cuando se suelta el mouse
+    // Evento para finalizar el dibujo cuando se suelta el mouse
     const audioUp = ($event3: MouseEvent) => {
       //console.log('audioUp');
       audios.removeEventListener('mousemove', audioMove);

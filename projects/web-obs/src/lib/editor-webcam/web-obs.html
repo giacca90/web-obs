@@ -11,7 +11,7 @@
         <div id="orizontal" class="cross-horizontal" style="display: none; background-color: #b91c1c"></div>
       </div>
     </div>
-    <div class="relative ml-4 flex w-full flex-col bg-transparent">
+    <div class="relative ml-4 flex w-full h-full flex-col bg-transparent overflow-hidden">
       <div class="flex">
         <div id="resolucion" class="flex bg-transparent">
           <p>Elige una resolución:</p>
@@ -25,45 +25,45 @@
             </div>
             <div class="relative w-full">
               @if (isResolutionSelectorVisible) {
-              <div class="relative flex">
-                <div class="z-10 flex flex-col bg-transparent">
-                  <div class="cursor-pointer" (click)="cambiarResolucion($event, '640x360')" tabindex="0" (keydown.enter)="cambiarResolucion($event, '640x360')">
-                    <p class="rounded-lg border-black pr-2 pl-2 text-nowrap hover:border dark:border-gray-400">360p (640x360)</p>
+                <div class="absolute flex z-10 rounded-lg border border-black bg-[inherit] backdrop-blur-lg overflow-hidden p-2">
+                  <div class="z-10 flex flex-col bg-transparent">
+                    <div class="cursor-pointer" (click)="cambiarResolucion($event, '640x360')" tabindex="0" (keydown.enter)="cambiarResolucion($event, '640x360')">
+                      <p class="rounded-lg border-black pr-2 pl-2 text-nowrap hover:border dark:border-gray-400">360p (640x360)</p>
+                    </div>
+                    <div class="cursor-pointer" (click)="cambiarResolucion($event, '854x480')" tabindex="0" (keydown.enter)="cambiarResolucion($event, '854x480')">
+                      <p class="rounded-lg border-black pr-2 pl-2 text-nowrap hover:border dark:border-gray-400">480p (854x480)</p>
+                    </div>
+                    <div class="cursor-pointer" (click)="cambiarResolucion($event, '1280x720')" tabindex="0" (keydown.enter)="cambiarResolucion($event, '1280x720')">
+                      <p class="rounded-lg border-black pr-2 pl-2 text-nowrap hover:border dark:border-gray-400">720p HD (1280x720)</p>
+                    </div>
+                    <div class="cursor-pointer" (click)="cambiarResolucion($event, '1920x1080')" tabindex="0" (keydown.enter)="cambiarResolucion($event, '1920x1080')">
+                      <p class="rounded-lg border-black pr-2 pl-2 text-nowrap hover:border dark:border-gray-400">1080p Full HD (1920x1080)</p>
+                    </div>
+                    <div class="cursor-pointer" (click)="cambiarResolucion($event, '2560x1440')" tabindex="0" (keydown.enter)="cambiarResolucion($event, '2560x1440')">
+                      <p class="rounded-lg border-black pr-2 pl-2 text-nowrap hover:border dark:border-gray-400">1440p QHD (2560x1440)</p>
+                    </div>
+                    <div class="cursor-pointer" (click)="cambiarResolucion($event, '3840x2160')" tabindex="0" (keydown.enter)="cambiarResolucion($event, '3840x2160')">
+                      <p class="rounded-lg border-black pr-2 pl-2 text-nowrap hover:border dark:border-gray-400">4K UHD (3840x2160)</p>
+                    </div>
                   </div>
-                  <div class="cursor-pointer" (click)="cambiarResolucion($event, '854x480')" tabindex="0" (keydown.enter)="cambiarResolucion($event, '854x480')">
-                    <p class="rounded-lg border-black pr-2 pl-2 text-nowrap hover:border dark:border-gray-400">480p (854x480)</p>
-                  </div>
-                  <div class="cursor-pointer" (click)="cambiarResolucion($event, '1280x720')" tabindex="0" (keydown.enter)="cambiarResolucion($event, '1280x720')">
-                    <p class="rounded-lg border-black pr-2 pl-2 text-nowrap hover:border dark:border-gray-400">720p HD (1280x720)</p>
-                  </div>
-                  <div class="cursor-pointer" (click)="cambiarResolucion($event, '1920x1080')" tabindex="0" (keydown.enter)="cambiarResolucion($event, '1920x1080')">
-                    <p class="rounded-lg border-black pr-2 pl-2 text-nowrap hover:border dark:border-gray-400">1080p Full HD (1920x1080)</p>
-                  </div>
-                  <div class="cursor-pointer" (click)="cambiarResolucion($event, '2560x1440')" tabindex="0" (keydown.enter)="cambiarResolucion($event, '2560x1440')">
-                    <p class="rounded-lg border-black pr-2 pl-2 text-nowrap hover:border dark:border-gray-400">1440p QHD (2560x1440)</p>
-                  </div>
-                  <div class="cursor-pointer" (click)="cambiarResolucion($event, '3840x2160')" tabindex="0" (keydown.enter)="cambiarResolucion($event, '3840x2160')">
-                    <p class="rounded-lg border-black pr-2 pl-2 text-nowrap hover:border dark:border-gray-400">4K UHD (3840x2160)</p>
+                  <div class="z-10 flex flex-col bg-transparent">
+                    <div class="cursor-pointer" (click)="cambiarFPS('25')" tabindex="0" (keydown.enter)="cambiarFPS('25')">
+                      <p class="rounded-lg border-black pr-2 pl-2 text-nowrap hover:border dark:border-gray-400">25fps</p>
+                    </div>
+                    <div class="cursor-pointer" (click)="cambiarFPS('30')" tabindex="0" (keydown.enter)="cambiarFPS('30')">
+                      <p class="rounded-lg border-black pr-2 pl-2 text-nowrap hover:border dark:border-gray-400">30fps</p>
+                    </div>
+                    <div class="cursor-pointer" (click)="cambiarFPS('60')" tabindex="0" (keydown.enter)="cambiarFPS('60')">
+                      <p class="rounded-lg border-black pr-2 pl-2 text-nowrap hover:border dark:border-gray-400">60fps</p>
+                    </div>
+                    <div class="cursor-pointer" (click)="cambiarFPS('90')" tabindex="0" (keydown.enter)="cambiarFPS('90')">
+                      <p class="rounded-lg border-black pr-2 pl-2 text-nowrap hover:border dark:border-gray-400">90fps</p>
+                    </div>
+                    <div class="cursor-pointer" (click)="cambiarFPS('120')" tabindex="0" (keydown.enter)="cambiarFPS('120')">
+                      <p class="rounded-lg border-black pr-2 pl-2 text-nowrap hover:border dark:border-gray-400">120fps</p>
+                    </div>
                   </div>
                 </div>
-                <div class="z-10 flex flex-col bg-transparent">
-                  <div class="cursor-pointer" (click)="cambiarFPS('25')" tabindex="0" (keydown.enter)="cambiarFPS('25')">
-                    <p class="rounded-lg border-black pr-2 pl-2 text-nowrap hover:border dark:border-gray-400">25fps</p>
-                  </div>
-                  <div class="cursor-pointer" (click)="cambiarFPS('30')" tabindex="0" (keydown.enter)="cambiarFPS('30')">
-                    <p class="rounded-lg border-black pr-2 pl-2 text-nowrap hover:border dark:border-gray-400">30fps</p>
-                  </div>
-                  <div class="cursor-pointer" (click)="cambiarFPS('60')" tabindex="0" (keydown.enter)="cambiarFPS('60')">
-                    <p class="rounded-lg border-black pr-2 pl-2 text-nowrap hover:border dark:border-gray-400">60fps</p>
-                  </div>
-                  <div class="cursor-pointer" (click)="cambiarFPS('90')" tabindex="0" (keydown.enter)="cambiarFPS('90')">
-                    <p class="rounded-lg border-black pr-2 pl-2 text-nowrap hover:border dark:border-gray-400">90fps</p>
-                  </div>
-                  <div class="cursor-pointer" (click)="cambiarFPS('120')" tabindex="0" (keydown.enter)="cambiarFPS('120')">
-                    <p class="rounded-lg border-black pr-2 pl-2 text-nowrap hover:border dark:border-gray-400">120fps</p>
-                  </div>
-                </div>
-              </div>
               }
             </div>
           </div>
@@ -72,24 +72,24 @@
       <div class="flex items-center">
         <p class="mt-2 mb-2">Presets:</p>
         @if (this.savedPresets !== undefined) {
-        <button (click)="this.savePresetsFunction()" class="m-2 rounded-lg border border-black bg-gray-400 p-2 text-black hover:border-2">Guardar presets</button>
+          <button (click)="this.savePresetsFunction()" class="m-2 rounded-lg border border-black bg-gray-400 p-2 text-black hover:border-2">Guardar presets</button>
         }
       </div>
-      <div id="presets" class="mi-grid">
+      <div id="presets" class="mi-grid h-full max-w-full max-h-full overflow-auto">
         <!-- Preset Items -->
         @for (presetName of this.presets.keys(); track presetName) {
-        <div class="mi-group">
-          <div id="preset-{{ presetName }}" (click)="this.aplicaPreset(presetName)" (keydown.enter)="this.aplicaPreset(presetName)" tabindex="0" class="relative h-full w-full justify-center group-hover:border-black dark:border-gray-400"></div>
-          <p (click)="this.aplicaPreset(presetName)" (keydown.enter)="this.aplicaPreset(presetName)" tabindex="0" class="absolute top-2 w-full text-center text-sm text-white">
-            {{ presetName }}
-          </p>
-          <p (click)="this.aplicaPreset(presetName)" (keydown.enter)="this.aplicaPreset(presetName)" tabindex="0" class="absolute bottom-2 w-full text-center text-sm text-white">
-            {{ this.presets.get(presetName)?.shortcut }}
-          </p>
-        </div>
+          <div class="mi-group">
+            <div id="preset-{{ presetName }}" (click)="this.aplicaPreset(presetName)" (keydown.enter)="this.aplicaPreset(presetName)" tabindex="0" class="relative h-full w-full justify-center group-hover:border-black dark:border-gray-400"></div>
+            <p (click)="this.aplicaPreset(presetName)" (keydown.enter)="this.aplicaPreset(presetName)" tabindex="0" class="absolute top-2 w-full text-center text-sm text-white">
+              {{ presetName }}
+            </p>
+            <p (click)="this.aplicaPreset(presetName)" (keydown.enter)="this.aplicaPreset(presetName)" tabindex="0" class="absolute bottom-2 w-full text-center text-sm text-white">
+              {{ this.presets.get(presetName)?.shortcut }}
+            </p>
+          </div>
         }
         <!-- Save Preset Button -->
-        <div (click)="guardaPreset()" tabindex="0" (keydown.enter)="guardaPreset()" class="group relative flex aspect-video! max-h-[33vh] items-center justify-between overflow-hidden rounded-lg border border-black bg-gray-400 px-2 text-black hover:border-2">
+        <div (click)="guardaPreset()" tabindex="0" (keydown.enter)="guardaPreset()" class="group cursor-pointer relative flex aspect-video! max-h-[33vh] h-auto items-center justify-between overflow-hidden rounded-lg border border-black bg-gray-400 px-2 text-black hover:border-2">
           <p class="truncate">Guardar preset actual</p>
           <svg class="h-8 w-8 shrink-0 text-gray-700 group-hover:text-black" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
             <path d="M6 12H18M12 6V18" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
@@ -100,10 +100,10 @@
   </div>
   <div class="flex items-center">
     @if (this.emitiendo) {
-    <button (click)="this.detenerEmision()" class="w-fix m-2 h-6 cursor-pointer rounded-lg border border-black bg-gray-400 px-2 text-center text-black hover:border-2">Detener emisión</button>
-    <p class="ml-4">Tiempo de grabación: {{ this.tiempoGrabacion }}</p>
+      <button (click)="this.detenerEmision()" class="w-fix m-2 h-6 cursor-pointer rounded-lg border border-black bg-gray-400 px-2 text-center text-black hover:border-2">Detener emisión</button>
+      <p class="ml-4">Tiempo de grabación: {{ this.tiempoGrabacion }}</p>
     } @else {
-    <button (click)="this.emitir()" class="w-fix m-2 h-6 cursor-pointer rounded-lg border border-black bg-gray-400 px-2 text-center text-black hover:border-2">Empezar a emitir</button>
+      <button (click)="this.emitir()" class="w-fix m-2 h-6 cursor-pointer rounded-lg border border-black bg-gray-400 px-2 text-center text-black hover:border-2">Empezar a emitir</button>
     }
   </div>
   <div id="elementosDiv" class="relative flex h-1/4 pb-4">
@@ -112,48 +112,48 @@
       <!-- Lista de entradas de audio de archivos -->
       <div id="audios-list" class="flex flex-col text-black">
         @for (fileName of this.audiosArchivos; track fileName) {
-        <div [id]="'audio-' + fileName" (mousedown)="audioDown($event)" class="audio-bar group m-2 flex h-10 min-h-6 items-center justify-center rounded-lg border border-black bg-transparent text-center hover:border-2 active:cursor-grabbing dark:border-gray-400">
-          <p class="m-2 w-full truncate overflow-hidden text-ellipsis whitespace-nowrap">
-            {{ fileName }}
-          </p>
-          <!-- Icono microfono -->
-          <svg class="mr-2 h-4 w-4" width="800px" height="800px" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <path fill-rule="evenodd" clip-rule="evenodd" d="M3.69231 10.3721C4.07466 10.3721 4.38462 10.6845 4.38462 11.0698V12.9302C4.38462 17.1687 7.79414 20.6047 12 20.6047C16.2059 20.6047 19.6154 17.1687 19.6154 12.9302V11.0698C19.6154 10.6845 19.9253 10.3721 20.3077 10.3721C20.69 10.3721 21 10.6845 21 11.0698V12.9302C21 17.9393 16.9706 22 12 22C7.02944 22 3 17.9393 3 12.9302V11.0698C3 10.6845 3.30996 10.3721 3.69231 10.3721Z" fill="currentColor" />
-            <path fill-rule="evenodd" clip-rule="evenodd" d="M12 2C8.55884 2 5.76923 4.81123 5.76923 8.27907V12.9302C5.76923 16.3981 8.55884 19.2093 12 19.2093C15.4412 19.2093 18.2308 16.3981 18.2308 12.9302V8.27907C18.2308 4.81124 15.4412 2 12 2ZM9.67822 7.39068C9.40039 7.12597 9.3881 6.6844 9.65078 6.40441L10.1538 6.88372C9.65078 6.40441 9.65154 6.40361 9.65154 6.40361L9.65231 6.40279L9.65388 6.40114L9.65716 6.3977L9.66431 6.39036C9.66934 6.38527 9.67489 6.37977 9.68099 6.37391C9.69318 6.36218 9.70751 6.349 9.72413 6.33461C9.75739 6.3058 9.79962 6.27232 9.85184 6.23613C9.95658 6.16357 10.0997 6.0814 10.2887 6.00438C10.6676 5.84997 11.2189 5.72093 12 5.72093C12.7811 5.72093 13.3324 5.84997 13.7113 6.00438C13.9003 6.0814 14.0434 6.16357 14.1482 6.23613C14.2004 6.27232 14.2426 6.3058 14.2759 6.33461C14.2925 6.349 14.3068 6.36218 14.319 6.37391C14.3251 6.37977 14.3307 6.38527 14.3357 6.39036L14.3428 6.3977L14.3461 6.40114L14.3477 6.40279L14.3485 6.40361C14.3485 6.40361 14.3492 6.40441 13.8562 6.87412L14.3492 6.40441C14.6119 6.6844 14.5996 7.12597 14.3218 7.39068C14.0536 7.64624 13.6359 7.64354 13.371 7.39112L13.3637 7.38596C13.3426 7.37132 13.2885 7.33721 13.1922 7.29795C13.0004 7.2198 12.6287 7.11628 12 7.11628C11.3713 7.11628 10.9996 7.2198 10.8078 7.29795C10.7115 7.33721 10.6574 7.37132 10.6363 7.38596L10.629 7.39112C10.3641 7.64354 9.94645 7.64624 9.67822 7.39068ZM9.67822 10.1814C9.40039 9.91667 9.3881 9.4751 9.65078 9.19511L10.1538 9.67442C9.65078 9.19511 9.65154 9.19431 9.65154 9.19431L9.65231 9.19349L9.65388 9.19183L9.65716 9.1884L9.66431 9.18106C9.66934 9.17597 9.67489 9.17047 9.68099 9.16461C9.69318 9.15288 9.70751 9.13969 9.72413 9.1253C9.75739 9.0965 9.79962 9.06301 9.85184 9.02683C9.95658 8.95427 10.0997 8.8721 10.2887 8.79507C10.6676 8.64067 11.2189 8.51163 12 8.51163C12.7811 8.51163 13.3324 8.64067 13.7113 8.79507C13.9003 8.8721 14.0434 8.95427 14.1482 9.02683C14.2004 9.06301 14.2426 9.0965 14.2759 9.1253C14.2925 9.13969 14.3068 9.15288 14.319 9.16461C14.3251 9.17047 14.3307 9.17597 14.3357 9.18106L14.3428 9.1884L14.3461 9.19183L14.3477 9.19349L14.3485 9.19431C14.3485 9.19431 14.3492 9.1951 13.8562 9.66482L14.3492 9.19511C14.6119 9.4751 14.5996 9.91667 14.3218 10.1814C14.0536 10.4369 13.6359 10.4342 13.371 10.1818L13.3637 10.1767C13.3426 10.162 13.2885 10.1279 13.1922 10.0886C13.0004 10.0105 12.6287 9.90698 12 9.90698C11.3713 9.90698 10.9996 10.0105 10.8078 10.0886C10.7115 10.1279 10.6574 10.162 10.6363 10.1767L10.629 10.1818C10.3641 10.4342 9.94645 10.4369 9.67822 10.1814Z" fill="currentColor" />
-          </svg>
-          <div [id]="'audio-level-' + fileName" class="audio-level"></div>
-          <input type="range" [id]="'volume-' + fileName" min="0" max="100" step="0.1" value="100" class="bg-opacity-30 absolute z-20 m-2 hidden h-2 w-[90%] cursor-pointer appearance-none rounded-lg border border-black bg-gray-300 pl-0 accent-gray-500 group-hover:block dark:border-gray-400" />
-        </div>
+          <div [id]="'audio-' + fileName" (mousedown)="audioDown($event)" class="audio-bar group m-2 flex h-10 min-h-6 items-center justify-center rounded-lg border border-black bg-transparent text-center hover:border-2 active:cursor-grabbing dark:border-gray-400">
+            <p class="m-2 w-full truncate overflow-hidden text-ellipsis whitespace-nowrap">
+              {{ fileName }}
+            </p>
+            <!-- Icono microfono -->
+            <svg class="mr-2 h-4 w-4" width="800px" height="800px" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path fill-rule="evenodd" clip-rule="evenodd" d="M3.69231 10.3721C4.07466 10.3721 4.38462 10.6845 4.38462 11.0698V12.9302C4.38462 17.1687 7.79414 20.6047 12 20.6047C16.2059 20.6047 19.6154 17.1687 19.6154 12.9302V11.0698C19.6154 10.6845 19.9253 10.3721 20.3077 10.3721C20.69 10.3721 21 10.6845 21 11.0698V12.9302C21 17.9393 16.9706 22 12 22C7.02944 22 3 17.9393 3 12.9302V11.0698C3 10.6845 3.30996 10.3721 3.69231 10.3721Z" fill="currentColor" />
+              <path fill-rule="evenodd" clip-rule="evenodd" d="M12 2C8.55884 2 5.76923 4.81123 5.76923 8.27907V12.9302C5.76923 16.3981 8.55884 19.2093 12 19.2093C15.4412 19.2093 18.2308 16.3981 18.2308 12.9302V8.27907C18.2308 4.81124 15.4412 2 12 2ZM9.67822 7.39068C9.40039 7.12597 9.3881 6.6844 9.65078 6.40441L10.1538 6.88372C9.65078 6.40441 9.65154 6.40361 9.65154 6.40361L9.65231 6.40279L9.65388 6.40114L9.65716 6.3977L9.66431 6.39036C9.66934 6.38527 9.67489 6.37977 9.68099 6.37391C9.69318 6.36218 9.70751 6.349 9.72413 6.33461C9.75739 6.3058 9.79962 6.27232 9.85184 6.23613C9.95658 6.16357 10.0997 6.0814 10.2887 6.00438C10.6676 5.84997 11.2189 5.72093 12 5.72093C12.7811 5.72093 13.3324 5.84997 13.7113 6.00438C13.9003 6.0814 14.0434 6.16357 14.1482 6.23613C14.2004 6.27232 14.2426 6.3058 14.2759 6.33461C14.2925 6.349 14.3068 6.36218 14.319 6.37391C14.3251 6.37977 14.3307 6.38527 14.3357 6.39036L14.3428 6.3977L14.3461 6.40114L14.3477 6.40279L14.3485 6.40361C14.3485 6.40361 14.3492 6.40441 13.8562 6.87412L14.3492 6.40441C14.6119 6.6844 14.5996 7.12597 14.3218 7.39068C14.0536 7.64624 13.6359 7.64354 13.371 7.39112L13.3637 7.38596C13.3426 7.37132 13.2885 7.33721 13.1922 7.29795C13.0004 7.2198 12.6287 7.11628 12 7.11628C11.3713 7.11628 10.9996 7.2198 10.8078 7.29795C10.7115 7.33721 10.6574 7.37132 10.6363 7.38596L10.629 7.39112C10.3641 7.64354 9.94645 7.64624 9.67822 7.39068ZM9.67822 10.1814C9.40039 9.91667 9.3881 9.4751 9.65078 9.19511L10.1538 9.67442C9.65078 9.19511 9.65154 9.19431 9.65154 9.19431L9.65231 9.19349L9.65388 9.19183L9.65716 9.1884L9.66431 9.18106C9.66934 9.17597 9.67489 9.17047 9.68099 9.16461C9.69318 9.15288 9.70751 9.13969 9.72413 9.1253C9.75739 9.0965 9.79962 9.06301 9.85184 9.02683C9.95658 8.95427 10.0997 8.8721 10.2887 8.79507C10.6676 8.64067 11.2189 8.51163 12 8.51163C12.7811 8.51163 13.3324 8.64067 13.7113 8.79507C13.9003 8.8721 14.0434 8.95427 14.1482 9.02683C14.2004 9.06301 14.2426 9.0965 14.2759 9.1253C14.2925 9.13969 14.3068 9.15288 14.319 9.16461C14.3251 9.17047 14.3307 9.17597 14.3357 9.18106L14.3428 9.1884L14.3461 9.19183L14.3477 9.19349L14.3485 9.19431C14.3485 9.19431 14.3492 9.1951 13.8562 9.66482L14.3492 9.19511C14.6119 9.4751 14.5996 9.91667 14.3218 10.1814C14.0536 10.4369 13.6359 10.4342 13.371 10.1818L13.3637 10.1767C13.3426 10.162 13.2885 10.1279 13.1922 10.0886C13.0004 10.0105 12.6287 9.90698 12 9.90698C11.3713 9.90698 10.9996 10.0105 10.8078 10.0886C10.7115 10.1279 10.6574 10.162 10.6363 10.1767L10.629 10.1818C10.3641 10.4342 9.94645 10.4369 9.67822 10.1814Z" fill="currentColor" />
+            </svg>
+            <div [id]="'audio-level-' + fileName" class="audio-level"></div>
+            <input type="range" [id]="'volume-' + fileName" min="0" max="100" step="0.1" value="100" class="bg-opacity-30 absolute z-20 m-2 hidden h-2 w-[90%] cursor-pointer appearance-none rounded-lg border border-black bg-gray-300 pl-0 accent-gray-500 group-hover:block dark:border-gray-400" />
+          </div>
         }
         <!-- Lista de entradas de audio (capturas) -->
         @for (captura of this.audiosCapturas; track captura.id) {
-        <div [id]="'audio-' + captura.id" (mousedown)="audioDown($event)" class="audio-bar group m-2 flex h-10 min-h-6 items-center justify-center rounded-lg border border-black bg-transparent text-center hover:border-2 active:cursor-grabbing dark:border-gray-400">
-          <p class="m-2 w-full truncate overflow-hidden text-ellipsis whitespace-nowrap">
-            {{ captura.id }}
-          </p>
-          <!-- Icono microfono -->
-          <svg class="mr-2 h-4 w-4" width="800px" height="800px" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <path fill-rule="evenodd" clip-rule="evenodd" d="M3.69231 10.3721C4.07466 10.3721 4.38462 10.6845 4.38462 11.0698V12.9302C4.38462 17.1687 7.79414 20.6047 12 20.6047C16.2059 20.6047 19.6154 17.1687 19.6154 12.9302V11.0698C19.6154 10.6845 19.9253 10.3721 20.3077 10.3721C20.69 10.3721 21 10.6845 21 11.0698V12.9302C21 17.9393 16.9706 22 12 22C7.02944 22 3 17.9393 3 12.9302V11.0698C3 10.6845 3.30996 10.3721 3.69231 10.3721Z" fill="currentColor" />
-            <path fill-rule="evenodd" clip-rule="evenodd" d="M12 2C8.55884 2 5.76923 4.81123 5.76923 8.27907V12.9302C5.76923 16.3981 8.55884 19.2093 12 19.2093C15.4412 19.2093 18.2308 16.3981 18.2308 12.9302V8.27907C18.2308 4.81124 15.4412 2 12 2ZM9.67822 7.39068C9.40039 7.12597 9.3881 6.6844 9.65078 6.40441L10.1538 6.88372C9.65078 6.40441 9.65154 6.40361 9.65154 6.40361L9.65231 6.40279L9.65388 6.40114L9.65716 6.3977L9.66431 6.39036C9.66934 6.38527 9.67489 6.37977 9.68099 6.37391C9.69318 6.36218 9.70751 6.349 9.72413 6.33461C9.75739 6.3058 9.79962 6.27232 9.85184 6.23613C9.95658 6.16357 10.0997 6.0814 10.2887 6.00438C10.6676 5.84997 11.2189 5.72093 12 5.72093C12.7811 5.72093 13.3324 5.84997 13.7113 6.00438C13.9003 6.0814 14.0434 6.16357 14.1482 6.23613C14.2004 6.27232 14.2426 6.3058 14.2759 6.33461C14.2925 6.349 14.3068 6.36218 14.319 6.37391C14.3251 6.37977 14.3307 6.38527 14.3357 6.39036L14.3428 6.3977L14.3461 6.40114L14.3477 6.40279L14.3485 6.40361C14.3485 6.40361 14.3492 6.40441 13.8562 6.87412L14.3492 6.40441C14.6119 6.6844 14.5996 7.12597 14.3218 7.39068C14.0536 7.64624 13.6359 7.64354 13.371 7.39112L13.3637 7.38596C13.3426 7.37132 13.2885 7.33721 13.1922 7.29795C13.0004 7.2198 12.6287 7.11628 12 7.11628C11.3713 7.11628 10.9996 7.2198 10.8078 7.29795C10.7115 7.33721 10.6574 7.37132 10.6363 7.38596L10.629 7.39112C10.3641 7.64354 9.94645 7.64624 9.67822 7.39068ZM9.67822 10.1814C9.40039 9.91667 9.3881 9.4751 9.65078 9.19511L10.1538 9.67442C9.65078 9.19511 9.65154 9.19431 9.65154 9.19431L9.65231 9.19349L9.65388 9.19183L9.65716 9.1884L9.66431 9.18106C9.66934 9.17597 9.67489 9.17047 9.68099 9.16461C9.69318 9.15288 9.70751 9.13969 9.72413 9.1253C9.75739 9.0965 9.79962 9.06301 9.85184 9.02683C9.95658 8.95427 10.0997 8.8721 10.2887 8.79507C10.6676 8.64067 11.2189 8.51163 12 8.51163C12.7811 8.51163 13.3324 8.64067 13.7113 8.79507C13.9003 8.8721 14.0434 8.95427 14.1482 9.02683C14.2004 9.06301 14.2426 9.0965 14.2759 9.1253C14.2925 9.13969 14.3068 9.15288 14.319 9.16461C14.3251 9.17047 14.3307 9.17597 14.3357 9.18106L14.3428 9.1884L14.3461 9.19183L14.3477 9.19349L14.3485 9.19431C14.3485 9.19431 14.3492 9.1951 13.8562 9.66482L14.3492 9.19511C14.6119 9.4751 14.5996 9.91667 14.3218 10.1814C14.0536 10.4369 13.6359 10.4342 13.371 10.1818L13.3637 10.1767C13.3426 10.162 13.2885 10.1279 13.1922 10.0886C13.0004 10.0105 12.6287 9.90698 12 9.90698C11.3713 9.90698 10.9996 10.0105 10.8078 10.0886C10.7115 10.1279 10.6574 10.162 10.6363 10.1767L10.629 10.1818C10.3641 10.4342 9.94645 10.4369 9.67822 10.1814Z" fill="currentColor" />
-          </svg>
-          <div [id]="'audio-level-' + captura.id" class="audio-level"></div>
-          <input type="range" [id]="'volume-' + captura.id" min="0" max="100" step="0.1" value="100" class="bg-opacity-30 absolute z-20 m-2 hidden h-2 w-[90%] cursor-pointer appearance-none rounded-lg border border-black bg-gray-300 pl-0 accent-gray-500 group-hover:block dark:border-gray-400" />
-        </div>
+          <div [id]="'audio-' + captura.id" (mousedown)="audioDown($event)" class="audio-bar group m-2 flex h-10 min-h-6 items-center justify-center rounded-lg border border-black bg-transparent text-center hover:border-2 active:cursor-grabbing dark:border-gray-400">
+            <p class="m-2 w-full truncate overflow-hidden text-ellipsis whitespace-nowrap">
+              {{ captura.id }}
+            </p>
+            <!-- Icono microfono -->
+            <svg class="mr-2 h-4 w-4" width="800px" height="800px" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path fill-rule="evenodd" clip-rule="evenodd" d="M3.69231 10.3721C4.07466 10.3721 4.38462 10.6845 4.38462 11.0698V12.9302C4.38462 17.1687 7.79414 20.6047 12 20.6047C16.2059 20.6047 19.6154 17.1687 19.6154 12.9302V11.0698C19.6154 10.6845 19.9253 10.3721 20.3077 10.3721C20.69 10.3721 21 10.6845 21 11.0698V12.9302C21 17.9393 16.9706 22 12 22C7.02944 22 3 17.9393 3 12.9302V11.0698C3 10.6845 3.30996 10.3721 3.69231 10.3721Z" fill="currentColor" />
+              <path fill-rule="evenodd" clip-rule="evenodd" d="M12 2C8.55884 2 5.76923 4.81123 5.76923 8.27907V12.9302C5.76923 16.3981 8.55884 19.2093 12 19.2093C15.4412 19.2093 18.2308 16.3981 18.2308 12.9302V8.27907C18.2308 4.81124 15.4412 2 12 2ZM9.67822 7.39068C9.40039 7.12597 9.3881 6.6844 9.65078 6.40441L10.1538 6.88372C9.65078 6.40441 9.65154 6.40361 9.65154 6.40361L9.65231 6.40279L9.65388 6.40114L9.65716 6.3977L9.66431 6.39036C9.66934 6.38527 9.67489 6.37977 9.68099 6.37391C9.69318 6.36218 9.70751 6.349 9.72413 6.33461C9.75739 6.3058 9.79962 6.27232 9.85184 6.23613C9.95658 6.16357 10.0997 6.0814 10.2887 6.00438C10.6676 5.84997 11.2189 5.72093 12 5.72093C12.7811 5.72093 13.3324 5.84997 13.7113 6.00438C13.9003 6.0814 14.0434 6.16357 14.1482 6.23613C14.2004 6.27232 14.2426 6.3058 14.2759 6.33461C14.2925 6.349 14.3068 6.36218 14.319 6.37391C14.3251 6.37977 14.3307 6.38527 14.3357 6.39036L14.3428 6.3977L14.3461 6.40114L14.3477 6.40279L14.3485 6.40361C14.3485 6.40361 14.3492 6.40441 13.8562 6.87412L14.3492 6.40441C14.6119 6.6844 14.5996 7.12597 14.3218 7.39068C14.0536 7.64624 13.6359 7.64354 13.371 7.39112L13.3637 7.38596C13.3426 7.37132 13.2885 7.33721 13.1922 7.29795C13.0004 7.2198 12.6287 7.11628 12 7.11628C11.3713 7.11628 10.9996 7.2198 10.8078 7.29795C10.7115 7.33721 10.6574 7.37132 10.6363 7.38596L10.629 7.39112C10.3641 7.64354 9.94645 7.64624 9.67822 7.39068ZM9.67822 10.1814C9.40039 9.91667 9.3881 9.4751 9.65078 9.19511L10.1538 9.67442C9.65078 9.19511 9.65154 9.19431 9.65154 9.19431L9.65231 9.19349L9.65388 9.19183L9.65716 9.1884L9.66431 9.18106C9.66934 9.17597 9.67489 9.17047 9.68099 9.16461C9.69318 9.15288 9.70751 9.13969 9.72413 9.1253C9.75739 9.0965 9.79962 9.06301 9.85184 9.02683C9.95658 8.95427 10.0997 8.8721 10.2887 8.79507C10.6676 8.64067 11.2189 8.51163 12 8.51163C12.7811 8.51163 13.3324 8.64067 13.7113 8.79507C13.9003 8.8721 14.0434 8.95427 14.1482 9.02683C14.2004 9.06301 14.2426 9.0965 14.2759 9.1253C14.2925 9.13969 14.3068 9.15288 14.319 9.16461C14.3251 9.17047 14.3307 9.17597 14.3357 9.18106L14.3428 9.1884L14.3461 9.19183L14.3477 9.19349L14.3485 9.19431C14.3485 9.19431 14.3492 9.1951 13.8562 9.66482L14.3492 9.19511C14.6119 9.4751 14.5996 9.91667 14.3218 10.1814C14.0536 10.4369 13.6359 10.4342 13.371 10.1818L13.3637 10.1767C13.3426 10.162 13.2885 10.1279 13.1922 10.0886C13.0004 10.0105 12.6287 9.90698 12 9.90698C11.3713 9.90698 10.9996 10.0105 10.8078 10.0886C10.7115 10.1279 10.6574 10.162 10.6363 10.1767L10.629 10.1818C10.3641 10.4342 9.94645 10.4369 9.67822 10.1814Z" fill="currentColor" />
+            </svg>
+            <div [id]="'audio-level-' + captura.id" class="audio-level"></div>
+            <input type="range" [id]="'volume-' + captura.id" min="0" max="100" step="0.1" value="100" class="bg-opacity-30 absolute z-20 m-2 hidden h-2 w-[90%] cursor-pointer appearance-none rounded-lg border border-black bg-gray-300 pl-0 accent-gray-500 group-hover:block dark:border-gray-400" />
+          </div>
         }
         <!-- Lista de entradas de audio -->
         @for (device of this.audioDevices; track device.deviceId) {
-        <div [id]="'audio-' + device.deviceId" (mousedown)="audioDown($event)" class="audio-bar group m-2 flex h-10 min-h-6 items-center justify-center rounded-lg border border-black bg-transparent text-center hover:border-2 active:cursor-grabbing dark:border-gray-400">
-          <p class="m-2 w-full truncate overflow-hidden text-ellipsis whitespace-nowrap">
-            {{ device.label || "Micrófono sin nombre" }}
-          </p>
-          <!-- Icono microfono -->
-          <svg class="mr-2 h-4 w-4" width="800px" height="800px" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <path fill-rule="evenodd" clip-rule="evenodd" d="M3.69231 10.3721C4.07466 10.3721 4.38462 10.6845 4.38462 11.0698V12.9302C4.38462 17.1687 7.79414 20.6047 12 20.6047C16.2059 20.6047 19.6154 17.1687 19.6154 12.9302V11.0698C19.6154 10.6845 19.9253 10.3721 20.3077 10.3721C20.69 10.3721 21 10.6845 21 11.0698V12.9302C21 17.9393 16.9706 22 12 22C7.02944 22 3 17.9393 3 12.9302V11.0698C3 10.6845 3.30996 10.3721 3.69231 10.3721Z" fill="currentColor" />
-            <path fill-rule="evenodd" clip-rule="evenodd" d="M12 2C8.55884 2 5.76923 4.81123 5.76923 8.27907V12.9302C5.76923 16.3981 8.55884 19.2093 12 19.2093C15.4412 19.2093 18.2308 16.3981 18.2308 12.9302V8.27907C18.2308 4.81124 15.4412 2 12 2ZM9.67822 7.39068C9.40039 7.12597 9.3881 6.6844 9.65078 6.40441L10.1538 6.88372C9.65078 6.40441 9.65154 6.40361 9.65154 6.40361L9.65231 6.40279L9.65388 6.40114L9.65716 6.3977L9.66431 6.39036C9.66934 6.38527 9.67489 6.37977 9.68099 6.37391C9.69318 6.36218 9.70751 6.349 9.72413 6.33461C9.75739 6.3058 9.79962 6.27232 9.85184 6.23613C9.95658 6.16357 10.0997 6.0814 10.2887 6.00438C10.6676 5.84997 11.2189 5.72093 12 5.72093C12.7811 5.72093 13.3324 5.84997 13.7113 6.00438C13.9003 6.0814 14.0434 6.16357 14.1482 6.23613C14.2004 6.27232 14.2426 6.3058 14.2759 6.33461C14.2925 6.349 14.3068 6.36218 14.319 6.37391C14.3251 6.37977 14.3307 6.38527 14.3357 6.39036L14.3428 6.3977L14.3461 6.40114L14.3477 6.40279L14.3485 6.40361C14.3485 6.40361 14.3492 6.40441 13.8562 6.87412L14.3492 6.40441C14.6119 6.6844 14.5996 7.12597 14.3218 7.39068C14.0536 7.64624 13.6359 7.64354 13.371 7.39112L13.3637 7.38596C13.3426 7.37132 13.2885 7.33721 13.1922 7.29795C13.0004 7.2198 12.6287 7.11628 12 7.11628C11.3713 7.11628 10.9996 7.2198 10.8078 7.29795C10.7115 7.33721 10.6574 7.37132 10.6363 7.38596L10.629 7.39112C10.3641 7.64354 9.94645 7.64624 9.67822 7.39068ZM9.67822 10.1814C9.40039 9.91667 9.3881 9.4751 9.65078 9.19511L10.1538 9.67442C9.65078 9.19511 9.65154 9.19431 9.65154 9.19431L9.65231 9.19349L9.65388 9.19183L9.65716 9.1884L9.66431 9.18106C9.66934 9.17597 9.67489 9.17047 9.68099 9.16461C9.69318 9.15288 9.70751 9.13969 9.72413 9.1253C9.75739 9.0965 9.79962 9.06301 9.85184 9.02683C9.95658 8.95427 10.0997 8.8721 10.2887 8.79507C10.6676 8.64067 11.2189 8.51163 12 8.51163C12.7811 8.51163 13.3324 8.64067 13.7113 8.79507C13.9003 8.8721 14.0434 8.95427 14.1482 9.02683C14.2004 9.06301 14.2426 9.0965 14.2759 9.1253C14.2925 9.13969 14.3068 9.15288 14.319 9.16461C14.3251 9.17047 14.3307 9.17597 14.3357 9.18106L14.3428 9.1884L14.3461 9.19183L14.3477 9.19349L14.3485 9.19431C14.3485 9.19431 14.3492 9.1951 13.8562 9.66482L14.3492 9.19511C14.6119 9.4751 14.5996 9.91667 14.3218 10.1814C14.0536 10.4369 13.6359 10.4342 13.371 10.1818L13.3637 10.1767C13.3426 10.162 13.2885 10.1279 13.1922 10.0886C13.0004 10.0105 12.6287 9.90698 12 9.90698C11.3713 9.90698 10.9996 10.0105 10.8078 10.0886C10.7115 10.1279 10.6574 10.162 10.6363 10.1767L10.629 10.1818C10.3641 10.4342 9.94645 10.4369 9.67822 10.1814Z" fill="currentColor" />
-          </svg>
-          <div [id]="'audio-level-' + device.deviceId" class="audio-level"></div>
-          <input type="range" [id]="'volume-' + device.deviceId" min="0" max="100" step="0.1" value="100" class="bg-opacity-30 absolute z-20 m-2 hidden h-2 w-[90%] cursor-pointer appearance-none rounded-lg border border-black bg-gray-300 pl-0 accent-gray-500 group-hover:block dark:border-gray-400" />
-        </div>
+          <div [id]="'audio-' + device.deviceId" (mousedown)="audioDown($event)" class="audio-bar group m-2 flex h-10 min-h-6 items-center justify-center rounded-lg border border-black bg-transparent text-center hover:border-2 active:cursor-grabbing dark:border-gray-400">
+            <p class="m-2 w-full truncate overflow-hidden text-ellipsis whitespace-nowrap">
+              {{ device.label || "Micrófono sin nombre" }}
+            </p>
+            <!-- Icono microfono -->
+            <svg class="mr-2 h-4 w-4" width="800px" height="800px" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path fill-rule="evenodd" clip-rule="evenodd" d="M3.69231 10.3721C4.07466 10.3721 4.38462 10.6845 4.38462 11.0698V12.9302C4.38462 17.1687 7.79414 20.6047 12 20.6047C16.2059 20.6047 19.6154 17.1687 19.6154 12.9302V11.0698C19.6154 10.6845 19.9253 10.3721 20.3077 10.3721C20.69 10.3721 21 10.6845 21 11.0698V12.9302C21 17.9393 16.9706 22 12 22C7.02944 22 3 17.9393 3 12.9302V11.0698C3 10.6845 3.30996 10.3721 3.69231 10.3721Z" fill="currentColor" />
+              <path fill-rule="evenodd" clip-rule="evenodd" d="M12 2C8.55884 2 5.76923 4.81123 5.76923 8.27907V12.9302C5.76923 16.3981 8.55884 19.2093 12 19.2093C15.4412 19.2093 18.2308 16.3981 18.2308 12.9302V8.27907C18.2308 4.81124 15.4412 2 12 2ZM9.67822 7.39068C9.40039 7.12597 9.3881 6.6844 9.65078 6.40441L10.1538 6.88372C9.65078 6.40441 9.65154 6.40361 9.65154 6.40361L9.65231 6.40279L9.65388 6.40114L9.65716 6.3977L9.66431 6.39036C9.66934 6.38527 9.67489 6.37977 9.68099 6.37391C9.69318 6.36218 9.70751 6.349 9.72413 6.33461C9.75739 6.3058 9.79962 6.27232 9.85184 6.23613C9.95658 6.16357 10.0997 6.0814 10.2887 6.00438C10.6676 5.84997 11.2189 5.72093 12 5.72093C12.7811 5.72093 13.3324 5.84997 13.7113 6.00438C13.9003 6.0814 14.0434 6.16357 14.1482 6.23613C14.2004 6.27232 14.2426 6.3058 14.2759 6.33461C14.2925 6.349 14.3068 6.36218 14.319 6.37391C14.3251 6.37977 14.3307 6.38527 14.3357 6.39036L14.3428 6.3977L14.3461 6.40114L14.3477 6.40279L14.3485 6.40361C14.3485 6.40361 14.3492 6.40441 13.8562 6.87412L14.3492 6.40441C14.6119 6.6844 14.5996 7.12597 14.3218 7.39068C14.0536 7.64624 13.6359 7.64354 13.371 7.39112L13.3637 7.38596C13.3426 7.37132 13.2885 7.33721 13.1922 7.29795C13.0004 7.2198 12.6287 7.11628 12 7.11628C11.3713 7.11628 10.9996 7.2198 10.8078 7.29795C10.7115 7.33721 10.6574 7.37132 10.6363 7.38596L10.629 7.39112C10.3641 7.64354 9.94645 7.64624 9.67822 7.39068ZM9.67822 10.1814C9.40039 9.91667 9.3881 9.4751 9.65078 9.19511L10.1538 9.67442C9.65078 9.19511 9.65154 9.19431 9.65154 9.19431L9.65231 9.19349L9.65388 9.19183L9.65716 9.1884L9.66431 9.18106C9.66934 9.17597 9.67489 9.17047 9.68099 9.16461C9.69318 9.15288 9.70751 9.13969 9.72413 9.1253C9.75739 9.0965 9.79962 9.06301 9.85184 9.02683C9.95658 8.95427 10.0997 8.8721 10.2887 8.79507C10.6676 8.64067 11.2189 8.51163 12 8.51163C12.7811 8.51163 13.3324 8.64067 13.7113 8.79507C13.9003 8.8721 14.0434 8.95427 14.1482 9.02683C14.2004 9.06301 14.2426 9.0965 14.2759 9.1253C14.2925 9.13969 14.3068 9.15288 14.319 9.16461C14.3251 9.17047 14.3307 9.17597 14.3357 9.18106L14.3428 9.1884L14.3461 9.19183L14.3477 9.19349L14.3485 9.19431C14.3485 9.19431 14.3492 9.1951 13.8562 9.66482L14.3492 9.19511C14.6119 9.4751 14.5996 9.91667 14.3218 10.1814C14.0536 10.4369 13.6359 10.4342 13.371 10.1818L13.3637 10.1767C13.3426 10.162 13.2885 10.1279 13.1922 10.0886C13.0004 10.0105 12.6287 9.90698 12 9.90698C11.3713 9.90698 10.9996 10.0105 10.8078 10.0886C10.7115 10.1279 10.6574 10.162 10.6363 10.1767L10.629 10.1818C10.3641 10.4342 9.94645 10.4369 9.67822 10.1814Z" fill="currentColor" />
+            </svg>
+            <div [id]="'audio-level-' + device.deviceId" class="audio-level"></div>
+            <input type="range" [id]="'volume-' + device.deviceId" min="0" max="100" step="0.1" value="100" class="bg-opacity-30 absolute z-20 m-2 hidden h-2 w-[90%] cursor-pointer appearance-none rounded-lg border border-black bg-gray-300 pl-0 accent-gray-500 group-hover:block dark:border-gray-400" />
+          </div>
         }
         <!-- Audio de grabación -->
         <div [id]="'audio-recorder'" (mousedown)="audioDown($event)" class="audio-bar group m-2 flex h-10 min-h-6 items-center justify-center rounded-lg border border-black bg-transparent text-center hover:border-2 active:cursor-grabbing dark:border-gray-400">
@@ -172,126 +172,129 @@
 
         <!-- Lista de salidas de audio -->
         @for (device of this.audioOutputDevices; track device.deviceId) {
-        <div [id]="'audio-' + device.deviceId" (mousedown)="audioDown($event)" class="audio-bar group m-2 flex h-10 min-h-6 items-center justify-center rounded-lg border border-black bg-transparent text-center hover:border-2 active:cursor-grabbing dark:border-gray-400">
-          <p class="m-2 w-full truncate overflow-hidden text-ellipsis whitespace-nowrap">
-            {{ device.label || "Salida de audio sin nombre" }}
-          </p>
-          <!-- Icono altavoz -->
-          <svg class="mr-2 h-4 w-4" width="800px" height="800px" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <path d="M12 10.75C10.2051 10.75 8.75 12.2051 8.75 14C8.75 15.7949 10.2051 17.25 12 17.25C13.7949 17.25 15.25 15.7949 15.25 14C15.25 12.2051 13.7949 10.75 12 10.75Z" fill="currentColor" />
-            <path fill-rule="evenodd" clip-rule="evenodd" d="M4 10C4 6.22876 4 4.34315 5.17157 3.17157C6.34315 2 8.22876 2 12 2C15.7712 2 17.6569 2 18.8284 3.17157C20 4.34315 20 6.22876 20 10V14C20 17.7712 20 19.6569 18.8284 20.8284C17.6569 22 15.7712 22 12 22C8.22876 22 6.34315 22 5.17157 20.8284C4 19.6569 4 17.7712 4 14V10ZM7.25 14C7.25 11.3766 9.37665 9.25 12 9.25C14.6234 9.25 16.75 11.3766 16.75 14C16.75 16.6234 14.6234 18.75 12 18.75C9.37665 18.75 7.25 16.6234 7.25 14ZM10 5.25C9.58579 5.25 9.25 5.58579 9.25 6C9.25 6.41421 9.58579 6.75 10 6.75H14C14.4142 6.75 14.75 6.41421 14.75 6C14.75 5.58579 14.4142 5.25 14 5.25H10Z" fill="currentColor" />
-          </svg>
-          <div [id]="'audio-level-' + device.deviceId" class="audio-level"></div>
-          <input type="range" [id]="'volume-' + device.deviceId" min="0" max="100" step="0.1" value="100" class="bg-opacity-30 absolute z-20 m-2 hidden h-2 w-[90%] cursor-pointer appearance-none rounded-lg border border-black bg-gray-300 pl-0 accent-gray-500 group-hover:block dark:border-gray-400" />
-        </div>
+          <div [id]="'audio-' + device.deviceId" (mousedown)="audioDown($event)" class="audio-bar group m-2 flex h-10 min-h-6 items-center justify-center rounded-lg border border-black bg-transparent text-center hover:border-2 active:cursor-grabbing dark:border-gray-400">
+            <p class="m-2 w-full truncate overflow-hidden text-ellipsis whitespace-nowrap">
+              {{ device.label || "Salida de audio sin nombre" }}
+            </p>
+            <!-- Icono altavoz -->
+            <svg class="mr-2 h-4 w-4" width="800px" height="800px" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M12 10.75C10.2051 10.75 8.75 12.2051 8.75 14C8.75 15.7949 10.2051 17.25 12 17.25C13.7949 17.25 15.25 15.7949 15.25 14C15.25 12.2051 13.7949 10.75 12 10.75Z" fill="currentColor" />
+              <path fill-rule="evenodd" clip-rule="evenodd" d="M4 10C4 6.22876 4 4.34315 5.17157 3.17157C6.34315 2 8.22876 2 12 2C15.7712 2 17.6569 2 18.8284 3.17157C20 4.34315 20 6.22876 20 10V14C20 17.7712 20 19.6569 18.8284 20.8284C17.6569 22 15.7712 22 12 22C8.22876 22 6.34315 22 5.17157 20.8284C4 19.6569 4 17.7712 4 14V10ZM7.25 14C7.25 11.3766 9.37665 9.25 12 9.25C14.6234 9.25 16.75 11.3766 16.75 14C16.75 16.6234 14.6234 18.75 12 18.75C9.37665 18.75 7.25 16.6234 7.25 14ZM10 5.25C9.58579 5.25 9.25 5.58579 9.25 6C9.25 6.41421 9.58579 6.75 10 6.75H14C14.4142 6.75 14.75 6.41421 14.75 6C14.75 5.58579 14.4142 5.25 14 5.25H10Z" fill="currentColor" />
+            </svg>
+            <div [id]="'audio-level-' + device.deviceId" class="audio-level"></div>
+            <input type="range" [id]="'volume-' + device.deviceId" min="0" max="100" step="0.1" value="100" class="bg-opacity-30 absolute z-20 m-2 hidden h-2 w-[90%] cursor-pointer appearance-none rounded-lg border border-black bg-gray-300 pl-0 accent-gray-500 group-hover:block dark:border-gray-400" />
+          </div>
         }
       </div>
       <div id="conexiones-derecha" class="relative h-full w-fit"></div>
     </div>
 
     @for (device of this.videoDevices; track device.deviceId) {
-    <div id="div-{{ device.deviceId }}" class="group relative m-2 flex max-w-[16.6667%] justify-center bg-transparent object-contain text-center">
-      <video #videoElement disablePictureInPicture (mousedown)="mousedown($event, device.deviceId)" (contextmenu)="onContextMenu($event, device.deviceId)" [id]="device.deviceId" autoplay playsinline class="cursor-grab rounded-lg border border-black object-contain hover:border-2 active:cursor-grabbing dark:border-gray-400"></video>
-      <!-- Botón full-screan -->
-      <svg (click)="fullscreen(device)" class="absolute top-2 left-2 z-10 hidden h-4 w-4 cursor-pointer text-black group-hover:block" width="800px" height="800px" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-        <path fill-rule="evenodd" clip-rule="evenodd" d="M5 1.25C5.41421 1.25 5.75 1.58579 5.75 2V11C5.75 12.9068 5.75159 14.2615 5.88976 15.2892C6.02502 16.2952 6.27869 16.8749 6.7019 17.2981C7.12511 17.7213 7.70476 17.975 8.71085 18.1102C9.73851 18.2484 11.0932 18.25 13 18.25H22C22.4142 18.25 22.75 18.5858 22.75 19C22.75 19.4142 22.4142 19.75 22 19.75H19.75V22C19.75 22.4142 19.4142 22.75 19 22.75C18.5858 22.75 18.25 22.4142 18.25 22V19.75H12.9436C11.1058 19.75 9.65019 19.75 8.51098 19.5969C7.33855 19.4392 6.38961 19.1071 5.64124 18.3588C4.89288 17.6104 4.56076 16.6614 4.40313 15.489C4.24997 14.3498 4.24998 12.8942 4.25 11.0564L4.25 5.75H2C1.58579 5.75 1.25 5.41421 1.25 5C1.25 4.58579 1.58579 4.25 2 4.25H4.25V2C4.25 1.58579 4.58579 1.25 5 1.25ZM15.2892 5.88976C14.2615 5.75159 12.9068 5.75 11 5.75H8C7.58579 5.75 7.25 5.41421 7.25 5C7.25 4.58579 7.58579 4.25 8 4.25L11.0564 4.25C12.8942 4.24998 14.3498 4.24997 15.489 4.40313C16.6614 4.56076 17.6104 4.89288 18.3588 5.64124C19.1071 6.38961 19.4392 7.33855 19.5969 8.51098C19.75 9.65019 19.75 11.1058 19.75 12.9436V16C19.75 16.4142 19.4142 16.75 19 16.75C18.5858 16.75 18.25 16.4142 18.25 16V13C18.25 11.0932 18.2484 9.73851 18.1102 8.71085C17.975 7.70476 17.7213 7.12511 17.2981 6.7019C16.8749 6.27869 16.2952 6.02502 15.2892 5.88976Z" fill="currentColor" />
-        <path d="M8.5 11.5C8.5 10.0858 8.5 9.37868 8.93934 8.93934C9.37868 8.5 10.0858 8.5 11.5 8.5H12.5C13.9142 8.5 14.6213 8.5 15.0607 8.93934C15.5 9.37868 15.5 10.0858 15.5 11.5V12.5C15.5 13.9142 15.5 14.6213 15.0607 15.0607C14.6213 15.5 13.9142 15.5 12.5 15.5H11.5C10.0858 15.5 9.37868 15.5 8.93934 15.0607C8.5 14.6213 8.5 13.9142 8.5 12.5V11.5Z" fill="currentColor" />
-      </svg>
-      <!-- Botón X -->
-      <svg (click)="stopElemento(device)" class="absolute top-2 right-2 z-10 hidden h-4 w-4 cursor-pointer text-black group-hover:block" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-        <path d="M20.7457 3.32851C20.3552 2.93798 19.722 2.93798 19.3315 3.32851L12.0371 10.6229L4.74275 3.32851C4.35223 2.93798 3.71906 2.93798 3.32854 3.32851C2.93801 3.71903 2.93801 4.3522 3.32854 4.74272L10.6229 12.0371L3.32856 19.3314C2.93803 19.722 2.93803 20.3551 3.32856 20.7457C3.71908 21.1362 4.35225 21.1362 4.74277 20.7457L12.0371 13.4513L19.3315 20.7457C19.722 21.1362 20.3552 21.1362 20.7457 20.7457C21.1362 20.3551 21.1362 19.722 20.7457 19.3315L13.4513 12.0371L20.7457 4.74272C21.1362 4.3522 21.1362 3.71903 20.7457 3.32851Z" fill="currentColor" />
-      </svg>
-      <p class="absolute bottom-6 truncate overflow-hidden text-xs text-ellipsis whitespace-nowrap text-white">
-        {{ device.label || "Camara sin nombre" }}
-      </p>
-      <p id="resolution" class="absolute bottom-2 truncate overflow-hidden text-xs text-ellipsis whitespace-nowrap text-white"></p>
-    </div>
-    } @for (captura of this.capturas; track captura.id) {
-    <div id="div-{{ captura.id }}" class="group relative m-2 flex max-w-[16.6667%] justify-center bg-transparent object-contain text-center">
-      <video #videoElement disablePictureInPicture (mousedown)="mousedown($event, captura.id)" (contextmenu)="onContextMenu($event, captura.id)" [id]="captura.id" autoplay playsinline muted class="cursor-grab rounded-lg border border-black object-contain hover-2 active:cursor-grabbing dark:border-gray-400" [srcObject]="captura"></video>
-      <!-- Botón full-screan -->
-      <svg (click)="fullscreen(captura)" class="absolute top-2 left-2 z-10 hidden h-4 w-4 cursor-pointer text-black group-hover:block" width="800px" height="800px" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-        <path fill-rule="evenodd" clip-rule="evenodd" d="M5 1.25C5.41421 1.25 5.75 1.58579 5.75 2V11C5.75 12.9068 5.75159 14.2615 5.88976 15.2892C6.02502 16.2952 6.27869 16.8749 6.7019 17.2981C7.12511 17.7213 7.70476 17.975 8.71085 18.1102C9.73851 18.2484 11.0932 18.25 13 18.25H22C22.4142 18.25 22.75 18.5858 22.75 19C22.75 19.4142 22.4142 19.75 22 19.75H19.75V22C19.75 22.4142 19.4142 22.75 19 22.75C18.5858 22.75 18.25 22.4142 18.25 22V19.75H12.9436C11.1058 19.75 9.65019 19.75 8.51098 19.5969C7.33855 19.4392 6.38961 19.1071 5.64124 18.3588C4.89288 17.6104 4.56076 16.6614 4.40313 15.489C4.24997 14.3498 4.24998 12.8942 4.25 11.0564L4.25 5.75H2C1.58579 5.75 1.25 5.41421 1.25 5C1.25 4.58579 1.58579 4.25 2 4.25H4.25V2C4.25 1.58579 4.58579 1.25 5 1.25ZM15.2892 5.88976C14.2615 5.75159 12.9068 5.75 11 5.75H8C7.58579 5.75 7.25 5.41421 7.25 5C7.25 4.58579 7.58579 4.25 8 4.25L11.0564 4.25C12.8942 4.24998 14.3498 4.24997 15.489 4.40313C16.6614 4.56076 17.6104 4.89288 18.3588 5.64124C19.1071 6.38961 19.4392 7.33855 19.5969 8.51098C19.75 9.65019 19.75 11.1058 19.75 12.9436V16C19.75 16.4142 19.4142 16.75 19 16.75C18.5858 16.75 18.25 16.4142 18.25 16V13C18.25 11.0932 18.2484 9.73851 18.1102 8.71085C17.975 7.70476 17.7213 7.12511 17.2981 6.7019C16.8749 6.27869 16.2952 6.02502 15.2892 5.88976Z" fill="currentColor" />
-        <path d="M8.5 11.5C8.5 10.0858 8.5 9.37868 8.93934 8.93934C9.37868 8.5 10.0858 8.5 11.5 8.5H12.5C13.9142 8.5 14.6213 8.5 15.0607 8.93934C15.5 9.37868 15.5 10.0858 15.5 11.5V12.5C15.5 13.9142 15.5 14.6213 15.0607 15.0607C14.6213 15.5 13.9142 15.5 12.5 15.5H11.5C10.0858 15.5 9.37868 15.5 8.93934 15.0607C8.5 14.6213 8.5 13.9142 8.5 12.5V11.5Z" fill="currentColor" />
-      </svg>
-      <!-- Botón X -->
-      <svg (click)="stopElemento(captura)" class="absolute top-2 right-2 z-10 hidden h-4 w-4 cursor-pointer text-black group-hover:block" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-        <path d="M20.7457 3.32851C20.3552 2.93798 19.722 2.93798 19.3315 3.32851L12.0371 10.6229L4.74275 3.32851C4.35223 2.93798 3.71906 2.93798 3.32854 3.32851C2.93801 3.71903 2.93801 4.3522 3.32854 4.74272L10.6229 12.0371L3.32856 19.3314C2.93803 19.722 2.93803 20.3551 3.32856 20.7457C3.71908 21.1362 4.35225 21.1362 4.74277 20.7457L12.0371 13.4513L19.3315 20.7457C19.722 21.1362 20.3552 21.1362 20.7457 20.7457C21.1362 20.3551 21.1362 19.722 20.7457 19.3315L13.4513 12.0371L20.7457 4.74272C21.1362 4.3522 21.1362 3.71903 20.7457 3.32851Z" fill="currentColor" />
-      </svg>
-      <p class="absolute bottom-6 truncate overflow-hidden text-xs text-ellipsis whitespace-nowrap text-white">
-        {{ captura.id || "Pantalla sin nombre" }}
-      </p>
-      <p id="resolution" class="absolute bottom-2 truncate overflow-hidden text-xs text-ellipsis whitespace-nowrap text-white"></p>
-    </div>
-    } @for (estatico of this.staticContent; track estatico.name) {
-    <div id="div-{{ estatico.name }}" class="group relative m-2 flex max-w-[16.6667%] rounded-lg border border-black bg-transparent hover:border-2 dark:border-gray-400">
-      @if (estatico.type.startsWith('image/')) {
-      <!-- Renderiza una imagen -->
-      <img [id]="estatico.name" (mousedown)="mousedown($event, estatico.name)" (contextmenu)="onContextMenu($event, estatico.name)" [src]="getFileUrl(estatico)" [alt]="estatico.name" class="h-full w-full cursor-grab rounded-lg object-contain active:cursor-grabbing" />
-      } @else if (estatico.type.startsWith('video/')) {
-      <!-- Renderiza un video -->
-      <video [id]="estatico.name" disablePictureInPicture (mousedown)="mousedown($event, estatico.name)" (contextmenu)="onContextMenu($event, estatico.name)" [src]="getFileUrl(estatico)" [id]="estatico.name" muted class="h-full w-full cursor-grab rounded-lg active:cursor-grabbing"></video>
-      } @else if (estatico.type.startsWith('audio/')) {
-      <!-- Renderiza un audio -->
-      <div [id]="estatico.name" class="relative h-full w-full cursor-grab rounded-lg active:cursor-grabbing">
-        <p class="m-2 w-full truncate overflow-hidden text-ellipsis whitespace-nowrap">
-          {{ estatico.name }}
+      <div id="div-{{ device.deviceId }}" class="group relative m-2 flex max-w-[16.6667%] justify-center bg-transparent object-contain text-center">
+        <video #videoElement disablePictureInPicture (mousedown)="mousedown($event, device.deviceId)" (contextmenu)="onContextMenu($event, device.deviceId)" [id]="device.deviceId" autoplay playsinline class="cursor-grab rounded-lg border border-black object-contain hover:border-2 active:cursor-grabbing dark:border-gray-400"></video>
+        <!-- Botón full-screan -->
+        <svg (click)="fullscreen(device)" class="absolute top-2 left-2 z-10 hidden h-4 w-4 cursor-pointer text-black group-hover:block" width="800px" height="800px" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path fill-rule="evenodd" clip-rule="evenodd" d="M5 1.25C5.41421 1.25 5.75 1.58579 5.75 2V11C5.75 12.9068 5.75159 14.2615 5.88976 15.2892C6.02502 16.2952 6.27869 16.8749 6.7019 17.2981C7.12511 17.7213 7.70476 17.975 8.71085 18.1102C9.73851 18.2484 11.0932 18.25 13 18.25H22C22.4142 18.25 22.75 18.5858 22.75 19C22.75 19.4142 22.4142 19.75 22 19.75H19.75V22C19.75 22.4142 19.4142 22.75 19 22.75C18.5858 22.75 18.25 22.4142 18.25 22V19.75H12.9436C11.1058 19.75 9.65019 19.75 8.51098 19.5969C7.33855 19.4392 6.38961 19.1071 5.64124 18.3588C4.89288 17.6104 4.56076 16.6614 4.40313 15.489C4.24997 14.3498 4.24998 12.8942 4.25 11.0564L4.25 5.75H2C1.58579 5.75 1.25 5.41421 1.25 5C1.25 4.58579 1.58579 4.25 2 4.25H4.25V2C4.25 1.58579 4.58579 1.25 5 1.25ZM15.2892 5.88976C14.2615 5.75159 12.9068 5.75 11 5.75H8C7.58579 5.75 7.25 5.41421 7.25 5C7.25 4.58579 7.58579 4.25 8 4.25L11.0564 4.25C12.8942 4.24998 14.3498 4.24997 15.489 4.40313C16.6614 4.56076 17.6104 4.89288 18.3588 5.64124C19.1071 6.38961 19.4392 7.33855 19.5969 8.51098C19.75 9.65019 19.75 11.1058 19.75 12.9436V16C19.75 16.4142 19.4142 16.75 19 16.75C18.5858 16.75 18.25 16.4142 18.25 16V13C18.25 11.0932 18.2484 9.73851 18.1102 8.71085C17.975 7.70476 17.7213 7.12511 17.2981 6.7019C16.8749 6.27869 16.2952 6.02502 15.2892 5.88976Z" fill="currentColor" />
+          <path d="M8.5 11.5C8.5 10.0858 8.5 9.37868 8.93934 8.93934C9.37868 8.5 10.0858 8.5 11.5 8.5H12.5C13.9142 8.5 14.6213 8.5 15.0607 8.93934C15.5 9.37868 15.5 10.0858 15.5 11.5V12.5C15.5 13.9142 15.5 14.6213 15.0607 15.0607C14.6213 15.5 13.9142 15.5 12.5 15.5H11.5C10.0858 15.5 9.37868 15.5 8.93934 15.0607C8.5 14.6213 8.5 13.9142 8.5 12.5V11.5Z" fill="currentColor" />
+        </svg>
+        <!-- Botón X -->
+        <svg (click)="stopElemento(device)" class="absolute top-2 right-2 z-10 hidden h-4 w-4 cursor-pointer text-black group-hover:block" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M20.7457 3.32851C20.3552 2.93798 19.722 2.93798 19.3315 3.32851L12.0371 10.6229L4.74275 3.32851C4.35223 2.93798 3.71906 2.93798 3.32854 3.32851C2.93801 3.71903 2.93801 4.3522 3.32854 4.74272L10.6229 12.0371L3.32856 19.3314C2.93803 19.722 2.93803 20.3551 3.32856 20.7457C3.71908 21.1362 4.35225 21.1362 4.74277 20.7457L12.0371 13.4513L19.3315 20.7457C19.722 21.1362 20.3552 21.1362 20.7457 20.7457C21.1362 20.3551 21.1362 19.722 20.7457 19.3315L13.4513 12.0371L20.7457 4.74272C21.1362 4.3522 21.1362 3.71903 20.7457 3.32851Z" fill="currentColor" />
+        </svg>
+        <p class="absolute bottom-6 truncate overflow-hidden text-xs text-ellipsis whitespace-nowrap text-white">
+          {{ device.label || "Camara sin nombre" }}
         </p>
-        <!-- Botón Play/Pause -->
-        <button id="play-pause" class="relative z-30 mr-2 ml-2 h-4 w-4 bg-transparent text-gray-900 hover:text-gray-500">
-          <!-- Botón Play-->
-          <svg id="play" class="h-full w-full" style="display: block" width="800px" height="800px" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <path d="M21.4086 9.35258C23.5305 10.5065 23.5305 13.4935 21.4086 14.6474L8.59662 21.6145C6.53435 22.736 4 21.2763 4 18.9671L4 5.0329C4 2.72368 6.53435 1.26402 8.59661 2.38548L21.4086 9.35258Z" fill="currentColor" />
-          </svg>
-
-          <!-- Bottón Pause -->
-          <svg id="pause" class="h-full w-full" style="display: none" width="800px" height="800px" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <path d="M2 6C2 4.11438 2 3.17157 2.58579 2.58579C3.17157 2 4.11438 2 6 2C7.88562 2 8.82843 2 9.41421 2.58579C10 3.17157 10 4.11438 10 6V18C10 19.8856 10 20.8284 9.41421 21.4142C8.82843 22 7.88562 22 6 22C4.11438 22 3.17157 22 2.58579 21.4142C2 20.8284 2 19.8856 2 18V6Z" fill="currentColor" />
-            <path d="M14 6C14 4.11438 14 3.17157 14.5858 2.58579C15.1716 2 16.1144 2 18 2C19.8856 2 20.8284 2 21.4142 2.58579C22 3.17157 22 4.11438 22 6V18C22 19.8856 22 20.8284 21.4142 21.4142C20.8284 22 19.8856 22 18 22C16.1144 22 15.1716 22 14.5858 21.4142C14 20.8284 14 19.8856 14 18V6Z" fill="currentColor" />
-          </svg>
-        </button>
-
-        <!-- Botón Reiniciar -->
-        <button id="restart" class="relative z-30 mr-2 h-4 w-4 bg-transparent text-gray-900 hover:text-gray-500">
-          <svg width="800px" class="h-full w-full" height="800px" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <path d="M8.09015 14.6474C6.30328 13.4935 6.30328 10.5065 8.09015 9.35258L18.8792 2.38548C20.6158 1.26402 22.75 2.72368 22.75 5.0329V18.9671C22.75 21.2763 20.6158 22.736 18.8792 21.6145L8.09015 14.6474Z" fill="currentColor" />
-            <path d="M2 5C2 4.58579 2.33579 4.25 2.75 4.25C3.16421 4.25 3.5 4.58579 3.5 5V19C3.5 19.4142 3.16421 19.75 2.75 19.75C2.33579 19.75 2 19.4142 2 19V5Z" fill="currentColor" />
-          </svg>
-        </button>
-
-        <!-- Botón loop -->
-        <button id="loop" class="relative z-30 h-4 w-4 bg-transparent text-gray-900 hover:text-gray-500">
-          <!-- loop desactivado -->
-          <svg id="loop-off" class="h-full w-full" width="800px" height="800px" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <path fill-rule="evenodd" clip-rule="evenodd" d="M8.46967 2.46967C8.76256 2.17678 9.23744 2.17678 9.53033 2.46967L11.5303 4.46967C11.7448 4.68417 11.809 5.00676 11.6929 5.28701C11.5768 5.56727 11.3033 5.75 11 5.75H9C5.54822 5.75 2.75 8.54822 2.75 12C2.75 15.4517 5.54846 18.25 9.00028 18.25H9.5C9.91421 18.25 10.25 18.5858 10.25 19C10.25 19.4142 9.91421 19.75 9.5 19.75H9.00028C4.72011 19.75 1.25 16.2802 1.25 12C1.25 7.71979 4.71979 4.25 9 4.25H9.18934L8.46967 3.53033C8.17678 3.23744 8.17678 2.76256 8.46967 2.46967ZM13.75 5C13.75 4.58579 14.0858 4.25 14.5 4.25H15C19.2802 4.25 22.75 7.71979 22.75 12C22.75 16.2802 19.2802 19.75 15 19.75H14.8107L15.5303 20.4697C15.8232 20.7626 15.8232 21.2374 15.5303 21.5303C15.2374 21.8232 14.7626 21.8232 14.4697 21.5303L12.4697 19.5303C12.2552 19.3158 12.191 18.9932 12.3071 18.713C12.4232 18.4327 12.6967 18.25 13 18.25H15C18.4518 18.25 21.25 15.4518 21.25 12C21.25 8.54822 18.4518 5.75 15 5.75H14.5C14.0858 5.75 13.75 5.41421 13.75 5Z" fill="currentColor" />
-          </svg>
-
-          <!-- loop activado -->
-          <svg id="loop-on" class="h-full w-full" style="display: none" width="800px" height="800px" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <path fill-rule="evenodd" clip-rule="evenodd" d="M8.71597 3.20277C8.98843 2.93241 9.43017 2.93241 9.70263 3.20277L11.5631 5.04893C11.7626 5.24692 11.8223 5.5447 11.7143 5.8034C11.6063 6.06209 11.352 6.23077 11.0698 6.23077H9.2093C5.99834 6.23077 3.39535 8.81374 3.39535 12C3.39535 15.1862 5.99857 17.7692 9.20956 17.7692H9.67442C10.0597 17.7692 10.3721 18.0792 10.3721 18.4615C10.3721 18.8439 10.0597 19.1538 9.67442 19.1538H9.20956C5.22801 19.1538 2 15.951 2 12C2 8.04904 5.22771 4.84615 9.2093 4.84615H9.38543L8.71597 4.18184C8.44351 3.91148 8.44351 3.47314 8.71597 3.20277Z" fill="currentColor" />
-            <path fill-rule="evenodd" clip-rule="evenodd" d="M13.6279 5.53846C13.6279 5.15611 13.9403 4.84615 14.3256 4.84615H14.7907C18.7723 4.84615 22 8.04904 22 12C22 15.951 18.7723 19.1538 14.7907 19.1538H14.6146L15.284 19.8182C15.5565 20.0885 15.5565 20.5269 15.284 20.7972C15.0116 21.0676 14.5698 21.0676 14.2974 20.7972L12.4369 18.9511C12.2374 18.7531 12.1777 18.4553 12.2857 18.1966C12.3937 17.9379 12.648 17.7692 12.9302 17.7692H14.7907C18.0017 17.7692 20.6047 15.1863 20.6047 12C20.6047 8.81374 18.0017 6.23077 14.7907 6.23077H14.3256C13.9403 6.23077 13.6279 5.92081 13.6279 5.53846Z" fill="currentColor" />
-            <path d="M5.48837 12C5.48837 9.96079 7.15429 8.30769 9.2093 8.30769H14.7907C16.8457 8.30769 18.5116 9.96079 18.5116 12C18.5116 14.0392 16.8457 15.6923 14.7907 15.6923H9.2093C7.15429 15.6923 5.48837 14.0392 5.48837 12Z" fill="currentColor" />
-          </svg>
-        </button>
-        <!-- Tiempo actual / Duración -->
-        <span id="time" class="ml-2">00:00 / 00:00</span>
-
-        <!-- Barra de progreso -->
-        <input type="range" id="progress" min="0" max="100" step="0.1" value="0" class="m-2 w-[90%] pl-0" />
+        <p id="resolution" class="absolute bottom-2 truncate overflow-hidden text-xs text-ellipsis whitespace-nowrap text-white"></p>
       </div>
-      <div id="audio-stream" class="absolute top-0 left-0 -z-10 h-full w-full"></div>
-      } @if (estatico.type.startsWith('image/') || estatico.type.startsWith('video/')) {
-      <!-- Botón full-screan -->
-      <svg (click)="fullscreen(estatico)" class="absolute top-2 left-2 z-10 hidden h-4 w-4 cursor-pointer text-black group-hover:block" width="800px" height="800px" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-        <path fill-rule="evenodd" clip-rule="evenodd" d="M5 1.25C5.41421 1.25 5.75 1.58579 5.75 2V11C5.75 12.9068 5.75159 14.2615 5.88976 15.2892C6.02502 16.2952 6.27869 16.8749 6.7019 17.2981C7.12511 17.7213 7.70476 17.975 8.71085 18.1102C9.73851 18.2484 11.0932 18.25 13 18.25H22C22.4142 18.25 22.75 18.5858 22.75 19C22.75 19.4142 22.4142 19.75 22 19.75H19.75V22C19.75 22.4142 19.4142 22.75 19 22.75C18.5858 22.75 18.25 22.4142 18.25 22V19.75H12.9436C11.1058 19.75 9.65019 19.75 8.51098 19.5969C7.33855 19.4392 6.38961 19.1071 5.64124 18.3588C4.89288 17.6104 4.56076 16.6614 4.40313 15.489C4.24997 14.3498 4.24998 12.8942 4.25 11.0564L4.25 5.75H2C1.58579 5.75 1.25 5.41421 1.25 5C1.25 4.58579 1.58579 4.25 2 4.25H4.25V2C4.25 1.58579 4.58579 1.25 5 1.25ZM15.2892 5.88976C14.2615 5.75159 12.9068 5.75 11 5.75H8C7.58579 5.75 7.25 5.41421 7.25 5C7.25 4.58579 7.58579 4.25 8 4.25L11.0564 4.25C12.8942 4.24998 14.3498 4.24997 15.489 4.40313C16.6614 4.56076 17.6104 4.89288 18.3588 5.64124C19.1071 6.38961 19.4392 7.33855 19.5969 8.51098C19.75 9.65019 19.75 11.1058 19.75 12.9436V16C19.75 16.4142 19.4142 16.75 19 16.75C18.5858 16.75 18.25 16.4142 18.25 16V13C18.25 11.0932 18.2484 9.73851 18.1102 8.71085C17.975 7.70476 17.7213 7.12511 17.2981 6.7019C16.8749 6.27869 16.2952 6.02502 15.2892 5.88976Z" fill="currentColor" />
-        <path d="M8.5 11.5C8.5 10.0858 8.5 9.37868 8.93934 8.93934C9.37868 8.5 10.0858 8.5 11.5 8.5H12.5C13.9142 8.5 14.6213 8.5 15.0607 8.93934C15.5 9.37868 15.5 10.0858 15.5 11.5V12.5C15.5 13.9142 15.5 14.6213 15.0607 15.0607C14.6213 15.5 13.9142 15.5 12.5 15.5H11.5C10.0858 15.5 9.37868 15.5 8.93934 15.0607C8.5 14.6213 8.5 13.9142 8.5 12.5V11.5Z" fill="currentColor" />
-      </svg>
-      }
-      <!-- Botón X -->
-      <svg (click)="stopElemento(estatico)" class="absolute top-2 right-2 z-10 hidden h-4 w-4 cursor-pointer text-black group-hover:block" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-        <path d="M20.7457 3.32851C20.3552 2.93798 19.722 2.93798 19.3315 3.32851L12.0371 10.6229L4.74275 3.32851C4.35223 2.93798 3.71906 2.93798 3.32854 3.32851C2.93801 3.71903 2.93801 4.3522 3.32854 4.74272L10.6229 12.0371L3.32856 19.3314C2.93803 19.722 2.93803 20.3551 3.32856 20.7457C3.71908 21.1362 4.35225 21.1362 4.74277 20.7457L12.0371 13.4513L19.3315 20.7457C19.722 21.1362 20.3552 21.1362 20.7457 20.7457C21.1362 20.3551 21.1362 19.722 20.7457 19.3315L13.4513 12.0371L20.7457 4.74272C21.1362 4.3522 21.1362 3.71903 20.7457 3.32851Z" fill="currentColor" />
-      </svg>
-    </div>
+    }
+    @for (captura of this.capturas; track captura.id) {
+      <div id="div-{{ captura.id }}" class="group relative m-2 flex max-w-[16.6667%] justify-center bg-transparent object-contain text-center">
+        <video #videoElement disablePictureInPicture (mousedown)="mousedown($event, captura.id)" (contextmenu)="onContextMenu($event, captura.id)" [id]="captura.id" autoplay playsinline muted class="cursor-grab rounded-lg border border-black object-contain hover-2 active:cursor-grabbing dark:border-gray-400" [srcObject]="captura"></video>
+        <!-- Botón full-screan -->
+        <svg (click)="fullscreen(captura)" class="absolute top-2 left-2 z-10 hidden h-4 w-4 cursor-pointer text-black group-hover:block" width="800px" height="800px" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path fill-rule="evenodd" clip-rule="evenodd" d="M5 1.25C5.41421 1.25 5.75 1.58579 5.75 2V11C5.75 12.9068 5.75159 14.2615 5.88976 15.2892C6.02502 16.2952 6.27869 16.8749 6.7019 17.2981C7.12511 17.7213 7.70476 17.975 8.71085 18.1102C9.73851 18.2484 11.0932 18.25 13 18.25H22C22.4142 18.25 22.75 18.5858 22.75 19C22.75 19.4142 22.4142 19.75 22 19.75H19.75V22C19.75 22.4142 19.4142 22.75 19 22.75C18.5858 22.75 18.25 22.4142 18.25 22V19.75H12.9436C11.1058 19.75 9.65019 19.75 8.51098 19.5969C7.33855 19.4392 6.38961 19.1071 5.64124 18.3588C4.89288 17.6104 4.56076 16.6614 4.40313 15.489C4.24997 14.3498 4.24998 12.8942 4.25 11.0564L4.25 5.75H2C1.58579 5.75 1.25 5.41421 1.25 5C1.25 4.58579 1.58579 4.25 2 4.25H4.25V2C4.25 1.58579 4.58579 1.25 5 1.25ZM15.2892 5.88976C14.2615 5.75159 12.9068 5.75 11 5.75H8C7.58579 5.75 7.25 5.41421 7.25 5C7.25 4.58579 7.58579 4.25 8 4.25L11.0564 4.25C12.8942 4.24998 14.3498 4.24997 15.489 4.40313C16.6614 4.56076 17.6104 4.89288 18.3588 5.64124C19.1071 6.38961 19.4392 7.33855 19.5969 8.51098C19.75 9.65019 19.75 11.1058 19.75 12.9436V16C19.75 16.4142 19.4142 16.75 19 16.75C18.5858 16.75 18.25 16.4142 18.25 16V13C18.25 11.0932 18.2484 9.73851 18.1102 8.71085C17.975 7.70476 17.7213 7.12511 17.2981 6.7019C16.8749 6.27869 16.2952 6.02502 15.2892 5.88976Z" fill="currentColor" />
+          <path d="M8.5 11.5C8.5 10.0858 8.5 9.37868 8.93934 8.93934C9.37868 8.5 10.0858 8.5 11.5 8.5H12.5C13.9142 8.5 14.6213 8.5 15.0607 8.93934C15.5 9.37868 15.5 10.0858 15.5 11.5V12.5C15.5 13.9142 15.5 14.6213 15.0607 15.0607C14.6213 15.5 13.9142 15.5 12.5 15.5H11.5C10.0858 15.5 9.37868 15.5 8.93934 15.0607C8.5 14.6213 8.5 13.9142 8.5 12.5V11.5Z" fill="currentColor" />
+        </svg>
+        <!-- Botón X -->
+        <svg (click)="stopElemento(captura)" class="absolute top-2 right-2 z-10 hidden h-4 w-4 cursor-pointer text-black group-hover:block" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M20.7457 3.32851C20.3552 2.93798 19.722 2.93798 19.3315 3.32851L12.0371 10.6229L4.74275 3.32851C4.35223 2.93798 3.71906 2.93798 3.32854 3.32851C2.93801 3.71903 2.93801 4.3522 3.32854 4.74272L10.6229 12.0371L3.32856 19.3314C2.93803 19.722 2.93803 20.3551 3.32856 20.7457C3.71908 21.1362 4.35225 21.1362 4.74277 20.7457L12.0371 13.4513L19.3315 20.7457C19.722 21.1362 20.3552 21.1362 20.7457 20.7457C21.1362 20.3551 21.1362 19.722 20.7457 19.3315L13.4513 12.0371L20.7457 4.74272C21.1362 4.3522 21.1362 3.71903 20.7457 3.32851Z" fill="currentColor" />
+        </svg>
+        <p class="absolute bottom-6 truncate overflow-hidden text-xs text-ellipsis whitespace-nowrap text-white">
+          {{ captura.id || "Pantalla sin nombre" }}
+        </p>
+        <p id="resolution" class="absolute bottom-2 truncate overflow-hidden text-xs text-ellipsis whitespace-nowrap text-white"></p>
+      </div>
+    }
+    @for (estatico of this.staticContent; track estatico.name) {
+      <div id="div-{{ estatico.name }}" class="group relative m-2 flex max-w-[16.6667%] rounded-lg border border-black bg-transparent hover:border-2 dark:border-gray-400">
+        @if (estatico.type.startsWith("image/")) {
+          <!-- Renderiza una imagen -->
+          <img [id]="estatico.name" (mousedown)="mousedown($event, estatico.name)" (contextmenu)="onContextMenu($event, estatico.name)" [src]="getFileUrl(estatico)" [alt]="estatico.name" class="h-full w-full cursor-grab rounded-lg object-contain active:cursor-grabbing" />
+        } @else if (estatico.type.startsWith("video/")) {
+          <!-- Renderiza un video -->
+          <video [id]="estatico.name" disablePictureInPicture (mousedown)="mousedown($event, estatico.name)" (contextmenu)="onContextMenu($event, estatico.name)" [src]="getFileUrl(estatico)" [id]="estatico.name" muted class="h-full w-full cursor-grab rounded-lg active:cursor-grabbing"></video>
+        } @else if (estatico.type.startsWith("audio/")) {
+          <!-- Renderiza un audio -->
+          <div [id]="estatico.name" class="relative h-full w-full cursor-grab rounded-lg active:cursor-grabbing">
+            <p class="m-2 w-full truncate overflow-hidden text-ellipsis whitespace-nowrap">
+              {{ estatico.name }}
+            </p>
+            <!-- Botón Play/Pause -->
+            <button id="play-pause" class="relative z-30 mr-2 ml-2 h-4 w-4 bg-transparent text-gray-900 hover:text-gray-500">
+              <!-- Botón Play-->
+              <svg id="play" class="h-full w-full" style="display: block" width="800px" height="800px" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M21.4086 9.35258C23.5305 10.5065 23.5305 13.4935 21.4086 14.6474L8.59662 21.6145C6.53435 22.736 4 21.2763 4 18.9671L4 5.0329C4 2.72368 6.53435 1.26402 8.59661 2.38548L21.4086 9.35258Z" fill="currentColor" />
+              </svg>
+
+              <!-- Bottón Pause -->
+              <svg id="pause" class="h-full w-full" style="display: none" width="800px" height="800px" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M2 6C2 4.11438 2 3.17157 2.58579 2.58579C3.17157 2 4.11438 2 6 2C7.88562 2 8.82843 2 9.41421 2.58579C10 3.17157 10 4.11438 10 6V18C10 19.8856 10 20.8284 9.41421 21.4142C8.82843 22 7.88562 22 6 22C4.11438 22 3.17157 22 2.58579 21.4142C2 20.8284 2 19.8856 2 18V6Z" fill="currentColor" />
+                <path d="M14 6C14 4.11438 14 3.17157 14.5858 2.58579C15.1716 2 16.1144 2 18 2C19.8856 2 20.8284 2 21.4142 2.58579C22 3.17157 22 4.11438 22 6V18C22 19.8856 22 20.8284 21.4142 21.4142C20.8284 22 19.8856 22 18 22C16.1144 22 15.1716 22 14.5858 21.4142C14 20.8284 14 19.8856 14 18V6Z" fill="currentColor" />
+              </svg>
+            </button>
+
+            <!-- Botón Reiniciar -->
+            <button id="restart" class="relative z-30 mr-2 h-4 w-4 bg-transparent text-gray-900 hover:text-gray-500">
+              <svg width="800px" class="h-full w-full" height="800px" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M8.09015 14.6474C6.30328 13.4935 6.30328 10.5065 8.09015 9.35258L18.8792 2.38548C20.6158 1.26402 22.75 2.72368 22.75 5.0329V18.9671C22.75 21.2763 20.6158 22.736 18.8792 21.6145L8.09015 14.6474Z" fill="currentColor" />
+                <path d="M2 5C2 4.58579 2.33579 4.25 2.75 4.25C3.16421 4.25 3.5 4.58579 3.5 5V19C3.5 19.4142 3.16421 19.75 2.75 19.75C2.33579 19.75 2 19.4142 2 19V5Z" fill="currentColor" />
+              </svg>
+            </button>
+
+            <!-- Botón loop -->
+            <button id="loop" class="relative z-30 h-4 w-4 bg-transparent text-gray-900 hover:text-gray-500">
+              <!-- loop desactivado -->
+              <svg id="loop-off" class="h-full w-full" width="800px" height="800px" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path fill-rule="evenodd" clip-rule="evenodd" d="M8.46967 2.46967C8.76256 2.17678 9.23744 2.17678 9.53033 2.46967L11.5303 4.46967C11.7448 4.68417 11.809 5.00676 11.6929 5.28701C11.5768 5.56727 11.3033 5.75 11 5.75H9C5.54822 5.75 2.75 8.54822 2.75 12C2.75 15.4517 5.54846 18.25 9.00028 18.25H9.5C9.91421 18.25 10.25 18.5858 10.25 19C10.25 19.4142 9.91421 19.75 9.5 19.75H9.00028C4.72011 19.75 1.25 16.2802 1.25 12C1.25 7.71979 4.71979 4.25 9 4.25H9.18934L8.46967 3.53033C8.17678 3.23744 8.17678 2.76256 8.46967 2.46967ZM13.75 5C13.75 4.58579 14.0858 4.25 14.5 4.25H15C19.2802 4.25 22.75 7.71979 22.75 12C22.75 16.2802 19.2802 19.75 15 19.75H14.8107L15.5303 20.4697C15.8232 20.7626 15.8232 21.2374 15.5303 21.5303C15.2374 21.8232 14.7626 21.8232 14.4697 21.5303L12.4697 19.5303C12.2552 19.3158 12.191 18.9932 12.3071 18.713C12.4232 18.4327 12.6967 18.25 13 18.25H15C18.4518 18.25 21.25 15.4518 21.25 12C21.25 8.54822 18.4518 5.75 15 5.75H14.5C14.0858 5.75 13.75 5.41421 13.75 5Z" fill="currentColor" />
+              </svg>
+
+              <!-- loop activado -->
+              <svg id="loop-on" class="h-full w-full" style="display: none" width="800px" height="800px" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path fill-rule="evenodd" clip-rule="evenodd" d="M8.71597 3.20277C8.98843 2.93241 9.43017 2.93241 9.70263 3.20277L11.5631 5.04893C11.7626 5.24692 11.8223 5.5447 11.7143 5.8034C11.6063 6.06209 11.352 6.23077 11.0698 6.23077H9.2093C5.99834 6.23077 3.39535 8.81374 3.39535 12C3.39535 15.1862 5.99857 17.7692 9.20956 17.7692H9.67442C10.0597 17.7692 10.3721 18.0792 10.3721 18.4615C10.3721 18.8439 10.0597 19.1538 9.67442 19.1538H9.20956C5.22801 19.1538 2 15.951 2 12C2 8.04904 5.22771 4.84615 9.2093 4.84615H9.38543L8.71597 4.18184C8.44351 3.91148 8.44351 3.47314 8.71597 3.20277Z" fill="currentColor" />
+                <path fill-rule="evenodd" clip-rule="evenodd" d="M13.6279 5.53846C13.6279 5.15611 13.9403 4.84615 14.3256 4.84615H14.7907C18.7723 4.84615 22 8.04904 22 12C22 15.951 18.7723 19.1538 14.7907 19.1538H14.6146L15.284 19.8182C15.5565 20.0885 15.5565 20.5269 15.284 20.7972C15.0116 21.0676 14.5698 21.0676 14.2974 20.7972L12.4369 18.9511C12.2374 18.7531 12.1777 18.4553 12.2857 18.1966C12.3937 17.9379 12.648 17.7692 12.9302 17.7692H14.7907C18.0017 17.7692 20.6047 15.1863 20.6047 12C20.6047 8.81374 18.0017 6.23077 14.7907 6.23077H14.3256C13.9403 6.23077 13.6279 5.92081 13.6279 5.53846Z" fill="currentColor" />
+                <path d="M5.48837 12C5.48837 9.96079 7.15429 8.30769 9.2093 8.30769H14.7907C16.8457 8.30769 18.5116 9.96079 18.5116 12C18.5116 14.0392 16.8457 15.6923 14.7907 15.6923H9.2093C7.15429 15.6923 5.48837 14.0392 5.48837 12Z" fill="currentColor" />
+              </svg>
+            </button>
+            <!-- Tiempo actual / Duración -->
+            <span id="time" class="ml-2">00:00 / 00:00</span>
+
+            <!-- Barra de progreso -->
+            <input type="range" id="progress" min="0" max="100" step="0.1" value="0" class="m-2 w-[90%] pl-0" />
+          </div>
+          <div id="audio-stream" class="absolute top-0 left-0 -z-10 h-full w-full"></div>
+        }
+        @if (estatico.type.startsWith("image/") || estatico.type.startsWith("video/")) {
+          <!-- Botón full-screan -->
+          <svg (click)="fullscreen(estatico)" class="absolute top-2 left-2 z-10 hidden h-4 w-4 cursor-pointer text-black group-hover:block" width="800px" height="800px" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path fill-rule="evenodd" clip-rule="evenodd" d="M5 1.25C5.41421 1.25 5.75 1.58579 5.75 2V11C5.75 12.9068 5.75159 14.2615 5.88976 15.2892C6.02502 16.2952 6.27869 16.8749 6.7019 17.2981C7.12511 17.7213 7.70476 17.975 8.71085 18.1102C9.73851 18.2484 11.0932 18.25 13 18.25H22C22.4142 18.25 22.75 18.5858 22.75 19C22.75 19.4142 22.4142 19.75 22 19.75H19.75V22C19.75 22.4142 19.4142 22.75 19 22.75C18.5858 22.75 18.25 22.4142 18.25 22V19.75H12.9436C11.1058 19.75 9.65019 19.75 8.51098 19.5969C7.33855 19.4392 6.38961 19.1071 5.64124 18.3588C4.89288 17.6104 4.56076 16.6614 4.40313 15.489C4.24997 14.3498 4.24998 12.8942 4.25 11.0564L4.25 5.75H2C1.58579 5.75 1.25 5.41421 1.25 5C1.25 4.58579 1.58579 4.25 2 4.25H4.25V2C4.25 1.58579 4.58579 1.25 5 1.25ZM15.2892 5.88976C14.2615 5.75159 12.9068 5.75 11 5.75H8C7.58579 5.75 7.25 5.41421 7.25 5C7.25 4.58579 7.58579 4.25 8 4.25L11.0564 4.25C12.8942 4.24998 14.3498 4.24997 15.489 4.40313C16.6614 4.56076 17.6104 4.89288 18.3588 5.64124C19.1071 6.38961 19.4392 7.33855 19.5969 8.51098C19.75 9.65019 19.75 11.1058 19.75 12.9436V16C19.75 16.4142 19.4142 16.75 19 16.75C18.5858 16.75 18.25 16.4142 18.25 16V13C18.25 11.0932 18.2484 9.73851 18.1102 8.71085C17.975 7.70476 17.7213 7.12511 17.2981 6.7019C16.8749 6.27869 16.2952 6.02502 15.2892 5.88976Z" fill="currentColor" />
+            <path d="M8.5 11.5C8.5 10.0858 8.5 9.37868 8.93934 8.93934C9.37868 8.5 10.0858 8.5 11.5 8.5H12.5C13.9142 8.5 14.6213 8.5 15.0607 8.93934C15.5 9.37868 15.5 10.0858 15.5 11.5V12.5C15.5 13.9142 15.5 14.6213 15.0607 15.0607C14.6213 15.5 13.9142 15.5 12.5 15.5H11.5C10.0858 15.5 9.37868 15.5 8.93934 15.0607C8.5 14.6213 8.5 13.9142 8.5 12.5V11.5Z" fill="currentColor" />
+          </svg>
+        }
+        <!-- Botón X -->
+        <svg (click)="stopElemento(estatico)" class="absolute top-2 right-2 z-10 hidden h-4 w-4 cursor-pointer text-black group-hover:block" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M20.7457 3.32851C20.3552 2.93798 19.722 2.93798 19.3315 3.32851L12.0371 10.6229L4.74275 3.32851C4.35223 2.93798 3.71906 2.93798 3.32854 3.32851C2.93801 3.71903 2.93801 4.3522 3.32854 4.74272L10.6229 12.0371L3.32856 19.3314C2.93803 19.722 2.93803 20.3551 3.32856 20.7457C3.71908 21.1362 4.35225 21.1362 4.74277 20.7457L12.0371 13.4513L19.3315 20.7457C19.722 21.1362 20.3552 21.1362 20.7457 20.7457C21.1362 20.3551 21.1362 19.722 20.7457 19.3315L13.4513 12.0371L20.7457 4.74272C21.1362 4.3522 21.1362 3.71903 20.7457 3.32851Z" fill="currentColor" />
+        </svg>
+      </div>
     }
 
     <div class="relative flex w-1/6 flex-col justify-between">
@@ -405,20 +408,20 @@
 <div id="filterMenu" class="fixed top-1 left-1 z-50 hidden h-fit w-1/5 flex-col rounded-lg bg-white p-4 text-black shadow-lg dark:bg-gray-900 dark:text-white">
   <span>Filtros:</span>
   @if (this.selectedVideoForFilter && this.selectedVideoForFilter.filters) {
-  <span>Brillo:</span>
-  <div class="flex flex-row">
-    <input (change)="updateStyleElement()" type="range" min="0" max="200" [(ngModel)]="selectedVideoForFilter.filters.brightness" class="grow" />
-    <input (change)="updateStyleElement()" type="number" [(ngModel)]="selectedVideoForFilter.filters.brightness" class="ml-2 w-12" />
-  </div>
-  <span>Contraste:</span>
-  <div class="flex flex-row">
-    <input (change)="updateStyleElement()" type="range" min="0" max="200" [(ngModel)]="selectedVideoForFilter.filters.contrast" class="grow" />
-    <input (change)="updateStyleElement()" type="number" [(ngModel)]="selectedVideoForFilter.filters.contrast" class="ml-2 w-12" />
-  </div>
-  <span>Saturación:</span>
-  <div class="flex flex-row">
-    <input (change)="updateStyleElement()" type="range" min="0" max="200" [(ngModel)]="selectedVideoForFilter.filters.saturation" class="grow" />
-    <input (change)="updateStyleElement()" type="number" [(ngModel)]="selectedVideoForFilter.filters.saturation" class="ml-2 w-12" />
-  </div>
+    <span>Brillo:</span>
+    <div class="flex flex-row">
+      <input (change)="updateStyleElement()" type="range" min="0" max="200" [(ngModel)]="selectedVideoForFilter.filters.brightness" class="grow" />
+      <input (change)="updateStyleElement()" type="number" [(ngModel)]="selectedVideoForFilter.filters.brightness" class="ml-2 w-12" />
+    </div>
+    <span>Contraste:</span>
+    <div class="flex flex-row">
+      <input (change)="updateStyleElement()" type="range" min="0" max="200" [(ngModel)]="selectedVideoForFilter.filters.contrast" class="grow" />
+      <input (change)="updateStyleElement()" type="number" [(ngModel)]="selectedVideoForFilter.filters.contrast" class="ml-2 w-12" />
+    </div>
+    <span>Saturación:</span>
+    <div class="flex flex-row">
+      <input (change)="updateStyleElement()" type="range" min="0" max="200" [(ngModel)]="selectedVideoForFilter.filters.saturation" class="grow" />
+      <input (change)="updateStyleElement()" type="number" [(ngModel)]="selectedVideoForFilter.filters.saturation" class="ml-2 w-12" />
+    </div>
   }
 </div>
