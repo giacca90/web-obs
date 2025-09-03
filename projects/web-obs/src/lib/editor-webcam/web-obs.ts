@@ -1061,6 +1061,7 @@ export class WebOBS implements OnInit, AfterViewInit, OnDestroy {
    * @param deviceId ID del elemento arrastrado (string)
    */
   mousedown(event: MouseEvent, deviceId: string) {
+    if (event.button !== 0) return;
     event.preventDefault();
 
     const videoElement = document.getElementById(deviceId) as HTMLVideoElement;
@@ -2102,6 +2103,7 @@ export class WebOBS implements OnInit, AfterViewInit, OnDestroy {
 
       // Añade el evento contextmenu
       capa.addEventListener('contextmenu', (event) => {
+        event.preventDefault();
         this.selectedVideoForFilter = elemento;
         this.showFilterMenu(event, elemento);
       });
