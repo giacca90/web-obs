@@ -35,10 +35,10 @@
     "test": "ng test web-obs",
     "lint": "ng lint",
     "clean": "rimraf dist out-tsc",
-    "publish:demo": "npm run build && npm run build:elements && gh-pages -d dist/web-obs/elements",
+    "publish:demo": "npm run build && npm run build:elements && node publish-visits.js && gh-pages -d dist/web-obs/elements",
     "publish:web-obs": "cd dist/web-obs && npm publish --access public",
     "publish:elements": "cd dist/web-obs/elements && npm publish --access public",
-    "publish": "npm run build && npm run publish:web-obs && npm run publish:elements && gh-pages -d dist/web-obs/elements",
+    "publish": "npm run build && npm run publish:web-obs && npm run publish:elements && node publish-visits.js && gh-pages -d dist/web-obs/elements",
     "release:patch": "npm version patch && cd projects/web-obs && npm version patch && cd ../.. && npm run publish",
     "release:minor": "npm version minor && cd projects/web-obs && npm version minor && cd ../.. && npm run publish",
     "release:major": "npm version major && cd projects/web-obs && npm version major && cd ../.. && npm run publish"
