@@ -1,8 +1,8 @@
 <div class="relative m-2 flex h-screen flex-col rounded-lg border border-black p-2 pb-4 dark:border-gray-400">
   <!-- Canvas con cruz -->
   <div class="relative flex h-3/4 pr-4">
-    <div id="canvas-container" (mouseleave)="canvasMouseLeave()" class="relative aspect-video h-full">
-      <canvas (mousemove)="canvasMouseMove($event)" tabindex="0" id="salida" [width]="canvasWidth" [height]="canvasHeight" autoplay playsinline class="h-full w-full border border-black bg-white dark:border-gray-400"></canvas>
+    <div id="canvas-container" (pointerleave)="canvasMouseLeave()" class="relative aspect-video h-full">
+      <canvas (pointermove)="canvasMouseMove($event)" tabindex="0" id="salida" [width]="canvasWidth" [height]="canvasHeight" autoplay playsinline class="h-full w-full border border-black bg-white dark:border-gray-400"></canvas>
       <!-- Cruz del arrastre -->
       <div id="cross" class="cross-container">
         <!-- Línea vertical -->
@@ -105,6 +105,7 @@
     } @else {
       <button (click)="this.emitir()" class="w-fix m-2 h-6 cursor-pointer rounded-lg border border-black bg-gray-400 px-2 text-center text-black hover:border-2">Empezar a emitir</button>
     }
+    <p id="status" class="ml-4"></p>
   </div>
   <div id="elementosDiv" class="relative flex h-1/4 pb-4">
     <div id="audios" class="scrollbar-thin scrollbar-thumb-gray-400 scrollbar-thumb-rounded flex w-1/5 overflow-x-hidden overflow-y-auto">
@@ -112,7 +113,7 @@
       <!-- Lista de entradas de audio de archivos -->
       <div id="audios-list" class="flex flex-col text-black">
         @for (fileName of this.audiosArchivos; track fileName) {
-          <div [id]="'audio-' + fileName" (mousedown)="audioDown($event)" class="audio-bar group m-2 flex h-10 min-h-6 items-center justify-center rounded-lg border border-black bg-transparent text-center hover:border-2 active:cursor-grabbing dark:border-gray-400">
+          <div [id]="'audio-' + fileName" (pointerdown)="audioDown($event)" class="audio-bar group m-2 flex h-10 min-h-6 items-center justify-center rounded-lg border border-black bg-transparent text-center hover:border-2 active:cursor-grabbing dark:border-gray-400">
             <p class="m-2 w-full truncate overflow-hidden text-ellipsis whitespace-nowrap">
               {{ fileName }}
             </p>
@@ -127,7 +128,7 @@
         }
         <!-- Lista de entradas de audio (capturas) -->
         @for (captura of this.audiosCapturas; track captura.id) {
-          <div [id]="'audio-' + captura.id" (mousedown)="audioDown($event)" class="audio-bar group m-2 flex h-10 min-h-6 items-center justify-center rounded-lg border border-black bg-transparent text-center hover:border-2 active:cursor-grabbing dark:border-gray-400">
+          <div [id]="'audio-' + captura.id" (pointerdown)="audioDown($event)" class="audio-bar group m-2 flex h-10 min-h-6 items-center justify-center rounded-lg border border-black bg-transparent text-center hover:border-2 active:cursor-grabbing dark:border-gray-400">
             <p class="m-2 w-full truncate overflow-hidden text-ellipsis whitespace-nowrap">
               {{ captura.id }}
             </p>
@@ -142,7 +143,7 @@
         }
         <!-- Lista de entradas de audio -->
         @for (device of this.audioDevices; track device.deviceId) {
-          <div [id]="'audio-' + device.deviceId" (mousedown)="audioDown($event)" class="audio-bar group m-2 flex h-10 min-h-6 items-center justify-center rounded-lg border border-black bg-transparent text-center hover:border-2 active:cursor-grabbing dark:border-gray-400">
+          <div [id]="'audio-' + device.deviceId" (pointerdown)="audioDown($event)" class="audio-bar group m-2 flex h-10 min-h-6 items-center justify-center rounded-lg border border-black bg-transparent text-center hover:border-2 active:cursor-grabbing dark:border-gray-400">
             <p class="m-2 w-full truncate overflow-hidden text-ellipsis whitespace-nowrap">
               {{ device.label || "Micrófono sin nombre" }}
             </p>
@@ -156,7 +157,7 @@
           </div>
         }
         <!-- Audio de grabación -->
-        <div [id]="'audio-recorder'" (mousedown)="audioDown($event)" class="audio-bar group m-2 flex h-10 min-h-6 items-center justify-center rounded-lg border border-black bg-transparent text-center hover:border-2 active:cursor-grabbing dark:border-gray-400">
+        <div [id]="'audio-recorder'" (pointerdown)="audioDown($event)" class="audio-bar group m-2 flex h-10 min-h-6 items-center justify-center rounded-lg border border-black bg-transparent text-center hover:border-2 active:cursor-grabbing dark:border-gray-400">
           <p class="m-2 w-full truncate overflow-hidden text-ellipsis whitespace-nowrap">
             {{ "Grabación" }}
           </p>
@@ -172,7 +173,7 @@
 
         <!-- Lista de salidas de audio -->
         @for (device of this.audioOutputDevices; track device.deviceId) {
-          <div [id]="'audio-' + device.deviceId" (mousedown)="audioDown($event)" class="audio-bar group m-2 flex h-10 min-h-6 items-center justify-center rounded-lg border border-black bg-transparent text-center hover:border-2 active:cursor-grabbing dark:border-gray-400">
+          <div [id]="'audio-' + device.deviceId" (pointerdown)="audioDown($event)" class="audio-bar group m-2 flex h-10 min-h-6 items-center justify-center rounded-lg border border-black bg-transparent text-center hover:border-2 active:cursor-grabbing dark:border-gray-400">
             <p class="m-2 w-full truncate overflow-hidden text-ellipsis whitespace-nowrap">
               {{ device.label || "Salida de audio sin nombre" }}
             </p>
@@ -191,7 +192,7 @@
 
     @for (device of this.videoDevices; track device.deviceId) {
       <div id="div-{{ device.deviceId }}" class="group relative m-2 flex max-w-[16.6667%] justify-center bg-transparent object-contain text-center">
-        <video #videoElement disablePictureInPicture (mousedown)="mousedown($event, device.deviceId)" (contextmenu)="onContextMenu($event, device.deviceId)" [id]="device.deviceId" autoplay playsinline class="cursor-grab rounded-lg border border-black object-contain hover:border-2 active:cursor-grabbing dark:border-gray-400"></video>
+        <video #videoElement disablePictureInPicture (pointerdown)="mousedown($event, device.deviceId)" (contextmenu)="onContextMenu($event, device.deviceId)" [id]="device.deviceId" autoplay playsinline class="cursor-grab rounded-lg border border-black object-contain hover:border-2 active:cursor-grabbing dark:border-gray-400"></video>
         <!-- Botón full-screan -->
         <svg (click)="fullscreen(device)" class="absolute top-2 left-2 z-10 hidden h-4 w-4 cursor-pointer text-black group-hover:block" width="800px" height="800px" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
           <path fill-rule="evenodd" clip-rule="evenodd" d="M5 1.25C5.41421 1.25 5.75 1.58579 5.75 2V11C5.75 12.9068 5.75159 14.2615 5.88976 15.2892C6.02502 16.2952 6.27869 16.8749 6.7019 17.2981C7.12511 17.7213 7.70476 17.975 8.71085 18.1102C9.73851 18.2484 11.0932 18.25 13 18.25H22C22.4142 18.25 22.75 18.5858 22.75 19C22.75 19.4142 22.4142 19.75 22 19.75H19.75V22C19.75 22.4142 19.4142 22.75 19 22.75C18.5858 22.75 18.25 22.4142 18.25 22V19.75H12.9436C11.1058 19.75 9.65019 19.75 8.51098 19.5969C7.33855 19.4392 6.38961 19.1071 5.64124 18.3588C4.89288 17.6104 4.56076 16.6614 4.40313 15.489C4.24997 14.3498 4.24998 12.8942 4.25 11.0564L4.25 5.75H2C1.58579 5.75 1.25 5.41421 1.25 5C1.25 4.58579 1.58579 4.25 2 4.25H4.25V2C4.25 1.58579 4.58579 1.25 5 1.25ZM15.2892 5.88976C14.2615 5.75159 12.9068 5.75 11 5.75H8C7.58579 5.75 7.25 5.41421 7.25 5C7.25 4.58579 7.58579 4.25 8 4.25L11.0564 4.25C12.8942 4.24998 14.3498 4.24997 15.489 4.40313C16.6614 4.56076 17.6104 4.89288 18.3588 5.64124C19.1071 6.38961 19.4392 7.33855 19.5969 8.51098C19.75 9.65019 19.75 11.1058 19.75 12.9436V16C19.75 16.4142 19.4142 16.75 19 16.75C18.5858 16.75 18.25 16.4142 18.25 16V13C18.25 11.0932 18.2484 9.73851 18.1102 8.71085C17.975 7.70476 17.7213 7.12511 17.2981 6.7019C16.8749 6.27869 16.2952 6.02502 15.2892 5.88976Z" fill="currentColor" />
@@ -209,7 +210,7 @@
     }
     @for (captura of this.capturas; track captura.id) {
       <div id="div-{{ captura.id }}" class="group relative m-2 flex max-w-[16.6667%] justify-center bg-transparent object-contain text-center">
-        <video #videoElement disablePictureInPicture (mousedown)="mousedown($event, captura.id)" (contextmenu)="onContextMenu($event, captura.id)" [id]="captura.id" autoplay playsinline muted class="cursor-grab rounded-lg border border-black object-contain hover-2 active:cursor-grabbing dark:border-gray-400" [srcObject]="captura"></video>
+        <video #videoElement disablePictureInPicture (pointerdown)="mousedown($event, captura.id)" (contextmenu)="onContextMenu($event, captura.id)" [id]="captura.id" autoplay playsinline muted class="cursor-grab rounded-lg border border-black object-contain hover-2 active:cursor-grabbing dark:border-gray-400" [srcObject]="captura"></video>
         <!-- Botón full-screan -->
         <svg (click)="fullscreen(captura)" class="absolute top-2 left-2 z-10 hidden h-4 w-4 cursor-pointer text-black group-hover:block" width="800px" height="800px" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
           <path fill-rule="evenodd" clip-rule="evenodd" d="M5 1.25C5.41421 1.25 5.75 1.58579 5.75 2V11C5.75 12.9068 5.75159 14.2615 5.88976 15.2892C6.02502 16.2952 6.27869 16.8749 6.7019 17.2981C7.12511 17.7213 7.70476 17.975 8.71085 18.1102C9.73851 18.2484 11.0932 18.25 13 18.25H22C22.4142 18.25 22.75 18.5858 22.75 19C22.75 19.4142 22.4142 19.75 22 19.75H19.75V22C19.75 22.4142 19.4142 22.75 19 22.75C18.5858 22.75 18.25 22.4142 18.25 22V19.75H12.9436C11.1058 19.75 9.65019 19.75 8.51098 19.5969C7.33855 19.4392 6.38961 19.1071 5.64124 18.3588C4.89288 17.6104 4.56076 16.6614 4.40313 15.489C4.24997 14.3498 4.24998 12.8942 4.25 11.0564L4.25 5.75H2C1.58579 5.75 1.25 5.41421 1.25 5C1.25 4.58579 1.58579 4.25 2 4.25H4.25V2C4.25 1.58579 4.58579 1.25 5 1.25ZM15.2892 5.88976C14.2615 5.75159 12.9068 5.75 11 5.75H8C7.58579 5.75 7.25 5.41421 7.25 5C7.25 4.58579 7.58579 4.25 8 4.25L11.0564 4.25C12.8942 4.24998 14.3498 4.24997 15.489 4.40313C16.6614 4.56076 17.6104 4.89288 18.3588 5.64124C19.1071 6.38961 19.4392 7.33855 19.5969 8.51098C19.75 9.65019 19.75 11.1058 19.75 12.9436V16C19.75 16.4142 19.4142 16.75 19 16.75C18.5858 16.75 18.25 16.4142 18.25 16V13C18.25 11.0932 18.2484 9.73851 18.1102 8.71085C17.975 7.70476 17.7213 7.12511 17.2981 6.7019C16.8749 6.27869 16.2952 6.02502 15.2892 5.88976Z" fill="currentColor" />
@@ -229,10 +230,10 @@
       <div id="div-{{ estatico.name }}" class="group relative m-2 flex max-w-[16.6667%] rounded-lg border border-black bg-transparent hover:border-2 dark:border-gray-400">
         @if (estatico.type.startsWith("image/")) {
           <!-- Renderiza una imagen -->
-          <img [id]="estatico.name" (mousedown)="mousedown($event, estatico.name)" (contextmenu)="onContextMenu($event, estatico.name)" [src]="getFileUrl(estatico)" [alt]="estatico.name" class="h-full w-full cursor-grab rounded-lg object-contain active:cursor-grabbing" />
+          <img [id]="estatico.name" (pointerdown)="mousedown($event, estatico.name)" (contextmenu)="onContextMenu($event, estatico.name)" [src]="getFileUrl(estatico)" [alt]="estatico.name" class="h-full w-full cursor-grab rounded-lg object-contain active:cursor-grabbing" />
         } @else if (estatico.type.startsWith("video/")) {
           <!-- Renderiza un video -->
-          <video [id]="estatico.name" disablePictureInPicture (mousedown)="mousedown($event, estatico.name)" (contextmenu)="onContextMenu($event, estatico.name)" [src]="getFileUrl(estatico)" [id]="estatico.name" muted class="h-full w-full cursor-grab rounded-lg active:cursor-grabbing"></video>
+          <video [id]="estatico.name" disablePictureInPicture (pointerdown)="mousedown($event, estatico.name)" (contextmenu)="onContextMenu($event, estatico.name)" [src]="getFileUrl(estatico)" [id]="estatico.name" muted class="h-full w-full cursor-grab rounded-lg active:cursor-grabbing"></video>
         } @else if (estatico.type.startsWith("audio/")) {
           <!-- Renderiza un audio -->
           <div [id]="estatico.name" class="relative h-full w-full cursor-grab rounded-lg active:cursor-grabbing">
@@ -348,11 +349,11 @@
     </svg>
   </button>
 
-  <div id="tirador-tl" (mousedown)="redimensionado($event)" class="bordr absolute top-0 left-0 z-20 h-4 w-4 cursor-grab border border-white hover:border-2 active:cursor-grabbing"></div>
-  <div id="tirador-tr" (mousedown)="redimensionado($event)" class="bordr absolute top-0 right-0 z-20 h-4 w-4 cursor-grab border border-white hover:border-2 active:cursor-grabbing"></div>
-  <div id="tirador-bl" (mousedown)="redimensionado($event)" class="absolute bottom-0 left-0 z-20 h-4 w-4 cursor-grab border border-white hover:border-2 active:cursor-grabbing"></div>
-  <div id="tirador-br" (mousedown)="redimensionado($event)" class="absolute right-0 bottom-0 z-20 h-4 w-4 cursor-grab border border-white hover:border-2 active:cursor-grabbing"></div>
-  <div id="tirador-center" (mousedown)="redimensionado($event)" class="tirador-central"></div>
+  <div id="tirador-tl" (pointerdown)="redimensionado($event)" class="bordr absolute top-0 left-0 z-20 h-4 w-4 cursor-grab border border-white hover:border-2 active:cursor-grabbing"></div>
+  <div id="tirador-tr" (pointerdown)="redimensionado($event)" class="bordr absolute top-0 right-0 z-20 h-4 w-4 cursor-grab border border-white hover:border-2 active:cursor-grabbing"></div>
+  <div id="tirador-bl" (pointerdown)="redimensionado($event)" class="absolute bottom-0 left-0 z-20 h-4 w-4 cursor-grab border border-white hover:border-2 active:cursor-grabbing"></div>
+  <div id="tirador-br" (pointerdown)="redimensionado($event)" class="absolute right-0 bottom-0 z-20 h-4 w-4 cursor-grab border border-white hover:border-2 active:cursor-grabbing"></div>
+  <div id="tirador-center" (pointerdown)="redimensionado($event)" class="tirador-central"></div>
 
   <div id="line1" class="absolute h-[1px] origin-top-left transform bg-white"></div>
   <div id="line2" class="absolute h-[1px] origin-top-right transform bg-white" style="border: null"></div>

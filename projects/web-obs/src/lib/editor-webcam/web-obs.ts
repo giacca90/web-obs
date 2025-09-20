@@ -49,6 +49,7 @@ export class WebOBS implements OnInit, AfterViewInit, OnDestroy {
   @Input() savedFiles?: File[] | null; // Files guardados del usuario (opcional)
   @Input() savedPresets?: Map<string, Preset> | null; //Presets guardados del usuario (opcional)
   @Input() readyObserve?: Observable<boolean>; // Avisa cuando está listo para emitir (opcional)
+  @Input() statusObserver?: Observable<string>; // Observa el estado de la emisión (opcional)
   @Output() emision: EventEmitter<MediaStream | null> = new EventEmitter(); // Emisión de video y audio
   @Output() savePresets: EventEmitter<Map<string, Preset>> = new EventEmitter(); // Guardar presets (opcional)
 
@@ -66,6 +67,13 @@ export class WebOBS implements OnInit, AfterViewInit, OnDestroy {
    */
   async ngOnInit() {
     try {
+      // Verifica si está en un movil o un pc
+      if (this.isMobile()) {
+        alert('¡¡¡ATENCIÓN!! Esta aplicación no está pensada para dispositivos móviles.');
+        const status = document.getElementById('status') as HTMLParagraphElement;
+        status.innerHTML = '<span style="color: red; font-weight: bold;">¡¡¡ATENCIÓN!! Esta aplicación no está pensada para dispositivos móviles.</span>';
+      }
+
       // Solicitar permisos para cámara y micrófono
       const stream = await navigator.mediaDevices.getUserMedia({
         video: true,
@@ -245,6 +253,15 @@ export class WebOBS implements OnInit, AfterViewInit, OnDestroy {
 
     // Eliminar el listener de eventos de teclado
     window.removeEventListener('keydown', this.handleKeydown.bind(this));
+  }
+
+  /**
+   * Metodo para detectar si se está en un movil o un pc
+   * @returns true si se está en un pc, false si se está en un movil
+   */
+  isMobile(): boolean {
+    const userAgent = navigator.userAgent || navigator.vendor || (window as any).opera;
+    return /android|iphone|ipad|iPod|opera mini|iemobile|wpdesktop/i.test(userAgent);
   }
 
   /**
@@ -1260,7 +1277,7 @@ export class WebOBS implements OnInit, AfterViewInit, OnDestroy {
         console.error('Error al mover el video: ', error);
       }
     };
-    document.addEventListener('mousemove', mousemove);
+    document.addEventListener('pointermove', mousemove);
 
     // Evento para soltar el ratón
     const mouseup = (upEvent: MouseEvent) => {
@@ -1299,12 +1316,12 @@ export class WebOBS implements OnInit, AfterViewInit, OnDestroy {
       //ghost.style.visibility = 'hidden';
       ghost.remove();
       cross.style.display = 'none';
-      document.removeEventListener('mousemove', mousemove);
+      document.removeEventListener('pointermove', mousemove);
       document.removeEventListener('wheel', wheel);
-      document.removeEventListener('mouseup', mouseup);
+      document.removeEventListener('pointerup', mouseup);
       document.body.classList.remove('cursor-grabbing');
     };
-    document.addEventListener('mouseup', mouseup);
+    document.addEventListener('pointerup', mouseup);
   }
 
   /**
@@ -1416,7 +1433,7 @@ export class WebOBS implements OnInit, AfterViewInit, OnDestroy {
       .slice() // clona
       .reverse(); // invierte
     const originalGhost = document.getElementById('marco') as HTMLDivElement;
-    console.log('Elementos detectados: ' + rendered.length + ' ' + new Date());
+    //console.log('Elementos detectados: ' + rendered.length + ' ' + new Date());
     let finded = false;
     rendered.forEach((video) => {
       let videoWidth: number = 0;
@@ -1443,7 +1460,7 @@ export class WebOBS implements OnInit, AfterViewInit, OnDestroy {
         ghostDiv = originalGhost.cloneNode(true) as HTMLDivElement;
         const tiradores = ghostDiv.querySelectorAll('[id*="tirador-"]') as NodeListOf<HTMLDivElement>; // Seleccionar los tiradores
         tiradores.forEach((tirador: HTMLDivElement) => {
-          tirador.addEventListener('mousedown', (event: MouseEvent) => {
+          tirador.addEventListener('pointerdown', (event: MouseEvent) => {
             this.redimensionado(event); // Llamar a la función original
           });
         });
@@ -1458,7 +1475,7 @@ export class WebOBS implements OnInit, AfterViewInit, OnDestroy {
       }
 
       if (isMouseOverVideo && !finded) {
-        console.log(video.id);
+        //console.log(video.id);
         // Calcular la posición y tamaño del "ghost" en el espacio visible del canvas
         const ghostLeft = videoLeft / scaleX; // Convertir a coordenadas internas del canvas
         const ghostTop = videoTop / scaleY; // Convertir a coordenadas internas del canvas
@@ -1489,7 +1506,7 @@ export class WebOBS implements OnInit, AfterViewInit, OnDestroy {
           }
         };
 
-        ghostDiv.addEventListener('mousemove', this.boundCanvasMouseMove);
+        ghostDiv.addEventListener('pointermove', this.boundCanvasMouseMove);
 
         // Calcular la longitud de la línea diagonal (de esquina superior izquierda a inferior derecha)
         const diagonalLength = Math.sqrt(Math.pow(ghostDiv.clientWidth, 2) + Math.pow(ghostDiv.clientHeight, 2));
@@ -1510,7 +1527,7 @@ export class WebOBS implements OnInit, AfterViewInit, OnDestroy {
       } else {
         // Eliminar el elemento del "ghost" si ya no está sobre el video
         ghostDiv.style.visibility = 'hidden';
-        ghostDiv.removeEventListener('mousemove', this.boundCanvasMouseMove);
+        ghostDiv.removeEventListener('pointermove', this.boundCanvasMouseMove);
       }
     });
   }
@@ -1685,7 +1702,7 @@ export class WebOBS implements OnInit, AfterViewInit, OnDestroy {
         }
       });
     };
-    canvasContainer.addEventListener('mousemove', mouseMove);
+    canvasContainer.addEventListener('pointermove', mouseMove);
 
     // Evento mouseup
     const mouseup = () => {
@@ -1710,8 +1727,8 @@ export class WebOBS implements OnInit, AfterViewInit, OnDestroy {
       elemento.painted = true; // Marcamos el video como "pintado"
 
       // Restaurar estado
-      canvasContainer.removeEventListener('mousemove', mouseMove);
-      canvasContainer.removeEventListener('mouseup', mouseup);
+      canvasContainer.removeEventListener('pointermove', mouseMove);
+      canvasContainer.removeEventListener('pointerup', mouseup);
       cross.style.display = 'none';
       const elementos = canvasContainer.querySelectorAll('[id^="marco"]') as NodeListOf<HTMLDivElement>;
       elementos.forEach((elemento) => {
@@ -1723,7 +1740,7 @@ export class WebOBS implements OnInit, AfterViewInit, OnDestroy {
       ghostDiv.style.visibility = 'hidden';
       this.editandoDimensiones = false;
     };
-    canvasContainer.addEventListener('mouseup', mouseup);
+    canvasContainer.addEventListener('pointerup', mouseup);
   }
 
   /**
@@ -2441,14 +2458,14 @@ export class WebOBS implements OnInit, AfterViewInit, OnDestroy {
           square.remove();
         };
 
-        square.addEventListener('mouseenter', () => {
+        square.addEventListener('pointerenter', () => {
           square.style.borderLeftWidth = '4px';
           square.style.borderTopWidth = '4px';
           square.style.borderBottomWidth = '4px';
           deleteButton.style.display = 'flex';
         });
 
-        square.addEventListener('mouseleave', () => {
+        square.addEventListener('pointerleave', () => {
           square.style.borderLeftWidth = '2px';
           square.style.borderTopWidth = '2px';
           square.style.borderBottomWidth = '2px';
@@ -2535,8 +2552,8 @@ export class WebOBS implements OnInit, AfterViewInit, OnDestroy {
     // Evento para finalizar el dibujo cuando se suelta el mouse
     const audioUp = ($event3: MouseEvent) => {
       //console.log('audioUp');
-      audios.removeEventListener('mousemove', audioMove);
-      audios.removeEventListener('mouseup', audioUp);
+      audios.removeEventListener('pointermove', audioMove);
+      audios.removeEventListener('pointerup', audioUp);
 
       const offsetX = parseInt(conexionTemp.style.width) + 2; // Puedes ajustar este valor según sea necesario
       conexionTemp.remove();
@@ -2594,8 +2611,8 @@ export class WebOBS implements OnInit, AfterViewInit, OnDestroy {
       this.drawAudioConnections();
     };
 
-    audios.addEventListener('mousemove', audioMove);
-    audios.addEventListener('mouseup', audioUp);
+    audios.addEventListener('pointermove', audioMove);
+    audios.addEventListener('pointerup', audioUp);
   }
 
   /**
@@ -2614,6 +2631,12 @@ export class WebOBS implements OnInit, AfterViewInit, OnDestroy {
       if (this.ready) {
         this.emitiendo = true;
         this.calculaTiempoGrabacion();
+        if (this.statusObserver) {
+          const status = document.getElementById('status') as HTMLParagraphElement;
+          this.statusObserver.subscribe((stat) => {
+            status.innerHTML = stat;
+          });
+        }
       }
     } else {
       this.emitiendo = true;
