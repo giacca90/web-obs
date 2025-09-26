@@ -232,6 +232,14 @@ export class WebOBS implements OnInit, AfterViewInit, OnDestroy {
       });
       this.calculatePreset();
     }, 2000);
+
+    // Estado de la aplicación
+    if (this.statusObserver) {
+      const status = document.getElementById('status') as HTMLParagraphElement;
+      this.statusObserver.subscribe((stat) => {
+        status.innerHTML = stat;
+      });
+    }
   }
 
   /**
@@ -2631,12 +2639,6 @@ export class WebOBS implements OnInit, AfterViewInit, OnDestroy {
       if (this.ready) {
         this.emitiendo = true;
         this.calculaTiempoGrabacion();
-        if (this.statusObserver) {
-          const status = document.getElementById('status') as HTMLParagraphElement;
-          this.statusObserver.subscribe((stat) => {
-            status.innerHTML = stat;
-          });
-        }
       }
     } else {
       this.emitiendo = true;

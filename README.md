@@ -72,6 +72,7 @@ El componente puede recibir los siguientes parametros:
 - `savedFiles`: Archivos guardados del usuario (opcional). Type: `File[]`
 - `savedPresets`: Presets guardados del usuario (opcional). Type: `Map<string, Preset>`
 - `readyObserve`: Avisa cuando el componente padre está listo para emitir (opcional) Type: `Observable<boolean>`
+- `statusObserver`: Mensajes de estado de la emisión (opcional) Type: `Observable<string | null>`
 
 También puede emitir los siguientes eventos:
 
