@@ -68,8 +68,8 @@ export class WebOBS implements OnInit, AfterViewInit, OnDestroy {
       // Verifica si está en un movil o un pc
       if (this.isMobile()) {
         alert('¡¡¡ATENCIÓN!! Esta aplicación no está pensada para dispositivos móviles.');
-        const status = document.getElementById('status') as HTMLParagraphElement;
-        status.innerHTML = '<span style="color: red; font-weight: bold;">¡¡¡ATENCIÓN!! Esta aplicación no está pensada para dispositivos móviles.</span>';
+        const statusMessage = document.getElementById('statusMessage') as HTMLParagraphElement;
+        statusMessage.innerHTML = '<span style="color: red; font-weight: bold;">¡¡¡ATENCIÓN!! Esta aplicación no está pensada para dispositivos móviles.</span>';
       }
 
       // Solicitar permisos para cámara y micrófono
