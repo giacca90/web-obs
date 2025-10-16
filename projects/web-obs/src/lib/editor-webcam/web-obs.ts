@@ -1,7 +1,6 @@
 import { CommonModule } from '@angular/common';
 import { AfterViewInit, Component, ElementRef, EventEmitter, HostListener, Input, OnDestroy, OnInit, Output, QueryList, ViewChildren } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { Observable } from 'rxjs';
 import { AudioConnection } from './types/audio-connection.interface';
 import { AudioElement } from './types/audio-element.interface';
 import { Preset } from './types/preset.interface';
@@ -35,21 +34,20 @@ export class WebOBS implements OnInit, AfterViewInit, OnDestroy {
   context!: CanvasRenderingContext2D; // El contexto de canvas
   editandoDimensiones = false; // Indica si se está editando las dimensiones de un video
   presets = new Map<string, Preset>(); // Presets
-  private fileUrlCache = new Map<File, string>(); // Cache de URLs de archivos
   audioContext = new AudioContext(); // Contexto de audio
   mixedAudioDestination: MediaStreamAudioDestinationNode = this.audioContext.createMediaStreamDestination(); //Audio de grabación
   emitiendo: boolean = false; // Indica si se está emitiendo
   tiempoGrabacion: string = '00:00:00'; // Tiempo de grabación
-  ready: boolean | undefined;
-  private drawInterval: any;
   selectedVideoForFilter: VideoElement | null = null;
-  private boundCanvasMouseMove = this.canvasMouseMove.bind(this);
+  private drawInterval: any;
+  private readonly fileUrlCache = new Map<File, string>(); // Cache de URLs de archivos
+  private readonly boundCanvasMouseMove = this.canvasMouseMove.bind(this);
 
   @ViewChildren('videoElement') videoElements!: QueryList<ElementRef<HTMLVideoElement>>;
   @Input() savedFiles?: File[] | null; // Files guardados del usuario (opcional)
   @Input() savedPresets?: Map<string, Preset> | null; //Presets guardados del usuario (opcional)
-  @Input() readyObserve?: Observable<boolean>; // Avisa cuando está listo para emitir (opcional)
-  @Input() statusObserver?: Observable<string>; // Observa el estado de la emisión (opcional)
+  @Input() ready?: boolean; // Avisa cuando está listo para emitir (opcional)
+  @Input() status?: string; // Observa el estado de la emisión (opcional)
   @Output() emision: EventEmitter<MediaStream | null> = new EventEmitter(); // Emisión de video y audio
   @Output() savePresets: EventEmitter<Map<string, Preset>> = new EventEmitter(); // Guardar presets (opcional)
 
@@ -107,13 +105,6 @@ export class WebOBS implements OnInit, AfterViewInit, OnDestroy {
     // Añadir presets recibidos (si hay)
     if (this.savedPresets) {
       this.presets = this.savedPresets;
-    }
-
-    // Suscrivirse al ready observable (si hay)
-    if (this.readyObserve !== undefined) {
-      this.readyObserve.subscribe((ready) => {
-        this.ready = ready;
-      });
     }
 
     // añadir los archivos recibidos desde la app (si hay)
@@ -232,14 +223,6 @@ export class WebOBS implements OnInit, AfterViewInit, OnDestroy {
       });
       this.calculatePreset();
     }, 2000);
-
-    // Estado de la aplicación
-    if (this.statusObserver) {
-      const status = document.getElementById('status') as HTMLParagraphElement;
-      this.statusObserver.subscribe((stat) => {
-        status.innerHTML = stat;
-      });
-    }
   }
 
   /**
@@ -2639,6 +2622,8 @@ export class WebOBS implements OnInit, AfterViewInit, OnDestroy {
       if (this.ready) {
         this.emitiendo = true;
         this.calculaTiempoGrabacion();
+      } else {
+        console.error('Missing this.ready');
       }
     } else {
       this.emitiendo = true;
