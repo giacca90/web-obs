@@ -101,11 +101,11 @@
   <div class="flex items-center">
     @if (this.emitiendo) {
       <button (click)="this.detenerEmision()" class="w-fix m-2 h-6 cursor-pointer rounded-lg border border-black bg-gray-400 px-2 text-center text-black hover:border-2">Detener emisión</button>
-      <p class="ml-4">Tiempo de grabación: {{ this.tiempoGrabacion }}</p>
+      <p class="ml-4">Tiempo de grabación: {{ tiempoGrabacion }}</p>
     } @else {
       <button (click)="this.emitir()" class="w-fix m-2 h-6 cursor-pointer rounded-lg border border-black bg-gray-400 px-2 text-center text-black hover:border-2">Empezar a emitir</button>
     }
-    <p id="statusMessage" class="ml-4">{{ this.status }}</p>
+    <p id="statusMessage" class="ml-4">{{ status }}</p>
   </div>
   <div id="elementosDiv" class="relative flex h-1/4 pb-4">
     <div id="audios" class="scrollbar-thin scrollbar-thumb-gray-400 scrollbar-thumb-rounded flex w-1/5 overflow-x-hidden overflow-y-auto">
