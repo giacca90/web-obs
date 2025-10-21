@@ -85,7 +85,7 @@ Ejemplo completo:
 <WebOBS
 (emision)="emiteWebcam($event)"
 (savePresets)="savePresets($event)"
-[ready]="this.ready"
+[isInLive]="this.isInLive"
 [status]="this.status"
 [savedPresets]="this.savedPresets"
 [savedFiles]="this.savedFiles">

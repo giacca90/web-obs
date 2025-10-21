@@ -16,7 +16,7 @@
         <div id="resolucion" class="flex bg-transparent">
           <p>Elige una resolución:</p>
           <div class="flex w-full flex-col">
-            <div class="group flex cursor-pointer items-center pr-2 pl-2" id="selected" (click)="isResolutionSelectorVisible = !isResolutionSelectorVisible" tabindex="0" (keydown.enter)="isResolutionSelectorVisible = !isResolutionSelectorVisible">
+            <div class="group flex cursor-pointer items-center pr-2 pl-2" id="selected" (click)="isResolutionSelectorVisible = !isResolutionSelectorVisible" (keydown.enter)="isResolutionSelectorVisible = !isResolutionSelectorVisible">
               <p id="value">720p HD (1280x720)</p>
               <p class="ml-2">{{ canvasFPS }} fps</p>
               <svg class="ml-2 hidden h-4 w-4 group-hover:block" width="800px" height="800px" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -27,39 +27,39 @@
               @if (isResolutionSelectorVisible) {
                 <div class="absolute flex z-10 rounded-lg border border-black bg-[inherit] backdrop-blur-lg overflow-hidden p-2">
                   <div class="z-10 flex flex-col bg-transparent">
-                    <div class="cursor-pointer" (click)="cambiarResolucion($event, '640x360')" tabindex="0" (keydown.enter)="cambiarResolucion($event, '640x360')">
+                    <div class="cursor-pointer" (click)="cambiarResolucion($event, '640x360')" (keydown.enter)="cambiarResolucion($event, '640x360')">
                       <p class="rounded-lg border-black pr-2 pl-2 text-nowrap hover:border dark:border-gray-400">360p (640x360)</p>
                     </div>
-                    <div class="cursor-pointer" (click)="cambiarResolucion($event, '854x480')" tabindex="0" (keydown.enter)="cambiarResolucion($event, '854x480')">
+                    <div class="cursor-pointer" (click)="cambiarResolucion($event, '854x480')" (keydown.enter)="cambiarResolucion($event, '854x480')">
                       <p class="rounded-lg border-black pr-2 pl-2 text-nowrap hover:border dark:border-gray-400">480p (854x480)</p>
                     </div>
-                    <div class="cursor-pointer" (click)="cambiarResolucion($event, '1280x720')" tabindex="0" (keydown.enter)="cambiarResolucion($event, '1280x720')">
+                    <div class="cursor-pointer" (click)="cambiarResolucion($event, '1280x720')" (keydown.enter)="cambiarResolucion($event, '1280x720')">
                       <p class="rounded-lg border-black pr-2 pl-2 text-nowrap hover:border dark:border-gray-400">720p HD (1280x720)</p>
                     </div>
-                    <div class="cursor-pointer" (click)="cambiarResolucion($event, '1920x1080')" tabindex="0" (keydown.enter)="cambiarResolucion($event, '1920x1080')">
+                    <div class="cursor-pointer" (click)="cambiarResolucion($event, '1920x1080')" (keydown.enter)="cambiarResolucion($event, '1920x1080')">
                       <p class="rounded-lg border-black pr-2 pl-2 text-nowrap hover:border dark:border-gray-400">1080p Full HD (1920x1080)</p>
                     </div>
-                    <div class="cursor-pointer" (click)="cambiarResolucion($event, '2560x1440')" tabindex="0" (keydown.enter)="cambiarResolucion($event, '2560x1440')">
+                    <div class="cursor-pointer" (click)="cambiarResolucion($event, '2560x1440')" (keydown.enter)="cambiarResolucion($event, '2560x1440')">
                       <p class="rounded-lg border-black pr-2 pl-2 text-nowrap hover:border dark:border-gray-400">1440p QHD (2560x1440)</p>
                     </div>
-                    <div class="cursor-pointer" (click)="cambiarResolucion($event, '3840x2160')" tabindex="0" (keydown.enter)="cambiarResolucion($event, '3840x2160')">
+                    <div class="cursor-pointer" (click)="cambiarResolucion($event, '3840x2160')" (keydown.enter)="cambiarResolucion($event, '3840x2160')">
                       <p class="rounded-lg border-black pr-2 pl-2 text-nowrap hover:border dark:border-gray-400">4K UHD (3840x2160)</p>
                     </div>
                   </div>
                   <div class="z-10 flex flex-col bg-transparent">
-                    <div class="cursor-pointer" (click)="cambiarFPS('25')" tabindex="0" (keydown.enter)="cambiarFPS('25')">
+                    <div class="cursor-pointer" (click)="cambiarFPS('25')" (keydown.enter)="cambiarFPS('25')">
                       <p class="rounded-lg border-black pr-2 pl-2 text-nowrap hover:border dark:border-gray-400">25fps</p>
                     </div>
-                    <div class="cursor-pointer" (click)="cambiarFPS('30')" tabindex="0" (keydown.enter)="cambiarFPS('30')">
+                    <div class="cursor-pointer" (click)="cambiarFPS('30')" (keydown.enter)="cambiarFPS('30')">
                       <p class="rounded-lg border-black pr-2 pl-2 text-nowrap hover:border dark:border-gray-400">30fps</p>
                     </div>
-                    <div class="cursor-pointer" (click)="cambiarFPS('60')" tabindex="0" (keydown.enter)="cambiarFPS('60')">
+                    <div class="cursor-pointer" (click)="cambiarFPS('60')" (keydown.enter)="cambiarFPS('60')">
                       <p class="rounded-lg border-black pr-2 pl-2 text-nowrap hover:border dark:border-gray-400">60fps</p>
                     </div>
-                    <div class="cursor-pointer" (click)="cambiarFPS('90')" tabindex="0" (keydown.enter)="cambiarFPS('90')">
+                    <div class="cursor-pointer" (click)="cambiarFPS('90')" (keydown.enter)="cambiarFPS('90')">
                       <p class="rounded-lg border-black pr-2 pl-2 text-nowrap hover:border dark:border-gray-400">90fps</p>
                     </div>
-                    <div class="cursor-pointer" (click)="cambiarFPS('120')" tabindex="0" (keydown.enter)="cambiarFPS('120')">
+                    <div class="cursor-pointer" (click)="cambiarFPS('120')" (keydown.enter)="cambiarFPS('120')">
                       <p class="rounded-lg border-black pr-2 pl-2 text-nowrap hover:border dark:border-gray-400">120fps</p>
                     </div>
                   </div>
@@ -79,17 +79,17 @@
         <!-- Preset Items -->
         @for (presetName of this.presets.keys(); track presetName) {
           <div class="mi-group">
-            <div id="preset-{{ presetName }}" (click)="this.aplicaPreset(presetName)" (keydown.enter)="this.aplicaPreset(presetName)" tabindex="0" class="relative h-full w-full justify-center group-hover:border-black dark:border-gray-400"></div>
-            <p (click)="this.aplicaPreset(presetName)" (keydown.enter)="this.aplicaPreset(presetName)" tabindex="0" class="absolute top-2 w-full text-center text-sm text-white">
+            <div id="preset-{{ presetName }}" (click)="this.aplicaPreset(presetName)" (keydown.enter)="this.aplicaPreset(presetName)" class="relative h-full w-full justify-center group-hover:border-black dark:border-gray-400"></div>
+            <p (click)="this.aplicaPreset(presetName)" (keydown.enter)="this.aplicaPreset(presetName)" class="absolute top-2 w-full text-center text-sm text-white">
               {{ presetName }}
             </p>
-            <p (click)="this.aplicaPreset(presetName)" (keydown.enter)="this.aplicaPreset(presetName)" tabindex="0" class="absolute bottom-2 w-full text-center text-sm text-white">
+            <p (click)="this.aplicaPreset(presetName)" (keydown.enter)="this.aplicaPreset(presetName)" class="absolute bottom-2 w-full text-center text-sm text-white">
               {{ this.presets.get(presetName)?.shortcut }}
             </p>
           </div>
         }
         <!-- Save Preset Button -->
-        <div (click)="guardaPreset()" tabindex="0" (keydown.enter)="guardaPreset()" class="group cursor-pointer relative flex aspect-video! max-h-[33vh] h-auto items-center justify-between overflow-hidden rounded-lg border border-black bg-gray-400 px-2 text-black hover:border-2">
+        <div (click)="guardaPreset()" (keydown.enter)="guardaPreset()" class="group cursor-pointer relative flex aspect-video! max-h-[33vh] h-auto items-center justify-between overflow-hidden rounded-lg border border-black bg-gray-400 px-2 text-black hover:border-2">
           <p class="truncate">Guardar preset actual</p>
           <svg class="h-8 w-8 shrink-0 text-gray-700 group-hover:text-black" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
             <path d="M6 12H18M12 6V18" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
@@ -194,12 +194,12 @@
       <div id="div-{{ device.deviceId }}" class="group relative m-2 flex max-w-[16.6667%] justify-center bg-transparent object-contain text-center">
         <video #videoElement disablePictureInPicture (pointerdown)="mousedown($event, device.deviceId)" (contextmenu)="onContextMenu($event, device.deviceId)" [id]="device.deviceId" autoplay playsinline class="cursor-grab rounded-lg border border-black object-contain hover:border-2 active:cursor-grabbing dark:border-gray-400"></video>
         <!-- Botón full-screan -->
-        <svg (click)="fullscreen(device)" class="absolute top-2 left-2 z-10 hidden h-4 w-4 cursor-pointer text-black group-hover:block" width="800px" height="800px" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <svg (click)="fullscreen(device)" (keydown.enter)="fullscreen(device)" class="absolute top-2 left-2 z-10 hidden h-4 w-4 cursor-pointer text-black group-hover:block" width="800px" height="800px" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
           <path fill-rule="evenodd" clip-rule="evenodd" d="M5 1.25C5.41421 1.25 5.75 1.58579 5.75 2V11C5.75 12.9068 5.75159 14.2615 5.88976 15.2892C6.02502 16.2952 6.27869 16.8749 6.7019 17.2981C7.12511 17.7213 7.70476 17.975 8.71085 18.1102C9.73851 18.2484 11.0932 18.25 13 18.25H22C22.4142 18.25 22.75 18.5858 22.75 19C22.75 19.4142 22.4142 19.75 22 19.75H19.75V22C19.75 22.4142 19.4142 22.75 19 22.75C18.5858 22.75 18.25 22.4142 18.25 22V19.75H12.9436C11.1058 19.75 9.65019 19.75 8.51098 19.5969C7.33855 19.4392 6.38961 19.1071 5.64124 18.3588C4.89288 17.6104 4.56076 16.6614 4.40313 15.489C4.24997 14.3498 4.24998 12.8942 4.25 11.0564L4.25 5.75H2C1.58579 5.75 1.25 5.41421 1.25 5C1.25 4.58579 1.58579 4.25 2 4.25H4.25V2C4.25 1.58579 4.58579 1.25 5 1.25ZM15.2892 5.88976C14.2615 5.75159 12.9068 5.75 11 5.75H8C7.58579 5.75 7.25 5.41421 7.25 5C7.25 4.58579 7.58579 4.25 8 4.25L11.0564 4.25C12.8942 4.24998 14.3498 4.24997 15.489 4.40313C16.6614 4.56076 17.6104 4.89288 18.3588 5.64124C19.1071 6.38961 19.4392 7.33855 19.5969 8.51098C19.75 9.65019 19.75 11.1058 19.75 12.9436V16C19.75 16.4142 19.4142 16.75 19 16.75C18.5858 16.75 18.25 16.4142 18.25 16V13C18.25 11.0932 18.2484 9.73851 18.1102 8.71085C17.975 7.70476 17.7213 7.12511 17.2981 6.7019C16.8749 6.27869 16.2952 6.02502 15.2892 5.88976Z" fill="currentColor" />
           <path d="M8.5 11.5C8.5 10.0858 8.5 9.37868 8.93934 8.93934C9.37868 8.5 10.0858 8.5 11.5 8.5H12.5C13.9142 8.5 14.6213 8.5 15.0607 8.93934C15.5 9.37868 15.5 10.0858 15.5 11.5V12.5C15.5 13.9142 15.5 14.6213 15.0607 15.0607C14.6213 15.5 13.9142 15.5 12.5 15.5H11.5C10.0858 15.5 9.37868 15.5 8.93934 15.0607C8.5 14.6213 8.5 13.9142 8.5 12.5V11.5Z" fill="currentColor" />
         </svg>
         <!-- Botón X -->
-        <svg (click)="stopElemento(device)" class="absolute top-2 right-2 z-10 hidden h-4 w-4 cursor-pointer text-black group-hover:block" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <svg (click)="stopElemento(device)" (keydown.enter)="stopElemento(device)" class="absolute top-2 right-2 z-10 hidden h-4 w-4 cursor-pointer text-black group-hover:block" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
           <path d="M20.7457 3.32851C20.3552 2.93798 19.722 2.93798 19.3315 3.32851L12.0371 10.6229L4.74275 3.32851C4.35223 2.93798 3.71906 2.93798 3.32854 3.32851C2.93801 3.71903 2.93801 4.3522 3.32854 4.74272L10.6229 12.0371L3.32856 19.3314C2.93803 19.722 2.93803 20.3551 3.32856 20.7457C3.71908 21.1362 4.35225 21.1362 4.74277 20.7457L12.0371 13.4513L19.3315 20.7457C19.722 21.1362 20.3552 21.1362 20.7457 20.7457C21.1362 20.3551 21.1362 19.722 20.7457 19.3315L13.4513 12.0371L20.7457 4.74272C21.1362 4.3522 21.1362 3.71903 20.7457 3.32851Z" fill="currentColor" />
         </svg>
         <p class="absolute bottom-6 truncate overflow-hidden text-xs text-ellipsis whitespace-nowrap text-white">
@@ -212,12 +212,12 @@
       <div id="div-{{ captura.id }}" class="group relative m-2 flex max-w-[16.6667%] justify-center bg-transparent object-contain text-center">
         <video #videoElement disablePictureInPicture (pointerdown)="mousedown($event, captura.id)" (contextmenu)="onContextMenu($event, captura.id)" [id]="captura.id" autoplay playsinline muted class="cursor-grab rounded-lg border border-black object-contain hover-2 active:cursor-grabbing dark:border-gray-400" [srcObject]="captura"></video>
         <!-- Botón full-screan -->
-        <svg (click)="fullscreen(captura)" class="absolute top-2 left-2 z-10 hidden h-4 w-4 cursor-pointer text-black group-hover:block" width="800px" height="800px" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <svg (click)="fullscreen(captura)" (keydown.enter)="fullscreen(captura)" class="absolute top-2 left-2 z-10 hidden h-4 w-4 cursor-pointer text-black group-hover:block" width="800px" height="800px" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
           <path fill-rule="evenodd" clip-rule="evenodd" d="M5 1.25C5.41421 1.25 5.75 1.58579 5.75 2V11C5.75 12.9068 5.75159 14.2615 5.88976 15.2892C6.02502 16.2952 6.27869 16.8749 6.7019 17.2981C7.12511 17.7213 7.70476 17.975 8.71085 18.1102C9.73851 18.2484 11.0932 18.25 13 18.25H22C22.4142 18.25 22.75 18.5858 22.75 19C22.75 19.4142 22.4142 19.75 22 19.75H19.75V22C19.75 22.4142 19.4142 22.75 19 22.75C18.5858 22.75 18.25 22.4142 18.25 22V19.75H12.9436C11.1058 19.75 9.65019 19.75 8.51098 19.5969C7.33855 19.4392 6.38961 19.1071 5.64124 18.3588C4.89288 17.6104 4.56076 16.6614 4.40313 15.489C4.24997 14.3498 4.24998 12.8942 4.25 11.0564L4.25 5.75H2C1.58579 5.75 1.25 5.41421 1.25 5C1.25 4.58579 1.58579 4.25 2 4.25H4.25V2C4.25 1.58579 4.58579 1.25 5 1.25ZM15.2892 5.88976C14.2615 5.75159 12.9068 5.75 11 5.75H8C7.58579 5.75 7.25 5.41421 7.25 5C7.25 4.58579 7.58579 4.25 8 4.25L11.0564 4.25C12.8942 4.24998 14.3498 4.24997 15.489 4.40313C16.6614 4.56076 17.6104 4.89288 18.3588 5.64124C19.1071 6.38961 19.4392 7.33855 19.5969 8.51098C19.75 9.65019 19.75 11.1058 19.75 12.9436V16C19.75 16.4142 19.4142 16.75 19 16.75C18.5858 16.75 18.25 16.4142 18.25 16V13C18.25 11.0932 18.2484 9.73851 18.1102 8.71085C17.975 7.70476 17.7213 7.12511 17.2981 6.7019C16.8749 6.27869 16.2952 6.02502 15.2892 5.88976Z" fill="currentColor" />
           <path d="M8.5 11.5C8.5 10.0858 8.5 9.37868 8.93934 8.93934C9.37868 8.5 10.0858 8.5 11.5 8.5H12.5C13.9142 8.5 14.6213 8.5 15.0607 8.93934C15.5 9.37868 15.5 10.0858 15.5 11.5V12.5C15.5 13.9142 15.5 14.6213 15.0607 15.0607C14.6213 15.5 13.9142 15.5 12.5 15.5H11.5C10.0858 15.5 9.37868 15.5 8.93934 15.0607C8.5 14.6213 8.5 13.9142 8.5 12.5V11.5Z" fill="currentColor" />
         </svg>
         <!-- Botón X -->
-        <svg (click)="stopElemento(captura)" class="absolute top-2 right-2 z-10 hidden h-4 w-4 cursor-pointer text-black group-hover:block" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <svg (click)="stopElemento(captura)" (keydown.enter)="stopElemento(captura)" class="absolute top-2 right-2 z-10 hidden h-4 w-4 cursor-pointer text-black group-hover:block" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
           <path d="M20.7457 3.32851C20.3552 2.93798 19.722 2.93798 19.3315 3.32851L12.0371 10.6229L4.74275 3.32851C4.35223 2.93798 3.71906 2.93798 3.32854 3.32851C2.93801 3.71903 2.93801 4.3522 3.32854 4.74272L10.6229 12.0371L3.32856 19.3314C2.93803 19.722 2.93803 20.3551 3.32856 20.7457C3.71908 21.1362 4.35225 21.1362 4.74277 20.7457L12.0371 13.4513L19.3315 20.7457C19.722 21.1362 20.3552 21.1362 20.7457 20.7457C21.1362 20.3551 21.1362 19.722 20.7457 19.3315L13.4513 12.0371L20.7457 4.74272C21.1362 4.3522 21.1362 3.71903 20.7457 3.32851Z" fill="currentColor" />
         </svg>
         <p class="absolute bottom-6 truncate overflow-hidden text-xs text-ellipsis whitespace-nowrap text-white">
@@ -286,26 +286,26 @@
         }
         @if (estatico.type.startsWith("image/") || estatico.type.startsWith("video/")) {
           <!-- Botón full-screan -->
-          <svg (click)="fullscreen(estatico)" class="absolute top-2 left-2 z-10 hidden h-4 w-4 cursor-pointer text-black group-hover:block" width="800px" height="800px" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <svg (click)="fullscreen(estatico)" (keydown.enter)="fullscreen(estatico)" class="absolute top-2 left-2 z-10 hidden h-4 w-4 cursor-pointer text-black group-hover:block" width="800px" height="800px" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
             <path fill-rule="evenodd" clip-rule="evenodd" d="M5 1.25C5.41421 1.25 5.75 1.58579 5.75 2V11C5.75 12.9068 5.75159 14.2615 5.88976 15.2892C6.02502 16.2952 6.27869 16.8749 6.7019 17.2981C7.12511 17.7213 7.70476 17.975 8.71085 18.1102C9.73851 18.2484 11.0932 18.25 13 18.25H22C22.4142 18.25 22.75 18.5858 22.75 19C22.75 19.4142 22.4142 19.75 22 19.75H19.75V22C19.75 22.4142 19.4142 22.75 19 22.75C18.5858 22.75 18.25 22.4142 18.25 22V19.75H12.9436C11.1058 19.75 9.65019 19.75 8.51098 19.5969C7.33855 19.4392 6.38961 19.1071 5.64124 18.3588C4.89288 17.6104 4.56076 16.6614 4.40313 15.489C4.24997 14.3498 4.24998 12.8942 4.25 11.0564L4.25 5.75H2C1.58579 5.75 1.25 5.41421 1.25 5C1.25 4.58579 1.58579 4.25 2 4.25H4.25V2C4.25 1.58579 4.58579 1.25 5 1.25ZM15.2892 5.88976C14.2615 5.75159 12.9068 5.75 11 5.75H8C7.58579 5.75 7.25 5.41421 7.25 5C7.25 4.58579 7.58579 4.25 8 4.25L11.0564 4.25C12.8942 4.24998 14.3498 4.24997 15.489 4.40313C16.6614 4.56076 17.6104 4.89288 18.3588 5.64124C19.1071 6.38961 19.4392 7.33855 19.5969 8.51098C19.75 9.65019 19.75 11.1058 19.75 12.9436V16C19.75 16.4142 19.4142 16.75 19 16.75C18.5858 16.75 18.25 16.4142 18.25 16V13C18.25 11.0932 18.2484 9.73851 18.1102 8.71085C17.975 7.70476 17.7213 7.12511 17.2981 6.7019C16.8749 6.27869 16.2952 6.02502 15.2892 5.88976Z" fill="currentColor" />
             <path d="M8.5 11.5C8.5 10.0858 8.5 9.37868 8.93934 8.93934C9.37868 8.5 10.0858 8.5 11.5 8.5H12.5C13.9142 8.5 14.6213 8.5 15.0607 8.93934C15.5 9.37868 15.5 10.0858 15.5 11.5V12.5C15.5 13.9142 15.5 14.6213 15.0607 15.0607C14.6213 15.5 13.9142 15.5 12.5 15.5H11.5C10.0858 15.5 9.37868 15.5 8.93934 15.0607C8.5 14.6213 8.5 13.9142 8.5 12.5V11.5Z" fill="currentColor" />
           </svg>
         }
         <!-- Botón X -->
-        <svg (click)="stopElemento(estatico)" class="absolute top-2 right-2 z-10 hidden h-4 w-4 cursor-pointer text-black group-hover:block" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <svg (click)="stopElemento(estatico)" (keydown.enter)="stopElemento(estatico)" class="absolute top-2 right-2 z-10 hidden h-4 w-4 cursor-pointer text-black group-hover:block" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
           <path d="M20.7457 3.32851C20.3552 2.93798 19.722 2.93798 19.3315 3.32851L12.0371 10.6229L4.74275 3.32851C4.35223 2.93798 3.71906 2.93798 3.32854 3.32851C2.93801 3.71903 2.93801 4.3522 3.32854 4.74272L10.6229 12.0371L3.32856 19.3314C2.93803 19.722 2.93803 20.3551 3.32856 20.7457C3.71908 21.1362 4.35225 21.1362 4.74277 20.7457L12.0371 13.4513L19.3315 20.7457C19.722 21.1362 20.3552 21.1362 20.7457 20.7457C21.1362 20.3551 21.1362 19.722 20.7457 19.3315L13.4513 12.0371L20.7457 4.74272C21.1362 4.3522 21.1362 3.71903 20.7457 3.32851Z" fill="currentColor" />
         </svg>
       </div>
     }
 
     <div class="relative flex w-1/6 flex-col justify-between">
-      <div class="group relative m-2 flex h-10 cursor-pointer items-center justify-center overflow-hidden rounded-lg border border-black bg-gray-400 text-center text-black hover:border-2" (click)="addScrean()" tabindex="0" (keydown.enter)="addScrean()">
+      <div class="group relative m-2 flex h-10 cursor-pointer items-center justify-center overflow-hidden rounded-lg border border-black bg-gray-400 text-center text-black hover:border-2" (click)="addScrean()" (keydown.enter)="addScrean()">
         <p class="p-2 text-center">Añadir pantalla</p>
         <svg class="h-10 w-10 text-gray-700 group-hover:text-black" width="800px" height="800px" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
           <path d="M6 12H18M12 6V18" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
         </svg>
       </div>
-      <div class="group relative m-2 flex h-10 cursor-pointer items-center justify-center overflow-hidden rounded-lg border border-black bg-gray-400 text-center text-black hover:border-2" (click)="addFiles()" tabindex="0" (keydown.enter)="addFiles()">
+      <div class="group relative m-2 flex h-10 cursor-pointer items-center justify-center overflow-hidden rounded-lg border border-black bg-gray-400 text-center text-black hover:border-2" (click)="addFiles()" (keydown.enter)="addFiles()">
         <p class="p-2 text-center">Añadir archivo</p>
         <svg class="h-10 w-10 text-gray-700 group-hover:text-black" width="800px" height="800px" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
           <path d="M6 12H18M12 6V18" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />

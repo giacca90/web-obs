@@ -42,11 +42,12 @@ export class WebOBS implements OnInit, AfterViewInit, OnDestroy {
   private drawInterval: any;
   private readonly fileUrlCache = new Map<File, string>(); // Cache de URLs de archivos
   private readonly boundCanvasMouseMove = this.canvasMouseMove.bind(this);
+  private readonly handleKeydownRef = this.handleKeydown.bind(this);
 
   @ViewChildren('videoElement') videoElements!: QueryList<ElementRef<HTMLVideoElement>>;
   @Input() savedFiles?: File[] | null; // Files guardados del usuario (opcional)
   @Input() savedPresets?: Map<string, Preset> | null; //Presets guardados del usuario (opcional)
-  @Input() ready?: boolean; // Avisa cuando está listo para emitir (opcional)
+  @Input() isInLive?: boolean; // Avisa cuando está listo para emitir (opcional)
   @Input() status?: string; // Observa el estado de la emisión (opcional)
   @Output() emision: EventEmitter<MediaStream | null> = new EventEmitter(); // Emisión de video y audio
   @Output() savePresets: EventEmitter<Map<string, Preset>> = new EventEmitter(); // Guardar presets (opcional)
@@ -63,58 +64,38 @@ export class WebOBS implements OnInit, AfterViewInit, OnDestroy {
   /**
    * Método para inicializar la aplicación
    */
-  async ngOnInit() {
+  ngOnInit(): void {
+    this.initialize().catch((err) => console.error('Error inicializando:', err));
+  }
+
+  private async initialize() {
     try {
-      // Verifica si está en un movil o un pc
       if (this.isMobile()) {
         alert('¡¡¡ATENCIÓN!! Esta aplicación no está pensada para dispositivos móviles.');
         const statusMessage = document.getElementById('statusMessage') as HTMLParagraphElement;
         statusMessage.innerHTML = '<span style="color: red; font-weight: bold;">¡¡¡ATENCIÓN!! Esta aplicación no está pensada para dispositivos móviles.</span>';
       }
 
-      // Solicitar permisos para cámara y micrófono
-      const stream = await navigator.mediaDevices.getUserMedia({
-        video: true,
-        audio: true,
-      });
-
-      // Listar todos los dispositivos multimedia
+      const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
       const devices = await navigator.mediaDevices.enumerateDevices();
-      stream.getTracks().forEach((track) => {
-        track.stop();
-      });
-
-      // Iniciar la configuración de medios
+      this.stopStream(stream);
       this.startMedias(devices);
 
-      // Escuchar cambios en los dispositivos multimedia
       navigator.mediaDevices.ondevicechange = async () => {
         console.log('Cambio detectado en los dispositivos');
         await this.updateDevices();
       };
+
+      if (this.savedFiles) {
+        this.staticContent = this.savedFiles;
+        setTimeout(() => this.loadFiles(this.staticContent), 100);
+      }
+
+      if (this.savedPresets) {
+        this.presets = this.savedPresets;
+      }
     } catch (error) {
       console.error('Error al acceder a los dispositivos:', error);
-    }
-
-    // Añadir archivos recibidos (si hay)
-    if (this.savedFiles) {
-      this.staticContent = this.savedFiles;
-      setTimeout(() => this.loadFiles(this.staticContent), 100);
-    }
-
-    // Añadir presets recibidos (si hay)
-    if (this.savedPresets) {
-      this.presets = this.savedPresets;
-    }
-
-    // añadir los archivos recibidos desde la app (si hay)
-    if (this.savedFiles) {
-      this.staticContent = this.savedFiles;
-    }
-
-    // añadir los presets recibidos desde la app (si hay)
-    if (this.savedPresets) {
-      this.presets = this.savedPresets;
     }
   }
 
@@ -127,42 +108,45 @@ export class WebOBS implements OnInit, AfterViewInit, OnDestroy {
 
     // Función para dibujar el canvas
     const drawFrame = () => {
-      if (!this.canvas) {
+      // 1️⃣ Cacheamos contexto y canvas para evitar lookups repetidos
+      const ctx = this.context;
+      const canvas = this.canvas;
+      if (!ctx || !canvas) {
+        // Solo lanzamos error una vez si no existen
         console.error('Canvas o contexto no encontrado');
         return;
       }
-      if (!this.context) {
-        console.error('Missing context');
-        return;
+
+      // 2️⃣ Limpiamos el canvas antes de dibujar
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      // 3️⃣ Iteramos todos los elementos (videos e imágenes) en un solo loop
+      for (const elemento of this.videosElements) {
+        const { element, position, painted, scale, filters } = elemento;
+
+        // 4️⃣ Saltamos elementos que no deben dibujarse
+        if (!painted || !element || !position) continue;
+
+        // 5️⃣ Calculamos dimensiones escaladas solo una vez
+        let width = 0,
+          height = 0;
+        if (element instanceof HTMLVideoElement) {
+          width = element.videoWidth * scale;
+          height = element.videoHeight * scale;
+        } else if (element instanceof HTMLImageElement) {
+          width = element.naturalWidth * scale;
+          height = element.naturalHeight * scale;
+        } else {
+          continue; // No es video ni imagen
+        }
+
+        // 6️⃣ Actualizamos filtros solo si cambian (reduce coste GPU)
+        const newFilter = filters ? `brightness(${filters.brightness}%) contrast(${filters.contrast}%) saturate(${filters.saturation}%)` : '';
+        if (ctx.filter !== newFilter) ctx.filter = newFilter;
+
+        // 7️⃣ Dibujamos el elemento en la posición indicada
+        ctx.drawImage(element, position.x, position.y, width, height);
       }
-      this.context.clearRect(0, 0, this.canvas.width, this.canvas.height);
-      this.videosElements
-        .filter((elemento) => elemento.painted && elemento.position && elemento.element)
-        .forEach((elemento) => {
-          if (elemento.element instanceof HTMLVideoElement && elemento.position) {
-            const videoWidth = elemento.element.videoWidth * elemento.scale;
-            const videoHeight = elemento.element.videoHeight * elemento.scale;
-            if (this.context) {
-              if (elemento.filters) {
-                this.context.filter = `brightness(${elemento.filters.brightness}%) contrast(${elemento.filters.contrast}%) saturate(${elemento.filters.saturation}%)`;
-              } else {
-                this.context.filter = '';
-              }
-            }
-            this.context?.drawImage(elemento.element, elemento.position.x, elemento.position.y, videoWidth, videoHeight);
-          } else if (elemento.element instanceof HTMLImageElement && elemento.position) {
-            const imageWidth = elemento.element.naturalWidth * elemento.scale;
-            const imageHeight = elemento.element.naturalHeight * elemento.scale;
-            if (this.context) {
-              if (elemento.filters) {
-                this.context.filter = `brightness(${elemento.filters.brightness}%) contrast(${elemento.filters.contrast}%) saturate(${elemento.filters.saturation}%)`;
-              } else {
-                this.context.filter = '';
-              }
-            }
-            this.context?.drawImage(elemento.element, elemento.position.x, elemento.position.y, imageWidth, imageHeight);
-          }
-        });
     };
 
     // Refresca el canvas a la tasa de fotogramas requerida
@@ -187,7 +171,7 @@ export class WebOBS implements OnInit, AfterViewInit, OnDestroy {
       return;
     }
     volume.oninput = () => {
-      gainNode.gain.value = parseInt(volume.value) / 100;
+      gainNode.gain.value = Number.parseInt(volume.value) / 100;
     };
 
     analyser.fftSize = 256;
@@ -206,8 +190,7 @@ export class WebOBS implements OnInit, AfterViewInit, OnDestroy {
     updateAudioLevel();
 
     // Escuchar eventos de teclado
-    window.addEventListener('keydown', this.handleKeydown.bind(this));
-
+    globalThis.window.addEventListener('keydown', this.handleKeydownRef);
     // Carga los files recibidos (si hay)
     if (this.staticContent.length > 0) {
       this.loadFiles(this.staticContent);
@@ -215,12 +198,14 @@ export class WebOBS implements OnInit, AfterViewInit, OnDestroy {
 
     // Carga los presets recibidos (si hay)
     setTimeout(() => {
-      Array.from(this.presets.keys()).forEach((key) => {
+      for (const key of Array.from(this.presets.keys())) {
         const preset = this.presets.get(key);
-        preset?.elements.forEach((element) => {
-          element.element = document.getElementById(element.id);
-        });
-      });
+        if (preset) {
+          for (const element of preset.elements) {
+            element.element = document.getElementById(element.id);
+          }
+        }
+      }
       this.calculatePreset();
     }, 2000);
   }
@@ -229,21 +214,31 @@ export class WebOBS implements OnInit, AfterViewInit, OnDestroy {
    * Evento para destruir la aplicación
    */
   ngOnDestroy() {
-    // Detener todos los flujos de video
-    this.streams.forEach((stream) => {
-      stream.getTracks().forEach((track) => track.stop());
-    });
+    // 1️⃣ Detener todos los flujos de video
+    for (const stream of this.streams) {
+      this.stopStream(stream);
+    }
 
-    // Detener todas las capturas de pantalla
-    this.capturas.forEach((stream) => {
-      stream.getTracks().forEach((track) => track.stop());
-    });
+    // 2️⃣ Detener todas las capturas de pantalla
+    for (const captura of this.capturas) {
+      this.stopStream(captura);
+    }
 
-    // Detener todas las capturas de audio
-    this.audiosCapturas.forEach((track) => track.stop());
+    // 3️⃣ Detener todas las capturas de audio (si son tracks sueltos)
+    for (const track of this.audiosCapturas) {
+      track.stop();
+    }
 
-    // Eliminar el listener de eventos de teclado
-    window.removeEventListener('keydown', this.handleKeydown.bind(this));
+    // 4️⃣ Eliminar el listener de teclado correctamente
+    // IMPORTANTE: bind(this) crea una nueva función, así que debemos guardar la referencia
+    globalThis.window.removeEventListener('keydown', this.handleKeydownRef);
+  }
+
+  private stopStream(stream: MediaStream) {
+    // Detiene todos los tracks de un MediaStream
+    for (const track of stream.getTracks()) {
+      track.stop();
+    }
   }
 
   /**
@@ -251,8 +246,8 @@ export class WebOBS implements OnInit, AfterViewInit, OnDestroy {
    * @returns true si se está en un pc, false si se está en un movil
    */
   isMobile(): boolean {
-    const userAgent = navigator.userAgent || navigator.vendor || (window as any).opera;
-    return /android|iphone|ipad|iPod|opera mini|iemobile|wpdesktop/i.test(userAgent);
+    const ua = navigator.userAgent || (globalThis.window as any).opera;
+    return /android|iphone|ipad|ipod|opera mini|iemobile|wpdesktop/i.test(ua);
   }
 
   /**
@@ -261,7 +256,7 @@ export class WebOBS implements OnInit, AfterViewInit, OnDestroy {
    */
   handleKeydown(event: KeyboardEvent) {
     // Verificar si se presionó Ctrl + un número
-    if (event.ctrlKey && !isNaN(Number(event.key))) {
+    if (event.ctrlKey && !Number.isNaN(Number(event.key))) {
       event.preventDefault(); // Evitar el comportamiento predeterminado solo para Ctrl + número
       const shortcut = `ctrl+${event.key}`;
       const preset = Array.from(this.presets.entries()).find(([_, value]) => value.shortcut === shortcut);
@@ -281,7 +276,7 @@ export class WebOBS implements OnInit, AfterViewInit, OnDestroy {
     const audioInputPromises: Promise<void>[] = [];
     const audioOutputPromises: Promise<void>[] = [];
 
-    devices.forEach((device) => {
+    for (const device of devices) {
       if (device.kind === 'videoinput') {
         if (!this.videoDevices.some((d) => d.deviceId === device.deviceId)) {
           this.videoDevices.push(device);
@@ -293,7 +288,7 @@ export class WebOBS implements OnInit, AfterViewInit, OnDestroy {
       } else if (device.kind === 'audiooutput' && device.deviceId !== 'default') {
         audioOutputPromises.push(this.getAudioOutputStream(device));
       }
-    });
+    }
 
     // Espera a que todas las promesas hayan terminado
     await Promise.all([...videoPromises, ...audioInputPromises, ...audioOutputPromises]);
@@ -309,7 +304,7 @@ export class WebOBS implements OnInit, AfterViewInit, OnDestroy {
       const allDevices = await navigator.mediaDevices.enumerateDevices();
 
       // Identificar dispositivos nuevos y agregarlos
-      allDevices.forEach((device) => {
+      for (const device of allDevices) {
         if (device.kind === 'videoinput') {
           const exists = this.videoDevices.some((d) => d.deviceId === device.deviceId);
           if (!exists) {
@@ -329,26 +324,26 @@ export class WebOBS implements OnInit, AfterViewInit, OnDestroy {
             this.getAudioStream(device.deviceId);
           }
         }
-      });
+      }
 
       // Identificar dispositivos de video desconectados y eliminarlos
       const disconnectedVideoDevices = this.videoDevices.filter((device) => !allDevices.some((d) => d.deviceId === device.deviceId));
 
       if (disconnectedVideoDevices.length > 0) {
         // Limpiar recursos de dispositivos desconectados
-        disconnectedVideoDevices.forEach((device) => {
+        for (const device of disconnectedVideoDevices) {
           console.log('Dispositivo desconectado:', device.label || 'Sin nombre');
 
           // Detener flujos activos asociados al dispositivo
           if (device.kind === 'videoinput' || device.kind === 'audioinput') {
             const element = document.getElementById(device.deviceId) as HTMLVideoElement | HTMLAudioElement;
-            if (element && element.srcObject) {
+            if (element?.srcObject) {
               const stream = element.srcObject as MediaStream;
-              stream.getTracks().forEach((track) => track.stop()); // Detener cada pista del flujo
+              this.stopStream(stream);
               element.srcObject = null; // Limpiar la referencia al flujo
             }
           }
-        });
+        }
       }
 
       // Identificar dispositivos de audio desconectados y eliminarlos
@@ -356,19 +351,19 @@ export class WebOBS implements OnInit, AfterViewInit, OnDestroy {
 
       if (disconnectedDevices.length > 0) {
         // Limpiar recursos de dispositivos desconectados
-        disconnectedDevices.forEach((device) => {
+        for (const device of disconnectedDevices) {
           console.log('Dispositivo desconectado:', device.label || 'Sin nombre');
 
           // Detener flujos activos asociados al dispositivo
           if (device.kind === 'videoinput' || device.kind === 'audioinput') {
             const element = document.getElementById(device.deviceId) as HTMLVideoElement | HTMLAudioElement;
-            if (element && element.srcObject) {
+            if (element?.srcObject) {
               const stream = element.srcObject as MediaStream;
-              stream.getTracks().forEach((track) => track.stop()); // Detener cada pista del flujo
+              this.stopStream(stream);
               element.srcObject = null; // Limpiar la referencia al flujo
             }
           }
-        });
+        }
       }
       console.log('Dispositivos actualizados:', this.videoDevices + '\n' + this.audioDevices);
     } catch (error) {
@@ -393,13 +388,8 @@ export class WebOBS implements OnInit, AfterViewInit, OnDestroy {
         capabilities = videoTrack.getCapabilities(); // Capacidades del dispositivo
         //console.log('Capabilities:', capabilities.width?.max, 'x', capabilities.height?.max);
       }
-      let settings = videoTrack.getSettings(); // Configuración actual
 
-      //console.log('Current Settings:', settings.width, 'x', settings.height);
-
-      stream.getTracks().forEach((track) => {
-        track.stop();
-      });
+      this.stopStream(stream);
 
       // Seleccionar valores específicos dentro de las capacidades
       let constraints: MediaStreamConstraints;
@@ -426,8 +416,7 @@ export class WebOBS implements OnInit, AfterViewInit, OnDestroy {
       stream = await navigator.mediaDevices.getUserMedia(constraints);
       this.streams.push(stream);
       videoTrack = stream.getVideoTracks()[0];
-      settings = videoTrack.getSettings();
-      /*   console.log('New Current Settings:', settings.width, 'x', settings.height); */
+      const settings = videoTrack.getSettings();
 
       // Encontrar el elemento <video> con el mismo ID que el dispositivo
       const div = document.getElementById('div-' + deviceId);
@@ -472,11 +461,6 @@ export class WebOBS implements OnInit, AfterViewInit, OnDestroy {
 
       this.streams.push(stream);
 
-      const audioTrack = stream.getAudioTracks()[0];
-      const settings = audioTrack.getSettings();
-
-      //console.log('Audio Settings:', settings);
-
       // Añade un controlador de volumen al dispositivo
       const volume = document.getElementById('volume-' + deviceId) as HTMLInputElement;
       if (!volume) {
@@ -498,7 +482,7 @@ export class WebOBS implements OnInit, AfterViewInit, OnDestroy {
       gainNode.connect(sample);
 
       volume.oninput = () => {
-        gainNode.gain.value = parseInt(volume.value) / 100;
+        gainNode.gain.value = Number.parseInt(volume.value) / 100;
       };
 
       const audioLevelElement = document.getElementById('audio-level-' + deviceId) as HTMLDivElement;
@@ -542,7 +526,7 @@ export class WebOBS implements OnInit, AfterViewInit, OnDestroy {
         const volume = document.getElementById('volume-' + device.deviceId) as HTMLInputElement;
         if (volume) {
           volume.oninput = () => {
-            gainNode.gain.value = parseInt(volume.value) / 100;
+            gainNode.gain.value = Number.parseInt(volume.value) / 100;
           };
         } else {
           console.error('No se encontró el control de volumen para ' + device.deviceId);
@@ -584,6 +568,7 @@ export class WebOBS implements OnInit, AfterViewInit, OnDestroy {
    * @param stream Flujo de audio (MediaStream)
    * @param audioLevel Elemento HTML para visualizar el nivel de audio (HTMLDivElement)
    */
+  // TODO: mover a un AudioWorklet
   async visualizeAudio(stream: MediaStream, audioLevel: HTMLDivElement) {
     const analyser = this.audioContext.createAnalyser();
     const source = this.audioContext.createMediaStreamSource(stream);
@@ -615,9 +600,10 @@ export class WebOBS implements OnInit, AfterViewInit, OnDestroy {
         audio: true, // Opcional: captura el audio del sistema si es compatible
       });
       this.capturas.push(stream);
-      stream.getAudioTracks().forEach((track) => {
+      for (const track of stream.getAudioTracks()) {
         this.audiosCapturas.push(track);
-      });
+      }
+
       setTimeout(() => {
         const div = document.getElementById('div-' + stream.id);
         if (!div) {
@@ -645,7 +631,7 @@ export class WebOBS implements OnInit, AfterViewInit, OnDestroy {
           this.videosElements.push(ele);
         }
         // Añade el contról de audio
-        stream.getAudioTracks().forEach((track) => {
+        for (const track of stream.getAudioTracks()) {
           const audioLevelElement = document.getElementById('audio-level-' + track.id) as HTMLDivElement;
           if (!audioLevelElement) {
             console.error('No se pudo encontrar el elemento con id audio-level-' + track.id);
@@ -671,15 +657,14 @@ export class WebOBS implements OnInit, AfterViewInit, OnDestroy {
             return;
           }
           volume.oninput = () => {
-            gainNode.gain.value = parseInt(volume.value) / 100;
+            gainNode.gain.value = Number.parseInt(volume.value) / 100;
           };
           this.visualizeAudio(sample.stream, audioLevelElement); // Iniciar visualización de audio
-        });
+        }
       }, 100);
 
       // Manejar el fin de la captura
       stream.getVideoTracks()[0].onended = () => {
-        //console.log('La captura ha terminado');
         this.capturas = this.capturas.filter((s) => s !== stream);
         this.audiosCapturas = this.audiosCapturas.filter((t) => t.id !== stream.id);
         // Eliminar el objeto ele del array videosElements
@@ -723,7 +708,7 @@ export class WebOBS implements OnInit, AfterViewInit, OnDestroy {
    * @param files Archivos a cargar (File[])
    */
   private loadFiles(files: File[]) {
-    files.forEach((file) => {
+    for (const file of files) {
       const div = document.getElementById('div-' + file.name);
       if (!div) {
         console.error('No se pudo encontrar el elemento con id div-' + file.name);
@@ -781,7 +766,7 @@ export class WebOBS implements OnInit, AfterViewInit, OnDestroy {
               return;
             }
             volume.oninput = () => {
-              gainNode.gain.value = parseInt(volume.value) / 100;
+              gainNode.gain.value = Number.parseInt(volume.value) / 100;
             };
             this.visualizeAudio(sample.stream, audioDiv);
           };
@@ -793,7 +778,7 @@ export class WebOBS implements OnInit, AfterViewInit, OnDestroy {
           console.error('No se encontró el elemento con id ' + 'audio-level-' + file.name);
           return;
         }
-        const audio = document.createElement('audio') as HTMLAudioElement;
+        const audio: HTMLAudioElement = document.createElement('audio');
         audio.src = this.getFileUrl(file);
         audio.load();
         const gainNode = this.audioContext.createGain();
@@ -822,7 +807,7 @@ export class WebOBS implements OnInit, AfterViewInit, OnDestroy {
             return;
           }
           volume.oninput = () => {
-            gainNode.gain.value = parseInt(volume.value) / 100;
+            gainNode.gain.value = Number.parseInt(volume.value) / 100;
           };
           this.visualizeAudio(sample.stream, audioDiv);
         };
@@ -901,7 +886,7 @@ export class WebOBS implements OnInit, AfterViewInit, OnDestroy {
                 console.error('Missing audioDiv');
                 return;
               }
-              const newTime = (parseInt(progress.value) / 100) * audio.duration;
+              const newTime = (Number.parseInt(progress.value) / 100) * audio.duration;
               audio.currentTime = newTime;
 
               // Actualizar el tiempo en el texto inmediatamente
@@ -916,19 +901,18 @@ export class WebOBS implements OnInit, AfterViewInit, OnDestroy {
             }
             const audioBars = audioStream.querySelectorAll('div');
             const currentSample = Math.floor((audio.currentTime / audio.duration) * audioStream.offsetWidth);
-            audioBars.forEach((bar, index) => {
-              if (audioBars.length < audioStream.offsetWidth * 2) {
-                bar.style.backgroundColor = index <= currentSample ? '#16a34a' : '#1d4ed8'; // Rojo si está en reproducción
-              } else {
-                bar.style.backgroundColor = index / 2 <= currentSample ? '#16a34a' : '#1d4ed8'; // Rojo si está en reproducción
-              }
-            });
+            const threshold = audioBars.length < audioStream.offsetWidth * 2;
+            for (let i = 0; i < audioBars.length; i++) {
+              const bar = audioBars[i];
+              const condition = threshold ? i <= currentSample : i / 2 <= currentSample;
+              bar.style.backgroundColor = condition ? '#16a34a' : '#1d4ed8';
+            }
           };
           // Dibuja el flujo de audio
           this.pintaAudio(file);
         };
       }
-    });
+    }
   }
 
   /**
@@ -1020,8 +1004,8 @@ export class WebOBS implements OnInit, AfterViewInit, OnDestroy {
     }
     const string = ($event.target as HTMLDivElement).innerHTML;
     const [width, height] = res.split('x');
-    this.canvasWidth = parseInt(width);
-    this.canvasHeight = parseInt(height);
+    this.canvasWidth = Number.parseInt(width);
+    this.canvasHeight = Number.parseInt(height);
     value.innerHTML = string;
     this.isResolutionSelectorVisible = false;
   }
@@ -1032,7 +1016,7 @@ export class WebOBS implements OnInit, AfterViewInit, OnDestroy {
    */
   // TODO: Revisar si se puede eliminar
   cambiarFPS(fps: string) {
-    this.canvasFPS = parseInt(fps);
+    this.canvasFPS = Number.parseInt(fps);
     if (this.drawInterval) {
       clearInterval(this.drawInterval);
     }
@@ -1043,7 +1027,7 @@ export class WebOBS implements OnInit, AfterViewInit, OnDestroy {
         return;
       }
       this.context.clearRect(0, 0, this.canvas.width, this.canvas.height);
-      this.videosElements.forEach((elemento) => {
+      for (const elemento of this.videosElements) {
         if (!elemento.painted || !elemento.position || !this.context) {
           console.error('Missing elemento.painted, elemento.position or this.context');
           return;
@@ -1057,7 +1041,7 @@ export class WebOBS implements OnInit, AfterViewInit, OnDestroy {
           const imageHeight = elemento.element.naturalHeight * elemento.scale;
           this.context.drawImage(elemento.element, elemento.position.x, elemento.position.y, imageWidth, imageHeight);
         }
-      });
+      }
     };
     this.drawInterval = setInterval(drawFrame, 1000 / this.canvasFPS);
   }
@@ -1147,13 +1131,13 @@ export class WebOBS implements OnInit, AfterViewInit, OnDestroy {
       if (isMouseOverCanvas) {
         wheelEvent.preventDefault();
         // Obtener tamaño actual del ghost
-        const ghostStyles = window.getComputedStyle(ghost);
-        const currentWidth = parseFloat(ghostStyles.width);
-        const currentHeight = parseFloat(ghostStyles.height);
+        const ghostStyles = globalThis.window.getComputedStyle(ghost);
+        const currentWidth = Number.parseFloat(ghostStyles.width);
+        const currentHeight = Number.parseFloat(ghostStyles.height);
 
         // Obtener posición actual del ghost
-        const currentLeft = parseFloat(ghostStyles.left);
-        const currentTop = parseFloat(ghostStyles.top);
+        const currentLeft = Number.parseFloat(ghostStyles.left);
+        const currentTop = Number.parseFloat(ghostStyles.top);
 
         // Incrementar o reducir tamaño en función del scroll
         const delta = wheelEvent.deltaY < 0 ? 1.05 : 0.95; // Aumenta o reduce en un 5%
@@ -1250,7 +1234,7 @@ export class WebOBS implements OnInit, AfterViewInit, OnDestroy {
           } else {
             ghost.style.border = '2px solid #1d4ed8';
           }
-          intersecciones?.forEach((elemento) => {
+          for (const elemento of intersecciones) {
             if (elemento.id === 'canvas-container') {
               if (this.canvas) {
                 this.canvas.style.border = '2px solid #b91c1c';
@@ -1259,7 +1243,7 @@ export class WebOBS implements OnInit, AfterViewInit, OnDestroy {
               elemento.style.border = '2px solid #b91c1c';
               elemento.style.visibility = 'visible';
             }
-          });
+          }
         } else {
           vertical.style.display = 'none';
           horizontal.style.display = 'none';
@@ -1304,7 +1288,6 @@ export class WebOBS implements OnInit, AfterViewInit, OnDestroy {
       // Restaurar estado
       this.canvas.style.border = '1px solid black';
       this.dragVideo = null;
-      //ghost.style.visibility = 'hidden';
       ghost.remove();
       cross.style.display = 'none';
       document.removeEventListener('pointermove', mousemove);
@@ -1324,13 +1307,11 @@ export class WebOBS implements OnInit, AfterViewInit, OnDestroy {
     event.preventDefault(); // Bloquea el menú contextual del navegador
     event.stopPropagation();
 
-    if (!ele.filters) {
-      ele.filters = {
-        brightness: 100,
-        contrast: 100,
-        saturation: 100,
-      };
-    }
+    ele.filters ??= {
+      brightness: 100,
+      contrast: 100,
+      saturation: 100,
+    };
 
     const filterMenu = document.querySelector('#filterMenu') as HTMLDivElement;
     if (!filterMenu) {
@@ -1399,8 +1380,8 @@ export class WebOBS implements OnInit, AfterViewInit, OnDestroy {
       console.error('Missing canvasContainer');
       return;
     }
+    // TODO: revisar si se puede eliminar
     if (this.editandoDimensiones) {
-      //console.error('editandoDimensiones');
       return;
     }
 
@@ -1418,15 +1399,13 @@ export class WebOBS implements OnInit, AfterViewInit, OnDestroy {
     const internalMouseY = mousey * scaleY;
 
     // Obtener las coordenadas de cada video renderizado
-    // TODO: revisar para que encuentre el elemento que está encima
     const rendered = this.videosElements
       .filter((video) => video.painted)
       .slice() // clona
       .reverse(); // invierte
     const originalGhost = document.getElementById('marco') as HTMLDivElement;
-    //console.log('Elementos detectados: ' + rendered.length + ' ' + new Date());
     let finded = false;
-    rendered.forEach((video) => {
+    for (const video of rendered) {
       let videoWidth: number = 0;
       let videoHeight: number = 0;
       if (video.element instanceof HTMLVideoElement) {
@@ -1449,12 +1428,12 @@ export class WebOBS implements OnInit, AfterViewInit, OnDestroy {
       let ghostDiv = canvasContainer.querySelector(`#marco-${CSS.escape(video.id)}`) as HTMLDivElement;
       if (!ghostDiv) {
         ghostDiv = originalGhost.cloneNode(true) as HTMLDivElement;
-        const tiradores = ghostDiv.querySelectorAll('[id*="tirador-"]') as NodeListOf<HTMLDivElement>; // Seleccionar los tiradores
-        tiradores.forEach((tirador: HTMLDivElement) => {
+        const tiradores: NodeListOf<HTMLDivElement> = ghostDiv.querySelectorAll('[id*="tirador-"]'); // Seleccionar los tiradores
+        for (const tirador of tiradores) {
           tirador.addEventListener('pointerdown', (event: MouseEvent) => {
             this.redimensionado(event); // Llamar a la función original
           });
-        });
+        }
 
         if (!ghostDiv) {
           console.error('Missing ghostDiv');
@@ -1520,7 +1499,7 @@ export class WebOBS implements OnInit, AfterViewInit, OnDestroy {
         ghostDiv.style.visibility = 'hidden';
         ghostDiv.removeEventListener('pointermove', this.boundCanvasMouseMove);
       }
-    });
+    }
   }
 
   /**
@@ -1529,12 +1508,12 @@ export class WebOBS implements OnInit, AfterViewInit, OnDestroy {
   canvasMouseLeave() {
     const rendered = this.videosElements.filter((video) => video.painted);
     if (rendered.length > 0) {
-      rendered.forEach((video) => {
+      for (const video of rendered) {
         const marco = document.getElementById('marco-' + video.id);
         if (marco) {
           marco.style.visibility = 'hidden';
         }
-      });
+      }
     }
   }
 
@@ -1572,7 +1551,7 @@ export class WebOBS implements OnInit, AfterViewInit, OnDestroy {
     const centroX = ghostDiv.offsetLeft + ghostDiv.offsetWidth / 2 + rect.x;
     const centroY = ghostDiv.offsetTop + ghostDiv.offsetHeight / 2 + rect.y;
     this.moverCruzPosicionamiento(centroX, centroY, intersecciones);
-    intersecciones?.forEach((elemento) => {
+    for (const elemento of intersecciones) {
       if (elemento.id === 'canvas-container') {
         if (this.canvas) {
           this.canvas.style.border = '2px solid #b91c1c';
@@ -1581,7 +1560,7 @@ export class WebOBS implements OnInit, AfterViewInit, OnDestroy {
         elemento.style.border = '2px solid #b91c1c';
         elemento.style.visibility = 'visible';
       }
-    });
+    }
 
     // En evento mousemove, se calcula la diferencia de posición entre el momento del click y el movimiento
     const mouseMove = ($event2: MouseEvent) => {
@@ -1592,12 +1571,12 @@ export class WebOBS implements OnInit, AfterViewInit, OnDestroy {
         return;
       }
       this.canvas.style.border = '2px solid #1d4ed8';
-      const elementos = canvasContainer.querySelectorAll('[id^="marco"]') as NodeListOf<HTMLDivElement>;
-      elementos.forEach((elemento) => {
+      const elementos: NodeListOf<HTMLDivElement> = canvasContainer.querySelectorAll('[id^="marco"]');
+      for (const elemento of elementos) {
         if (elemento.id !== ghostDiv.id) {
           elemento.style.visibility = 'hidden';
         }
-      });
+      }
 
       // Función para recalcular las líneas diagonales
       const recalculaDiagonales = () => {
@@ -1682,7 +1661,7 @@ export class WebOBS implements OnInit, AfterViewInit, OnDestroy {
       const centroY = ghostDiv.offsetTop + ghostDiv.offsetHeight / 2 + rect.y;
       this.moverCruzPosicionamiento(centroX, centroY, intersecciones);
 
-      intersecciones?.forEach((elemento) => {
+      for (const elemento of intersecciones) {
         if (elemento.id === 'canvas-container') {
           if (this.canvas) {
             this.canvas.style.border = '2px solid #b91c1c';
@@ -1691,7 +1670,7 @@ export class WebOBS implements OnInit, AfterViewInit, OnDestroy {
           elemento.style.border = '2px solid #b91c1c';
           elemento.style.visibility = 'visible';
         }
-      });
+      }
     };
     canvasContainer.addEventListener('pointermove', mouseMove);
 
@@ -1702,7 +1681,7 @@ export class WebOBS implements OnInit, AfterViewInit, OnDestroy {
         return;
       }
       const elemento: VideoElement | undefined = this.videosElements.find((el) => el.id === ghostId.substring(6));
-      if (!elemento || !elemento.element) {
+      if (!elemento?.element) {
         console.error('Missing elemento or elemento.element');
         return;
       }
@@ -1721,12 +1700,12 @@ export class WebOBS implements OnInit, AfterViewInit, OnDestroy {
       canvasContainer.removeEventListener('pointermove', mouseMove);
       canvasContainer.removeEventListener('pointerup', mouseup);
       cross.style.display = 'none';
-      const elementos = canvasContainer.querySelectorAll('[id^="marco"]') as NodeListOf<HTMLDivElement>;
-      elementos.forEach((elemento) => {
+      const elementos: NodeListOf<HTMLDivElement> = canvasContainer.querySelectorAll('[id^="marco"]');
+      for (const elemento of elementos) {
         if (elemento.id !== ghostDiv.id) {
           elemento.style.border = '1px solid black';
         }
-      });
+      }
       this.canvas.style.border = '1px solid black';
       ghostDiv.style.visibility = 'hidden';
       this.editandoDimensiones = false;
@@ -1804,8 +1783,8 @@ export class WebOBS implements OnInit, AfterViewInit, OnDestroy {
     const elementosIntersecados: HTMLElement[] = [];
     const canvasContainer = document.getElementById('canvas-container') as HTMLElement;
     if (!canvasContainer || !this.canvas) return elementosIntersecados;
-    const elementos = canvasContainer.querySelectorAll('[id^="marco"]') as NodeListOf<HTMLElement>;
-    elementos.forEach((elemento) => {
+    const elementos: NodeListOf<HTMLElement> = canvasContainer.querySelectorAll('[id^="marco"]');
+    for (const elemento of elementos) {
       if (elemento.id != principal.id) {
         const rect2 = elemento.getBoundingClientRect();
         // Comprobamos si rect se intersecta con rect2
@@ -1814,7 +1793,7 @@ export class WebOBS implements OnInit, AfterViewInit, OnDestroy {
           elementosIntersecados.push(elemento);
         }
       }
-    });
+    }
     const canvasRect = this.canvas.getBoundingClientRect();
     const tocaBorde = rect.left <= canvasRect.left || rect.right >= canvasRect.right || rect.top <= canvasRect.top || rect.bottom >= canvasRect.bottom;
     if (tocaBorde) {
@@ -1829,7 +1808,7 @@ export class WebOBS implements OnInit, AfterViewInit, OnDestroy {
    * @returns el tiempo en formato hh:mm:ss (string)
    */
   private formatTime(seconds: number): string {
-    if (isNaN(seconds) || !isFinite(seconds)) {
+    if (Number.isNaN(seconds) || !Number.isFinite(seconds)) {
       return '00:00:00';
     }
     const hrs = Math.floor(seconds / 3600);
@@ -1846,9 +1825,10 @@ export class WebOBS implements OnInit, AfterViewInit, OnDestroy {
     const name = prompt('Introduce el nombre del preset \n(El mismo nombre sobrescribe el preset) ', 'Nuevo preset');
     if (name) {
       const videoElements: VideoElement[] = [];
-      this.videosElements.forEach((elemento) => {
+      for (const elemento of this.videosElements) {
         if (elemento.painted && elemento.element) {
-          const newE: VideoElement = JSON.parse(JSON.stringify(elemento));
+          const newE: VideoElement = structuredClone(elemento);
+
           newE.element = elemento.element.cloneNode(true) as HTMLVideoElement;
           if (elemento.element instanceof HTMLVideoElement && newE.element instanceof HTMLVideoElement) {
             newE.element.srcObject = elemento.element.srcObject;
@@ -1858,7 +1838,7 @@ export class WebOBS implements OnInit, AfterViewInit, OnDestroy {
           }
           videoElements.push(newE);
         }
-      });
+      }
       this.presets.set(name, {
         elements: videoElements,
         shortcut: 'ctrl+' + (this.presets.size + 1),
@@ -1878,7 +1858,7 @@ export class WebOBS implements OnInit, AfterViewInit, OnDestroy {
         const videoElement = div.querySelector('video') as HTMLVideoElement;
         if (videoElement) {
           const stream = videoElement.srcObject as MediaStream;
-          stream.getTracks().forEach((track) => track.stop());
+          this.stopStream(stream);
         }
       }
       this.videoDevices = this.videoDevices.filter((device) => device.deviceId !== ele.deviceId);
@@ -1888,14 +1868,16 @@ export class WebOBS implements OnInit, AfterViewInit, OnDestroy {
         const videoElement = div.querySelector('video') as HTMLVideoElement;
         if (videoElement) {
           const stream = videoElement.srcObject as MediaStream;
-          stream.getVideoTracks().forEach((track) => track.stop());
-          stream.getAudioTracks().forEach((track) => {
+          for (const track of stream.getVideoTracks()) {
+            track.stop();
+          }
+          for (const track of stream.getAudioTracks()) {
             track.stop();
             this.audiosCapturas = this.audiosCapturas.filter((t) => t.id !== track.id);
             this.audiosElements = this.audiosElements.filter((element: AudioElement) => element.id !== track.id);
             this.audiosConnections = this.audiosConnections.filter((element: AudioConnection) => element.idEntrada !== track.id || element.idSalida !== track.id);
             this.drawAudioConnections();
-          });
+          }
         }
       }
       this.capturas = this.capturas.filter((stream) => stream !== ele);
@@ -1974,7 +1956,7 @@ export class WebOBS implements OnInit, AfterViewInit, OnDestroy {
         elemento.painted = false;
         elemento.position = null;
         elemento.scale = 1;
-        div.removeChild(capa);
+        capa.remove();
         const marco = document.getElementById('marco-' + elemento.id);
         if (marco) {
           marco.remove();
@@ -2083,7 +2065,7 @@ export class WebOBS implements OnInit, AfterViewInit, OnDestroy {
               console.error('Missing elemento');
               return;
             }
-            const newTime = (parseInt(progress.value) / 100) * (elemento.element as HTMLVideoElement).duration;
+            const newTime = (Number.parseInt(progress.value) / 100) * (elemento.element as HTMLVideoElement).duration;
             (elemento.element as HTMLVideoElement).currentTime = newTime;
 
             // Actualizar el tiempo en el texto inmediatamente
@@ -2103,8 +2085,8 @@ export class WebOBS implements OnInit, AfterViewInit, OnDestroy {
           const duration = this.formatTime((elemento.element as HTMLVideoElement).duration);
           time.innerText = `${currentTime} / ${duration}`;
         });
-        const currentTime = this.formatTime((elemento.element as HTMLVideoElement).currentTime);
-        const duration = this.formatTime((elemento.element as HTMLVideoElement).duration);
+        const currentTime = this.formatTime(elemento.element.currentTime);
+        const duration = this.formatTime(elemento.element.duration);
         time.innerText = `${currentTime} / ${duration}`;
         controllers.appendChild(control);
       }
@@ -2188,14 +2170,19 @@ export class WebOBS implements OnInit, AfterViewInit, OnDestroy {
    */
   async calculatePreset() {
     const keysArray = Array.from(this.presets.keys());
-    keysArray.forEach((key) => {
+    for (const key of keysArray) {
       const presetDiv = document.getElementById('preset-' + key);
       if (!presetDiv) {
         console.error('Preset ' + key + ' no encontrado');
         return;
       }
       presetDiv.innerHTML = '';
-      this.presets.get(key)?.elements.forEach((element: VideoElement) => {
+      const pre = this.presets.get(key);
+      if (!pre) {
+        console.error('Preset ' + key + ' no encontrado');
+        return;
+      }
+      for (const element of pre.elements) {
         let ele;
         let width;
         let height;
@@ -2210,9 +2197,9 @@ export class WebOBS implements OnInit, AfterViewInit, OnDestroy {
             const newStream = new MediaStream();
 
             // Copiar todas las pistas (video, audio) al nuevo flujo
-            originalStream.getTracks().forEach((track) => {
+            for (const track of originalStream.getTracks()) {
               newStream.addTrack(track);
-            });
+            }
 
             // Asignar el nuevo flujo al video
             ele.srcObject = newStream;
@@ -2246,8 +2233,8 @@ export class WebOBS implements OnInit, AfterViewInit, OnDestroy {
         ele.style.width = `${(width * element.scale) / scaleX}px`;
         ele.style.height = `${(height * element.scale) / scaleY}px`;
         presetDiv.appendChild(ele);
-      });
-    });
+      }
+    }
   }
 
   /**
@@ -2262,21 +2249,21 @@ export class WebOBS implements OnInit, AfterViewInit, OnDestroy {
       console.error('Missing elementosDiv');
       return;
     }
-    this.videosElements.forEach((elemento) => {
+    for (const elemento of this.videosElements) {
       const capa = elementosDiv.querySelector('#capa-' + CSS.escape(elemento.id));
       if (capa) {
         capa.remove();
       }
-    });
+    }
 
     // Quitamos las capas de cada preset
     const keysArray = Array.from(this.presets.keys());
-    keysArray.forEach((key) => {
+    for (const key of keysArray) {
       const capa = document.getElementById('capa-' + key);
       if (capa) {
         capa.remove();
       }
-    });
+    }
 
     // Borramos todo el contenido del canvas
     const preset = this.presets.get(name);
@@ -2284,14 +2271,14 @@ export class WebOBS implements OnInit, AfterViewInit, OnDestroy {
       console.error('Missing preset');
       return;
     }
-    this.videosElements.forEach((elemento) => {
+    for (const elemento of this.videosElements) {
       elemento.painted = false;
       elemento.scale = 1;
       elemento.position = null;
-    });
+    }
 
     // Pintamo cada elemento del preset
-    preset.elements.forEach((element) => {
+    for (const element of preset.elements) {
       const ele = this.videosElements.find((el) => el.id === element.id);
       if (!ele) {
         console.error('Missing ele');
@@ -2301,7 +2288,7 @@ export class WebOBS implements OnInit, AfterViewInit, OnDestroy {
       ele.scale = element.scale;
       ele.position = element.position;
       ele.painted = true;
-    });
+    }
 
     // Reorganizar los elementos
     for (let i = 0; i < preset.elements.length; i++) {
@@ -2339,9 +2326,9 @@ export class WebOBS implements OnInit, AfterViewInit, OnDestroy {
 
     // Añadir capa a cada elemento pintado
     const pintados = this.videosElements.filter((elemento) => elemento.painted);
-    pintados.forEach((elemento) => {
+    for (const elemento of pintados) {
       this.addCapa(elemento);
-    });
+    }
   }
 
   /**
@@ -2371,45 +2358,56 @@ export class WebOBS implements OnInit, AfterViewInit, OnDestroy {
    */
   drawAudioConnections() {
     setTimeout(() => {
-      if (this.audiosElements.length === 0) return;
+      if (!this.audiosElements.length) return;
+
       const audios = document.getElementById('audios') as HTMLDivElement;
+      if (!audios) return;
+
       const audiosRect = audios.getBoundingClientRect();
       const audiosList = document.getElementById('audios-list') as HTMLDivElement;
-      if (!audiosList) {
-        console.error('Missing audiosList');
-        return;
-      }
       const conexionesIzquierda = document.getElementById('conexiones-izquierda') as HTMLDivElement;
-      if (!conexionesIzquierda) {
-        console.error('Missing conexionesIzquierda');
-        return;
-      }
       const conexionesDerecha = document.getElementById('conexiones-derecha') as HTMLDivElement;
-      if (!conexionesDerecha) {
-        console.error('Missing conexionesDerecha');
+
+      if (!audiosList || !conexionesIzquierda || !conexionesDerecha) {
+        console.error('Missing required elements');
         return;
       }
 
+      // Limpiar contenedores
       conexionesIzquierda.innerHTML = '';
       conexionesDerecha.innerHTML = '';
-      conexionesIzquierda.style.width = `${8 * this.audiosConnections.length}px`;
-      audiosList.style.width = audiosRect.width - 2 - 8 * this.audiosConnections.length + 'px';
-      this.audiosConnections.forEach((elemento, index) => {
-        //console.log('elemento.idEntrada ' + index + ': ' + elemento.idEntrada);
-        //console.log('elemento.idSalida ' + index + ': ' + elemento.idSalida);
-        const audioEntrada = document.getElementById('audio-level-' + elemento.idEntrada) as HTMLDivElement;
-        if (!audioEntrada) {
-          console.error('Missing audioEntrada');
-          return;
+
+      const connectionWidth = 8;
+      const totalConnections = this.audiosConnections.length;
+
+      conexionesIzquierda.style.width = `${connectionWidth * totalConnections}px`;
+      audiosList.style.width = `${audiosRect.width - 2 - connectionWidth * totalConnections}px`;
+
+      // Helper: generar color aleatorio
+      const getRandomColor = () => {
+        const letters = '0123456789ABCDEF';
+        let color = '#';
+        for (let i = 0; i < 6; i++) {
+          color += letters[Math.floor(Math.random() * 16)];
         }
-        const audioSalida = document.getElementById('audio-level-' + elemento.idSalida) as HTMLDivElement;
-        if (!audioSalida) {
-          console.error('Missing audioSalida');
-          return;
+        color += 'f0'; // alpha
+        return color;
+      };
+
+      // Iterar sobre conexiones
+      for (let i = 0; i < this.audiosConnections.length; i++) {
+        const elemento = this.audiosConnections[i];
+
+        const audioEntrada = document.getElementById(`audio-level-${elemento.idEntrada}`) as HTMLDivElement;
+        const audioSalida = document.getElementById(`audio-level-${elemento.idSalida}`) as HTMLDivElement;
+        if (!audioEntrada || !audioSalida) {
+          console.error('Missing audio elements for connection', elemento);
+          continue;
         }
 
         const entradaRect = audioEntrada.getBoundingClientRect();
         const salidaRect = audioSalida.getBoundingClientRect();
+
         const start = {
           x: entradaRect.left - audiosRect.left,
           y: entradaRect.top - audiosRect.top + entradaRect.height / 2 + audios.scrollTop,
@@ -2418,37 +2416,39 @@ export class WebOBS implements OnInit, AfterViewInit, OnDestroy {
           x: salidaRect.left - audiosRect.left,
           y: salidaRect.top - audiosRect.top + salidaRect.height / 2 + audios.scrollTop,
         };
-        const square = document.createElement('div');
 
+        // Crear el contenedor visual
+        const square = document.createElement('div');
         square.style.position = 'absolute';
         square.style.border = '2px solid';
         square.style.borderRightWidth = '0px';
+        square.style.borderColor = getRandomColor();
+        square.style.left = `${start.x - connectionWidth * (i + 1)}px`;
+        square.style.top = `${start.y}px`;
+        square.style.width = `${connectionWidth * (i + 1)}px`;
+        square.style.height = `${end.y - start.y}px`;
+        square.style.zIndex = `${500 - (i + 1) * 10}`;
 
-        //square.style.transition = 'border-width 0.3s ease'; // para hover suave
-
-        // Crear botón para eliminar la conexión
+        // Botón de eliminar
         const deleteButton = document.createElement('button');
         deleteButton.innerText = 'X';
         deleteButton.style.position = 'absolute';
-        deleteButton.style.left = '-2px';
-        deleteButton.style.top = '0';
-        deleteButton.style.width = '1rem'; // w-4 = 1rem = 16px
-        deleteButton.style.height = '1rem'; // h-4 = 1rem
-        deleteButton.style.borderRadius = '9999px'; // rounded-full
-        deleteButton.style.display = 'none'; // hidden
-        deleteButton.style.alignItems = 'center'; // flex + items-center + justify-center
+        deleteButton.style.width = '1rem';
+        deleteButton.style.height = '1rem';
+        deleteButton.style.borderRadius = '9999px';
+        deleteButton.style.display = 'none';
+        deleteButton.style.alignItems = 'center';
         deleteButton.style.justifyContent = 'center';
         deleteButton.style.top = '0';
         deleteButton.style.right = '0';
+
         deleteButton.onclick = () => {
-          // Eliminar la conexión de la lista
-          this.audiosConnections.splice(index, 1);
-          // Desconectar los nodos de audio
+          this.audiosConnections.splice(i, 1);
           elemento.entrada.disconnect(elemento.salida);
-          // Eliminar el elemento visual
           square.remove();
         };
 
+        // Hover
         square.addEventListener('pointerenter', () => {
           square.style.borderLeftWidth = '4px';
           square.style.borderTopWidth = '4px';
@@ -2463,24 +2463,10 @@ export class WebOBS implements OnInit, AfterViewInit, OnDestroy {
           deleteButton.style.display = 'none';
         });
 
-        const letters = '0123456789ABCDEF';
-        let color = '#';
-        for (let i = 0; i < 6; i++) {
-          color += letters[Math.floor(Math.random() * 16)];
-        }
-        color += 'f0';
-        square.style.borderColor = color;
-        square.style.left = `${start.x - 8 * (index + 1)}px`;
-        square.style.top = `${start.y}px`;
-        square.style.width = `${8 * (index + 1)}px`;
-        square.style.height = `${end.y - start.y}px`;
-        square.style.zIndex = (500 - (index + 1) * 10).toString();
-
         square.appendChild(deleteButton);
-
         conexionesIzquierda.appendChild(square);
-      });
-    }, 100);
+      }
+    }, 100); // Mantengo timeout si es necesario
   }
 
   /**
@@ -2542,11 +2528,10 @@ export class WebOBS implements OnInit, AfterViewInit, OnDestroy {
 
     // Evento para finalizar el dibujo cuando se suelta el mouse
     const audioUp = ($event3: MouseEvent) => {
-      //console.log('audioUp');
       audios.removeEventListener('pointermove', audioMove);
       audios.removeEventListener('pointerup', audioUp);
 
-      const offsetX = parseInt(conexionTemp.style.width) + 2; // Puedes ajustar este valor según sea necesario
+      const offsetX = Number.parseInt(conexionTemp.style.width) + 2; // Puedes ajustar este valor según sea necesario
       conexionTemp.remove();
 
       const elementoFinal = document.elementFromPoint($event3.clientX + offsetX, $event3.clientY);
@@ -2585,7 +2570,7 @@ export class WebOBS implements OnInit, AfterViewInit, OnDestroy {
 
       const startElement = this.audiosElements.find((element: AudioElement) => element.id === idElementoStrart);
       const endElement = this.audiosElements.find((element: AudioElement) => element.id === idElementoFinal);
-      if (typeof startElement === 'undefined' || typeof endElement === 'undefined') {
+      if (startElement === undefined || endElement === undefined) {
         console.error('Elementos no encontrados');
         return;
       }
@@ -2615,19 +2600,17 @@ export class WebOBS implements OnInit, AfterViewInit, OnDestroy {
       return;
     }
     const videoStream = this.canvas.captureStream(this.canvasFPS).getVideoTracks()[0];
-    //console.log('Constrain: ' + videoStream.getSettings().frameRate);
     const audioStream = this.mixedAudioDestination.stream.getAudioTracks()[0];
     this.emision.emit(new MediaStream([videoStream, audioStream]));
-    if (this.ready !== undefined) {
-      if (this.ready) {
-        this.emitiendo = true;
-        this.calculaTiempoGrabacion();
-      } else {
-        console.error('Missing this.ready');
-      }
-    } else {
+
+    if (this.isInLive === undefined) {
       this.emitiendo = true;
       this.calculaTiempoGrabacion();
+    } else {
+      this.emitiendo = this.isInLive;
+      if (this.emitiendo) {
+        this.calculaTiempoGrabacion();
+      }
     }
   }
 
@@ -2635,9 +2618,11 @@ export class WebOBS implements OnInit, AfterViewInit, OnDestroy {
    * Método para detener la emisión
    */
   detenerEmision() {
-    this.emitiendo = false;
     if (this.emision) {
       this.emision.emit(null);
+    }
+    if (this.isInLive === undefined) {
+      this.emitiendo = false;
     }
   }
 
