@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { AfterViewInit, Component, ElementRef, EventEmitter, HostListener, Input, OnDestroy, OnInit, Output, QueryList, ViewChildren } from '@angular/core';
+import { AfterViewInit, Component, ElementRef, EventEmitter, HostListener, Input, OnChanges, OnDestroy, OnInit, Output, QueryList, SimpleChanges, ViewChildren } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { AudioConnection } from './types/audio-connection.interface';
 import { AudioElement } from './types/audio-element.interface';
@@ -13,7 +13,7 @@ import { VideoElement } from './types/video-element.interface';
   templateUrl: './web-obs.html',
   styleUrls: ['./web-obs.css', './assets/tailwind.generated.css'],
 })
-export class WebOBS implements OnInit, AfterViewInit, OnDestroy {
+export class WebOBS implements OnInit, AfterViewInit, OnDestroy, OnChanges {
   canvasWidth = 1280; // Resolución por defecto de la emisión
   canvasHeight = 720; // Resolución por defecto de la emisión
   canvasFPS = 30; // FPS por defecto de la emisión
@@ -51,6 +51,20 @@ export class WebOBS implements OnInit, AfterViewInit, OnDestroy {
   @Input() status?: string; // Observa el estado de la emisión (opcional)
   @Output() emision: EventEmitter<MediaStream | null> = new EventEmitter(); // Emisión de video y audio
   @Output() savePresets: EventEmitter<Map<string, Preset>> = new EventEmitter(); // Guardar presets (opcional)
+
+  // Elije si utilizar la señal del padre o la propia
+  get estadoEmision(): boolean {
+    return this.isInLive ?? this.emitiendo;
+  }
+
+  // Detecta cambios del @Input (desde el padre)
+  ngOnChanges(changes: SimpleChanges) {
+    if (changes['isInLive'] && this.isInLive !== undefined) {
+      if (this.isInLive) {
+        this.calculaTiempoGrabacion();
+      }
+    }
+  }
 
   /**
    * Evento que se emite cuando se cambia el tamaño de la ventana
@@ -2606,11 +2620,6 @@ export class WebOBS implements OnInit, AfterViewInit, OnDestroy {
     if (this.isInLive === undefined) {
       this.emitiendo = true;
       this.calculaTiempoGrabacion();
-    } else {
-      this.emitiendo = this.isInLive;
-      if (this.emitiendo) {
-        this.calculaTiempoGrabacion();
-      }
     }
   }
 
@@ -2632,7 +2641,7 @@ export class WebOBS implements OnInit, AfterViewInit, OnDestroy {
   async calculaTiempoGrabacion() {
     let tiempo = -1;
     const updateTimer = () => {
-      if (this.emitiendo) {
+      if (this.estadoEmision) {
         tiempo += 1;
         this.tiempoGrabacion = this.formatTime(tiempo);
         setTimeout(updateTimer, 1000);

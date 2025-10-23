@@ -99,7 +99,7 @@
     </div>
   </div>
   <div class="flex items-center">
-    @if (this.emitiendo) {
+    @if (this.estadoEmision) {
       <button (click)="this.detenerEmision()" class="w-fix m-2 h-6 cursor-pointer rounded-lg border border-black bg-gray-400 px-2 text-center text-black hover:border-2">Detener emisión</button>
       <p class="ml-4">Tiempo de grabación: {{ tiempoGrabacion }}</p>
     } @else {
