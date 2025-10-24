@@ -45,15 +45,13 @@ export class WebOBS implements OnInit, AfterViewInit, OnDestroy, OnChanges {
   private readonly boundCanvasMouseMove = this.canvasMouseMove.bind(this);
   private readonly handleKeydownRef = this.handleKeydown.bind(this);
 
-  private workletNode: AudioWorkletNode | null = null;
-  private audioSource: MediaStreamAudioSourceNode | null = null;
-  private silentGain: GainNode | null = null;
   private workletLoadingPromise: Promise<void> | null = null;
 
   // para múltiples streams
-  private workletNodes = new Map<string, AudioWorkletNode>(); // key: id de stream o generated id
-  private audioSources = new Map<string, MediaStreamAudioSourceNode>();
-  private silentGains = new Map<string, GainNode>();
+  private readonly mediaElementSources = new Map<HTMLMediaElement, MediaElementAudioSourceNode>();
+  private readonly workletNodes = new Map<string, AudioWorkletNode>(); // key: id de stream o generated id
+  private readonly audioSources = new Map<string, MediaStreamAudioSourceNode>();
+  private readonly silentGains = new Map<string, GainNode>();
 
   @ViewChildren('videoElement') videoElements!: QueryList<ElementRef<HTMLVideoElement>>;
   @Input() savedFiles?: File[] | null; // Files guardados del usuario (opcional)
@@ -63,11 +61,17 @@ export class WebOBS implements OnInit, AfterViewInit, OnDestroy, OnChanges {
   @Output() emision: EventEmitter<MediaStream | null> = new EventEmitter(); // Emisión de video y audio
   @Output() savePresets: EventEmitter<Map<string, Preset>> = new EventEmitter(); // Guardar presets (opcional)
 
-  // Elije si utilizar la señal del padre o la propia
+  /**
+   * Elije si utilizar la señal del padre o la propia
+   */
   get estadoEmision(): boolean {
     return this.isInLive ?? this.emitiendo;
   }
 
+  /**
+   * función para cargar el worklet de procesamiento de audio (AudioWorklet)
+   * @returns
+   */
   async loadAudioWorklet(): Promise<void> {
     if (this.workletLoaded) return;
     if (this.workletLoadingPromise) return this.workletLoadingPromise;
@@ -77,7 +81,7 @@ export class WebOBS implements OnInit, AfterViewInit, OnDestroy, OnChanges {
         await this.ensureAudioContext();
         // Determinar URL (ajusta si necesitas import.meta)
         let workletUrl = '/assets/audio-processor.worklet.js';
-        if (typeof import.meta !== 'undefined' && import.meta.url) {
+        if (import.meta?.url) {
           const candidate = new URL('./assets/audio-processor.worklet.js', import.meta.url).href;
           if (!candidate.startsWith('file:')) workletUrl = candidate;
         }
@@ -85,7 +89,7 @@ export class WebOBS implements OnInit, AfterViewInit, OnDestroy, OnChanges {
         console.log('🧩 Intentando cargar worklet desde:', workletUrl);
         const noCacheUrl = `${workletUrl}?v=${Date.now()}`;
 
-        await this.audioContext!.audioWorklet.addModule(noCacheUrl);
+        await this.audioContext.audioWorklet.addModule(noCacheUrl);
         console.log('✅ AudioWorklet module cargado con éxito');
 
         this.workletLoaded = true;
@@ -101,7 +105,9 @@ export class WebOBS implements OnInit, AfterViewInit, OnDestroy, OnChanges {
     return this.workletLoadingPromise;
   }
 
-  // Detecta cambios del @Input (desde el padre)
+  /**
+   * Detecta cambios del @Input (desde el padre)
+   */
   ngOnChanges(changes: SimpleChanges) {
     if (changes['isInLive'] && this.isInLive !== undefined) {
       if (this.isInLive) {
@@ -126,6 +132,9 @@ export class WebOBS implements OnInit, AfterViewInit, OnDestroy, OnChanges {
     this.initialize().catch((err) => console.error('Error inicializando:', err));
   }
 
+  /**
+   * Función que inicializa la aplicación
+   */
   private async initialize() {
     try {
       if (this.isMobile()) {
@@ -160,7 +169,7 @@ export class WebOBS implements OnInit, AfterViewInit, OnDestroy, OnChanges {
   /**
    * Método para inicializar la aplicación después de la vista
    */
-  ngAfterViewInit(): void {
+  ngAfterViewInit() {
     this.canvas = document.getElementById('salida') as HTMLCanvasElement;
     this.context = this.canvas.getContext('2d')!;
 
@@ -216,13 +225,19 @@ export class WebOBS implements OnInit, AfterViewInit, OnDestroy, OnChanges {
       console.error('No se pudo obtener el elemento audio-level-recorder');
       return;
     }
-    const analyser = this.audioContext.createAnalyser();
-    const source = this.audioContext.createMediaStreamSource(this.mixedAudioDestination.stream);
+
+    // Crear un gainNode para controlar el volumen (opcional si quieres manipular volumen para la grabación)
     const gainNode = this.audioContext.createGain();
     this.audiosElements.push({ id: 'recorder', ele: gainNode });
-    source.connect(gainNode);
-    gainNode.connect(analyser);
 
+    // Conectar el flujo de audio mixto al gainNode
+    const source = this.audioContext.createMediaStreamSource(this.mixedAudioDestination.stream);
+    source.connect(gainNode);
+
+    // ⚠️ No conectamos al audioContext.destination para que no se escuche por los altavoces
+    // gainNode.connect(this.audioContext.destination); // <-- comentado intencionadamente
+
+    // Slider de volumen (solo afecta la grabación si lo conectas a mixedAudioDestination)
     const volume = document.getElementById('volume-audio-recorder') as HTMLInputElement;
     if (!volume) {
       console.error('No se pudo obtener el elemento volume-audio-recorder');
@@ -232,20 +247,8 @@ export class WebOBS implements OnInit, AfterViewInit, OnDestroy, OnChanges {
       gainNode.gain.value = Number.parseInt(volume.value) / 100;
     };
 
-    analyser.fftSize = 256;
-
-    const dataArray = new Uint8Array(analyser.frequencyBinCount);
-
-    // Función para actualizar el nivel de volumen del audio
-    function updateAudioLevel() {
-      analyser.getByteFrequencyData(dataArray);
-      const volume = Math.max(...dataArray) / 255;
-      const percentage = Math.min(volume * 100, 100);
-      audioGrabacion.style.width = `${percentage}%`; // Ajustar el ancho de la barra
-      requestAnimationFrame(updateAudioLevel);
-    }
-    // Actualiza el nivel de volumen del audio
-    updateAudioLevel();
+    // Visualización de audio mediante Worklet (RMS)
+    this.visualizeAudio(this.mixedAudioDestination.stream, audioGrabacion, 'recorder').catch((err) => console.error('Error visualizando audio:', err));
 
     // Escuchar eventos de teclado
     globalThis.window.addEventListener('keydown', this.handleKeydownRef);
@@ -271,7 +274,7 @@ export class WebOBS implements OnInit, AfterViewInit, OnDestroy, OnChanges {
   /**
    * Evento para destruir la aplicación
    */
-  async ngOnDestroy() {
+  ngOnDestroy() {
     // 1️⃣ Detener todos los flujos de video
     for (const stream of this.streams) {
       this.stopStream(stream);
@@ -314,20 +317,24 @@ export class WebOBS implements OnInit, AfterViewInit, OnDestroy, OnChanges {
       for (const [id, src] of this.audioSources) {
         try {
           src.disconnect();
-        } catch (e) {}
+        } catch (e) {
+          console.warn('⚠️ error disconnect node', id, e);
+        }
       }
       this.audioSources.clear();
       for (const [id, g] of this.silentGains) {
         try {
           g.disconnect();
-        } catch (e) {}
+        } catch (e) {
+          console.warn('⚠️ error disconnect node', id, e);
+        }
       }
       this.silentGains.clear();
 
       // Cerrar context
       if (this.audioContext && this.audioContext.state !== 'closed') {
         try {
-          await this.audioContext.close();
+          this.audioContext.close();
           console.log('🧹 AudioContext cerrado correctamente');
         } catch (err) {
           console.warn('⚠️ Error cerrando AudioContext:', err);
@@ -343,6 +350,7 @@ export class WebOBS implements OnInit, AfterViewInit, OnDestroy, OnChanges {
 
   private stopStream(stream: MediaStream) {
     // Detiene todos los tracks de un MediaStream
+    // TODO: hacerlo selectivo, y que cierre bien los audios con todos los nodos de AudioAPI y sobretodo con el worklet
     for (const track of stream.getTracks()) {
       track.stop();
     }
@@ -675,11 +683,24 @@ export class WebOBS implements OnInit, AfterViewInit, OnDestroy, OnChanges {
   }
 
   /**
-   * Función para visualizar el nivel de audio
-   * @param stream Flujo de audio (MediaStream)
-   * @param audioLevel Elemento HTML para visualizar el nivel de audio (HTMLDivElement)
+   * Conecta un flujo de audio a un AudioWorklet para visualizar su nivel RMS en tiempo real.
+   *
+   * Esta función:
+   *  - Garantiza que el AudioWorklet esté cargado y el AudioContext activo.
+   *  - Permite tener múltiples flujos de audio simultáneos, identificados por un `id`.
+   *  - Limpia cualquier nodo previo asociado al mismo `id` para evitar conflictos.
+   *  - Conecta el flujo al AudioWorklet y a un nodo silencioso para procesar audio sin emitir sonido.
+   *  - Escucha los mensajes del Worklet, incluyendo:
+   *      - `worker-started`: cuando el Worklet se inicia por primera vez.
+   *      - `pre-worker-started`: cuando el Worklet ya estaba activo.
+   *      - `rms`: valor RMS del audio, usado para actualizar la barra de nivel.
+   *  - Actualiza el ancho del elemento `audioLevel` según el RMS del flujo.
+   *  - Guarda referencias internas de nodos, fuentes y gains para poder limpiar más tarde.
+   *
+   * @param stream Flujo de audio (MediaStream) a visualizar.
+   * @param audioLevel Elemento HTML (HTMLDivElement) donde se mostrará el nivel de audio.
+   * @param id Identificador opcional para el flujo; si no se proporciona, se genera uno único.
    */
-  // TODO: mover a un AudioWorklet
   async visualizeAudio(stream: MediaStream, audioLevel: HTMLDivElement, id?: string) {
     // id para identificar este worklet/nodo (usa stream.id si disponible)
     const nodeId = id ?? stream.id ?? `stream-${Math.random().toString(36).slice(2, 9)}`;
@@ -702,31 +723,35 @@ export class WebOBS implements OnInit, AfterViewInit, OnDestroy, OnChanges {
       if (prevSource) {
         try {
           prevSource.disconnect();
-        } catch (e) {}
+        } catch (e) {
+          console.warn('⚠️ error disconnect node', nodeId, e);
+        }
         this.audioSources.delete(nodeId);
       }
       const prevGain = this.silentGains.get(nodeId);
       if (prevGain) {
         try {
           prevGain.disconnect();
-        } catch (e) {}
+        } catch (e) {
+          console.warn('⚠️ error disconnect node', nodeId, e);
+        }
         this.silentGains.delete(nodeId);
       }
     }
 
     // 3) Crear fuente y nodo (usa nombre fijo 'audio-processor')
-    const source = this.audioContext!.createMediaStreamSource(stream);
-    const node = new AudioWorkletNode(this.audioContext!, 'audio-processor');
+    const source = this.audioContext.createMediaStreamSource(stream);
+    const node = new AudioWorkletNode(this.audioContext, 'audio-processor');
 
     // 4) Silent gain
-    const silentGain = this.audioContext!.createGain();
+    const silentGain = this.audioContext.createGain();
     silentGain.gain.value = 0;
 
     // 5) Conexiones: source -> node -> silentGain -> destination (o mixedAudioDestination si quieres)
     source.connect(node);
     node.connect(silentGain);
     // conectamos al destination para que el procesador funcione; usar mixed destination si prefieres
-    silentGain.connect(this.audioContext!.destination);
+    silentGain.connect(this.audioContext.destination);
 
     // 6) Escuchar mensajes
     node.port.onmessage = (event: MessageEvent) => {
@@ -751,6 +776,9 @@ export class WebOBS implements OnInit, AfterViewInit, OnDestroy, OnChanges {
     console.log('🔗 Fuente de audio conectada al worklet:', nodeId);
   }
 
+  /**
+   * Función para asegurar que el AudioContext esté funcionando
+   */
   private async ensureAudioContext(): Promise<void> {
     if (!this.audioContext || this.audioContext.state === 'closed') {
       this.audioContext = new AudioContext();
@@ -887,28 +915,53 @@ export class WebOBS implements OnInit, AfterViewInit, OnDestroy, OnChanges {
    * Función para cargar archivos
    * @param files Archivos a cargar (File[])
    */
-  private loadFiles(files: File[]) {
+  async loadFiles(files: File[]) {
+    // Asegura que tenemos AudioContext y mixedAudioDestination
+    try {
+      if (typeof this.ensureAudioContext === 'function') {
+        await this.ensureAudioContext();
+        return; // salir temprano si existe ensureAudioContext
+      }
+
+      // fallback si no hay ensureAudioContext
+      if (!this.audioContext || this.audioContext.state === 'closed') {
+        this.audioContext = new AudioContext();
+        this.mixedAudioDestination = this.audioContext.createMediaStreamDestination();
+        console.log('🔄 AudioContext (fallback) creado en loadFiles');
+      }
+    } catch (err) {
+      console.warn('⚠️ No se pudo asegurar AudioContext en loadFiles:', err);
+    }
+
     for (const file of files) {
       const div = document.getElementById('div-' + file.name);
       if (!div) {
         console.error('No se pudo encontrar el elemento con id div-' + file.name);
-        return;
+        continue;
       }
-      if (file.type.startsWith('image/')) {
-        const img = document.getElementById(file.name) as HTMLImageElement;
-        if (img) {
-          const elemento: VideoElement = {
-            id: file.name,
-            element: img,
-            painted: false,
-            scale: 1,
-            position: null,
-          };
-          this.videosElements.push(elemento);
-        }
-      } else if (file.type.startsWith('video/')) {
-        const video = document.getElementById(file.name) as HTMLVideoElement;
-        if (video) {
+
+      try {
+        if (file.type.startsWith('image/')) {
+          const img = document.getElementById(file.name) as HTMLImageElement | null;
+          if (img) {
+            const elemento: VideoElement = {
+              id: file.name,
+              element: img,
+              painted: false,
+              scale: 1,
+              position: null,
+            };
+            this.videosElements.push(elemento);
+          } else {
+            console.warn('Imagen no encontrada en DOM:', file.name);
+          }
+        } else if (file.type.startsWith('video/')) {
+          const video = document.getElementById(file.name) as HTMLVideoElement | null;
+          if (!video) {
+            console.warn('Video element no encontrado en DOM:', file.name);
+            continue;
+          }
+
           const elemento: VideoElement = {
             id: file.name,
             element: video,
@@ -917,10 +970,13 @@ export class WebOBS implements OnInit, AfterViewInit, OnDestroy, OnChanges {
             position: null,
           };
           this.videosElements.push(elemento);
-          // Añadir el control de audio
-          // TODO: Revisar si se puede confirmar si el audio existe
+
+          // Añadir control de audio
           this.audiosArchivos.push(file.name);
+
+          // Crear gainNode y registrar en arrays
           const gainNode = this.audioContext.createGain();
+          gainNode.gain.value = 1;
           this.audiosElements.push({ id: file.name, ele: gainNode });
           this.audiosConnections.push({
             idEntrada: file.name,
@@ -929,176 +985,220 @@ export class WebOBS implements OnInit, AfterViewInit, OnDestroy, OnChanges {
             salida: this.mixedAudioDestination,
           });
           this.drawAudioConnections();
+
+          // Aseguramos que onplaying sólo asigna la lógica (reemplaza anterior)
           video.onplaying = () => {
-            const audioDiv = document.getElementById('audio-level-' + file.name) as HTMLDivElement;
+            const audioDiv = document.getElementById('audio-level-' + file.name) as HTMLDivElement | null;
             if (!audioDiv) {
               console.error('No se encontró el elemento con id ' + 'audio-level-' + file.name);
               return;
             }
-            const source = this.audioContext.createMediaElementSource(video);
-            source.connect(gainNode);
-            gainNode.connect(this.mixedAudioDestination);
+
+            // Reutilizar source si ya existe para este media element
+            let source = this.mediaElementSources.get(video);
+            if (!source) {
+              source = this.audioContext.createMediaElementSource(video);
+              this.mediaElementSources.set(video, source);
+            }
+
+            // Conexiones
+            try {
+              source.connect(gainNode);
+            } catch (e) {
+              console.warn('⚠️ No se pudo conectar source->gain (video):', e);
+            }
+
+            try {
+              gainNode.connect(this.mixedAudioDestination);
+            } catch (e) {
+              console.warn('⚠️ No se pudo conectar gain->mixedAudioDestination (video):', e);
+            }
+
+            // Crear sample stream para visualización
             const sample = this.audioContext.createMediaStreamDestination();
-            gainNode.connect(sample);
-            const volume = document.getElementById('volume-' + file.name) as HTMLInputElement;
+            try {
+              gainNode.connect(sample);
+            } catch (e) {
+              console.warn('⚠️ No se pudo conectar gain->sample (video):', e);
+            }
+
+            // Slider de volumen
+            const volume = document.getElementById('volume-' + file.name) as HTMLInputElement | null;
             if (!volume) {
               console.error('No se encontró el elemento con id ' + 'volume-' + file.name);
               return;
             }
             volume.oninput = () => {
-              gainNode.gain.value = Number.parseInt(volume.value) / 100;
+              gainNode.gain.value = Number.parseInt(volume.value, 10) / 100;
             };
-            this.visualizeAudio(sample.stream, audioDiv);
+
+            // Visualización mediante Worklet (no await necesario)
+            this.visualizeAudio(sample.stream, audioDiv, file.name).catch((err) => {
+              console.error('Error visualizando audio (video):', err);
+            });
           };
-        }
-      } else if (file.type.startsWith('audio/')) {
-        this.audiosArchivos.push(file.name);
-        const audioDiv = document.getElementById(file.name) as HTMLDivElement;
-        if (!audioDiv) {
-          console.error('No se encontró el elemento con id ' + 'audio-level-' + file.name);
-          return;
-        }
-        const audio: HTMLAudioElement = document.createElement('audio');
-        audio.src = this.getFileUrl(file);
-        audio.load();
-        const gainNode = this.audioContext.createGain();
-        this.audiosElements.push({ id: file.name, ele: gainNode });
-        this.audiosConnections.push({
-          idEntrada: file.name,
-          entrada: gainNode,
-          idSalida: 'recorder',
-          salida: this.mixedAudioDestination,
-        });
-        this.drawAudioConnections();
-        audio.onplaying = () => {
-          const audioDiv = document.getElementById('audio-level-' + file.name) as HTMLDivElement;
+        } else if (file.type.startsWith('audio/')) {
+          this.audiosArchivos.push(file.name);
+          const audioDiv = document.getElementById(file.name) as HTMLDivElement | null;
           if (!audioDiv) {
             console.error('No se encontró el elemento con id ' + 'audio-level-' + file.name);
-            return;
+            continue;
           }
-          const source = this.audioContext.createMediaElementSource(audio);
-          source.connect(gainNode);
-          gainNode.connect(this.mixedAudioDestination);
-          const sample = this.audioContext.createMediaStreamDestination();
-          gainNode.connect(sample);
-          const volume = document.getElementById('volume-' + file.name) as HTMLInputElement;
-          if (!volume) {
-            console.error('No se encontró el elemento con id ' + 'volume-' + file.name);
-            return;
-          }
-          volume.oninput = () => {
-            gainNode.gain.value = Number.parseInt(volume.value) / 100;
-          };
-          this.visualizeAudio(sample.stream, audioDiv);
-        };
 
-        // Ponemos las funcionalidades a los botones de reproducción
-        const playPause = audioDiv.querySelector('#play-pause') as HTMLButtonElement;
-        const play = audioDiv.querySelector('#play') as SVGElement;
-        const pause = audioDiv.querySelector('#pause') as SVGElement;
-        const restart = audioDiv.querySelector('#restart') as HTMLButtonElement;
-        const loop = audioDiv.querySelector('#loop') as HTMLButtonElement;
-        const loopOff = audioDiv.querySelector('#loop-off') as SVGElement;
-        const loopOn = audioDiv.querySelector('#loop-on') as SVGElement;
-        const time = audioDiv.querySelector('#time') as HTMLSpanElement;
-        const progress = audioDiv.querySelector('#progress') as HTMLInputElement;
-        if (!audioDiv || !playPause || !restart || !loop || !time || !progress) {
-          console.error('Missing elements');
-          return;
-        }
-        playPause.onclick = () => {
-          if (!audioDiv) {
-            console.error('Missing audioDiv');
-            return;
-          }
-          if (audio.paused) {
-            audio.play();
-            play.style.display = 'none';
-            pause.style.display = 'block';
-          } else {
-            audio.pause();
-            play.style.display = 'block';
-            pause.style.display = 'none';
-          }
-        };
-        restart.onclick = () => {
-          if (!audioDiv) {
-            console.error('Missing audioDiv');
-            return;
-          }
-          audio.currentTime = 0;
-        };
+          // Crear elemento <audio>
+          const audio: HTMLAudioElement = document.createElement('audio');
+          audio.src = this.getFileUrl(file);
+          audio.load();
 
-        loop.onclick = () => {
-          if (!audioDiv) {
-            console.error('Missing audioDiv');
-            return;
-          }
-          if (audio.loop) {
-            audio.loop = false;
-            loopOff.style.display = 'block';
-            loopOn.style.display = 'none';
-          } else {
-            audio.loop = true;
-            loopOff.style.display = 'none';
-            loopOn.style.display = 'block';
-          }
-        };
+          // Registrar gain y conexiones
+          const gainNode = this.audioContext.createGain();
+          gainNode.gain.value = 1;
+          this.audiosElements.push({ id: file.name, ele: gainNode });
+          this.audiosConnections.push({
+            idEntrada: file.name,
+            entrada: gainNode,
+            idSalida: 'recorder',
+            salida: this.mixedAudioDestination,
+          });
+          this.drawAudioConnections();
 
-        audio.onloadedmetadata = () => {
-          /* Barra de progreso */
-          const duration = this.formatTime(audio.duration);
-          const timeStart = this.formatTime(audio.currentTime);
-          time.innerText = `${timeStart} / ${duration}`;
-          audio.ontimeupdate = () => {
-            if (!audioDiv) {
-              console.error('Missing audioDiv');
+          // Asignar onplaying (reemplaza cualquier handler previo)
+          audio.onplaying = () => {
+            const audioDivLocal = document.getElementById('audio-level-' + file.name) as HTMLDivElement | null;
+            if (!audioDivLocal) {
+              console.error('No se encontró el elemento con id ' + 'audio-level-' + file.name);
               return;
             }
-            const percentage = (audio.currentTime / audio.duration) * 100;
-            progress.value = percentage.toString();
-            // Mostrar el tiempo actual y la duración
-            const currentTime = this.formatTime(audio.currentTime);
-            time.innerText = `${currentTime} / ${duration}`;
 
-            progress.oninput = () => {
-              if (!audioDiv) {
-                console.error('Missing audioDiv');
-                return;
-              }
-              const newTime = (Number.parseInt(progress.value) / 100) * audio.duration;
-              audio.currentTime = newTime;
+            // Reutilizar source si ya existe
+            let source = this.mediaElementSources.get(audio);
+            if (!source) {
+              source = this.audioContext.createMediaElementSource(audio);
+              this.mediaElementSources.set(audio, source);
+            }
 
-              // Actualizar el tiempo en el texto inmediatamente
-              const currentTime = this.formatTime(audio.currentTime);
-              time.innerText = `${currentTime} / ${duration}`;
+            try {
+              source.connect(gainNode);
+            } catch (e) {
+              console.warn('⚠️ No se pudo conectar source->gain (audio):', e);
+            }
+
+            try {
+              gainNode.connect(this.mixedAudioDestination);
+            } catch (e) {
+              console.warn('⚠️ No se pudo conectar gain->mixedAudioDestination (audio):', e);
+            }
+
+            const sample = this.audioContext.createMediaStreamDestination();
+            try {
+              gainNode.connect(sample);
+            } catch (e) {
+              console.warn('⚠️ No se pudo conectar gain->sample (audio):', e);
+            }
+
+            const volume = document.getElementById('volume-' + file.name) as HTMLInputElement | null;
+            if (!volume) {
+              console.error('No se encontró el elemento con id ' + 'volume-' + file.name);
+              return;
+            }
+            volume.oninput = () => {
+              gainNode.gain.value = Number.parseInt(volume.value, 10) / 100;
             };
-            // Cambia el color de las barras de audio
-            const audioStream: HTMLDivElement | null | undefined = document.getElementById('div-' + file.name)?.querySelector('#audio-stream');
-            if (!audioStream) {
-              console.error('No se encontró el elemento con id ' + 'audio-stream');
-              return;
-            }
-            const audioBars = audioStream.querySelectorAll('div');
-            const currentSample = Math.floor((audio.currentTime / audio.duration) * audioStream.offsetWidth);
-            const threshold = audioBars.length < audioStream.offsetWidth * 2;
-            for (let i = 0; i < audioBars.length; i++) {
-              const bar = audioBars[i];
-              const condition = threshold ? i <= currentSample : i / 2 <= currentSample;
-              bar.style.backgroundColor = condition ? '#16a34a' : '#1d4ed8';
-            }
+
+            // Inicia visualización
+            this.visualizeAudio(sample.stream, audioDivLocal, file.name).catch((err) => {
+              console.error('Error visualizando audio (file):', err);
+            });
           };
-          // Dibuja el flujo de audio
-          this.pintaAudio(file);
-        };
+
+          // Controles del UI (play/pause/restart/loop/progress)
+          const playPause: HTMLButtonElement | null = audioDiv.querySelector('#play-pause');
+          const play: SVGElement | null = audioDiv.querySelector('#play');
+          const pause: SVGElement | null = audioDiv.querySelector('#pause');
+          const restart: HTMLButtonElement | null = audioDiv.querySelector('#restart');
+          const loop: HTMLButtonElement | null = audioDiv.querySelector('#loop');
+          const loopOff: SVGElement | null = audioDiv.querySelector('#loop-off');
+          const loopOn: SVGElement | null = audioDiv.querySelector('#loop-on');
+          const time: HTMLSpanElement | null = audioDiv.querySelector('#time');
+          const progress: HTMLInputElement | null = audioDiv.querySelector('#progress');
+
+          if (!audioDiv || !playPause || !restart || !loop || !time || !progress) {
+            console.error('Missing elements for audio controls:', file.name);
+          } else {
+            playPause.onclick = () => {
+              if (audio.paused) {
+                audio.play().catch((e) => console.error('Error play audio:', e));
+                if (play) play.style.display = 'none';
+                if (pause) pause.style.display = 'block';
+              } else {
+                audio.pause();
+                if (play) play.style.display = 'block';
+                if (pause) pause.style.display = 'none';
+              }
+            };
+            restart.onclick = () => {
+              audio.currentTime = 0;
+            };
+            loop.onclick = () => {
+              if (audio.loop) {
+                audio.loop = false;
+                if (loopOff) loopOff.style.display = 'block';
+                if (loopOn) loopOn.style.display = 'none';
+              } else {
+                audio.loop = true;
+                if (loopOff) loopOff.style.display = 'none';
+                if (loopOn) loopOn.style.display = 'block';
+              }
+            };
+
+            audio.onloadedmetadata = () => {
+              const duration = this.formatTime(audio.duration);
+              const timeStart = this.formatTime(audio.currentTime);
+              if (time) time.innerText = `${timeStart} / ${duration}`;
+              audio.ontimeupdate = () => {
+                if (!time || !progress) return;
+                const percentage = (audio.currentTime / audio.duration) * 100;
+                progress.value = percentage.toString();
+                const currentTime = this.formatTime(audio.currentTime);
+                time.innerText = `${currentTime} / ${duration}`;
+
+                progress.oninput = () => {
+                  const newTime = (Number.parseInt(progress.value, 10) / 100) * audio.duration;
+                  audio.currentTime = newTime;
+                  const currentTime = this.formatTime(audio.currentTime);
+                  time.innerText = `${currentTime} / ${duration}`;
+                };
+
+                // Cambia el color de las barras de audio
+                const audioStreamDiv: HTMLDivElement | null | undefined = document.getElementById('div-' + file.name)?.querySelector('#audio-stream') as HTMLDivElement | null;
+                if (!audioStreamDiv) return;
+                const audioBars = audioStreamDiv.querySelectorAll('div');
+                const currentSample = Math.floor((audio.currentTime / audio.duration) * audioStreamDiv.offsetWidth);
+                const threshold = audioBars.length < audioStreamDiv.offsetWidth * 2;
+                for (let i = 0; i < audioBars.length; i++) {
+                  const bar = audioBars[i] as HTMLElement;
+                  const condition = threshold ? i <= currentSample : i / 2 <= currentSample;
+                  bar.style.backgroundColor = condition ? '#16a34a' : '#1d4ed8';
+                }
+              }; // ontimeupdate end
+
+              // Dibuja el flujo de audio
+              this.pintaAudio(file);
+            }; // onloadedmetadata end
+          } // controls else end
+        } // file type branches end
+      } catch (err) {
+        console.error('Error procesando file', file.name, err);
       }
-    }
+    } // for files end
   }
 
   /**
-   * Función para pintar el audio
+   * Función para pintar el audio de un archivo de audio
    * @param file Archivo de audio (File)
    */
+
+  // TODO: revisar si se puede hacer más eficiente y moverlo a un worker
   async pintaAudio(file: File) {
     const arrayBuffer = await file.arrayBuffer();
     const audioBuffer = await this.audioContext.decodeAudioData(arrayBuffer);
@@ -1895,6 +1995,7 @@ export class WebOBS implements OnInit, AfterViewInit, OnDestroy, OnChanges {
 
   /**
    * Función para pintar un elemento en el canvas
+   * No pinta el Canvas, solo añade el elemento formateado a la lista de elementos a pintar
    * @param element Elemento a pintar (HTMLElement)
    * @param widthElement Ancho del elemento (number)
    * @param heightElement Alto del elemento (number)
