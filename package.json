@@ -23,11 +23,13 @@
   },
   "scripts": {
     "ng": "ng",
+    "start": "ng serve demo-app",
     "tailwind:build": "npx tailwindcss -i ./projects/web-obs/src/styles/tailwind.css -o ./projects/web-obs/src/lib/editor-webcam/assets/tailwind.generated.css --config ./tailwind.config.js --minify",
     "tailwind:watch": "npx tailwindcss -i ./projects/web-obs/src/styles/tailwind.css -o ./projects/web-obs/src/lib/editor-webcam/assets/tailwind.generated.css --config ./tailwind.config.js --watch",
-    "build:lib": "npm run tailwind:build && ng build web-obs && cp ./docs/README_Angular.md ./dist/web-obs/README.md && cd dist/web-obs && npm pack",
-    "build:lib:watch": "ng build web-obs --watch",
-    "build:elements": "ng run web-obs:elements && node generate-package.js && cp ./docs/README_WebComponent.md ./dist/web-obs/elements/README.md && cd dist/web-obs/elements && npm pack",
+    "build:workers": "tsc -p tsconfig.workers.json",
+    "build:lib": "npm run tailwind:build && npm run build:workers && ng build web-obs && cp ./docs/README_Angular.md ./dist/web-obs/README.md && cd dist/web-obs && npm pack",
+    "build:lib:watch": "npm run build:workers && ng build web-obs --watch",
+    "build:elements": "npm run build:workers && ng run web-obs:elements && node generate-package.js && cp ./docs/README_WebComponent.md ./dist/web-obs/elements/README.md && cd dist/web-obs/elements && npm pack",
     "build": "npm run build:lib && npm run build:elements",
     "start:elements": "ng serve web-obs:serve-elements",
     "start:demo": "ng serve demo-app",
@@ -90,6 +92,7 @@
     "postcss": "^8.5.6",
     "prettier-plugin-tailwindcss": "^0.6.14",
     "tailwind-scrollbar": "^4.0.2",
-    "typescript": "~5.9.2"
+    "typescript": "~5.9.2",
+    "undici-types": "^7.16.0"
   }
 }

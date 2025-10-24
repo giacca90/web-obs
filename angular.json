@@ -43,7 +43,13 @@
             "tsConfig": "projects/web-obs/tsconfig.elements.json",
             "polyfills": [],
             "inlineStyleLanguage": "css",
-            "assets": []
+            "assets": [
+              {
+                "glob": "**/*.js",
+                "input": "projects/web-obs/src/lib/editor-webcam/assets",
+                "output": "/assets/"
+              }
+            ]
           },
           "configurations": {
             "production": {
@@ -92,6 +98,11 @@
                 "glob": "**/*",
                 "input": "projects/demo-app/public",
                 "output": "/"
+              },
+              {
+                "glob": "**/*",
+                "input": "projects/web-obs/src/lib/editor-webcam/assets",
+                "output": "/assets/"
               }
             ],
             "scripts": [],

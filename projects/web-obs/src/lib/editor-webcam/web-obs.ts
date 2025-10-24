@@ -34,15 +34,26 @@ export class WebOBS implements OnInit, AfterViewInit, OnDestroy, OnChanges {
   context!: CanvasRenderingContext2D; // El contexto de canvas
   editandoDimensiones = false; // Indica si se está editando las dimensiones de un video
   presets = new Map<string, Preset>(); // Presets
-  audioContext = new AudioContext(); // Contexto de audio
+  audioContext: AudioContext = new AudioContext(); // Contexto de audio
   mixedAudioDestination: MediaStreamAudioDestinationNode = this.audioContext.createMediaStreamDestination(); //Audio de grabación
   emitiendo: boolean = false; // Indica si se está emitiendo
   tiempoGrabacion: string = '00:00:00'; // Tiempo de grabación
   selectedVideoForFilter: VideoElement | null = null;
+  private workletLoaded = false;
   private drawInterval: any;
   private readonly fileUrlCache = new Map<File, string>(); // Cache de URLs de archivos
   private readonly boundCanvasMouseMove = this.canvasMouseMove.bind(this);
   private readonly handleKeydownRef = this.handleKeydown.bind(this);
+
+  private workletNode: AudioWorkletNode | null = null;
+  private audioSource: MediaStreamAudioSourceNode | null = null;
+  private silentGain: GainNode | null = null;
+  private workletLoadingPromise: Promise<void> | null = null;
+
+  // para múltiples streams
+  private workletNodes = new Map<string, AudioWorkletNode>(); // key: id de stream o generated id
+  private audioSources = new Map<string, MediaStreamAudioSourceNode>();
+  private silentGains = new Map<string, GainNode>();
 
   @ViewChildren('videoElement') videoElements!: QueryList<ElementRef<HTMLVideoElement>>;
   @Input() savedFiles?: File[] | null; // Files guardados del usuario (opcional)
@@ -55,6 +66,39 @@ export class WebOBS implements OnInit, AfterViewInit, OnDestroy, OnChanges {
   // Elije si utilizar la señal del padre o la propia
   get estadoEmision(): boolean {
     return this.isInLive ?? this.emitiendo;
+  }
+
+  async loadAudioWorklet(): Promise<void> {
+    if (this.workletLoaded) return;
+    if (this.workletLoadingPromise) return this.workletLoadingPromise;
+
+    this.workletLoadingPromise = (async () => {
+      try {
+        await this.ensureAudioContext();
+        // Determinar URL (ajusta si necesitas import.meta)
+        let workletUrl = '/assets/audio-processor.worklet.js';
+        if (typeof import.meta !== 'undefined' && import.meta.url) {
+          const candidate = new URL('./assets/audio-processor.worklet.js', import.meta.url).href;
+          if (!candidate.startsWith('file:')) workletUrl = candidate;
+        }
+
+        console.log('🧩 Intentando cargar worklet desde:', workletUrl);
+        const noCacheUrl = `${workletUrl}?v=${Date.now()}`;
+
+        await this.audioContext!.audioWorklet.addModule(noCacheUrl);
+        console.log('✅ AudioWorklet module cargado con éxito');
+
+        this.workletLoaded = true;
+      } catch (err) {
+        console.error('❌ Error cargando AudioWorklet:', err);
+        this.workletLoaded = false;
+        throw err;
+      } finally {
+        this.workletLoadingPromise = null;
+      }
+    })();
+
+    return this.workletLoadingPromise;
   }
 
   // Detecta cambios del @Input (desde el padre)
@@ -227,7 +271,7 @@ export class WebOBS implements OnInit, AfterViewInit, OnDestroy, OnChanges {
   /**
    * Evento para destruir la aplicación
    */
-  ngOnDestroy() {
+  async ngOnDestroy() {
     // 1️⃣ Detener todos los flujos de video
     for (const stream of this.streams) {
       this.stopStream(stream);
@@ -246,6 +290,55 @@ export class WebOBS implements OnInit, AfterViewInit, OnDestroy, OnChanges {
     // 4️⃣ Eliminar el listener de teclado correctamente
     // IMPORTANTE: bind(this) crea una nueva función, así que debemos guardar la referencia
     globalThis.window.removeEventListener('keydown', this.handleKeydownRef);
+
+    try {
+      // detener streams (tus loops actuales)
+      for (const stream of this.streams) this.stopStream(stream);
+      for (const captura of this.capturas) this.stopStream(captura);
+      for (const track of this.audiosCapturas) if (track.readyState === 'live') track.stop();
+      if (this.handleKeydownRef) globalThis.window.removeEventListener('keydown', this.handleKeydownRef);
+
+      // Desconectar todos workletNodes
+      for (const [id, node] of this.workletNodes) {
+        try {
+          node.port.onmessage = null;
+          node.disconnect();
+          node.port.close();
+        } catch (e) {
+          console.warn('⚠️ error disconnect node', id, e);
+        }
+      }
+      this.workletNodes.clear();
+
+      // Desconectar sources/gains
+      for (const [id, src] of this.audioSources) {
+        try {
+          src.disconnect();
+        } catch (e) {}
+      }
+      this.audioSources.clear();
+      for (const [id, g] of this.silentGains) {
+        try {
+          g.disconnect();
+        } catch (e) {}
+      }
+      this.silentGains.clear();
+
+      // Cerrar context
+      if (this.audioContext && this.audioContext.state !== 'closed') {
+        try {
+          await this.audioContext.close();
+          console.log('🧹 AudioContext cerrado correctamente');
+        } catch (err) {
+          console.warn('⚠️ Error cerrando AudioContext:', err);
+        }
+      }
+    } finally {
+      this.workletLoaded = false;
+      this.workletLoadingPromise = null;
+      this.audioContext = new AudioContext();
+      console.log('✅ Limpieza completa del componente');
+    }
   }
 
   private stopStream(stream: MediaStream) {
@@ -475,6 +568,8 @@ export class WebOBS implements OnInit, AfterViewInit, OnDestroy, OnChanges {
 
       this.streams.push(stream);
 
+      await this.ensureAudioContext(); // importante!!
+
       // Añade un controlador de volumen al dispositivo
       const volume = document.getElementById('volume-' + deviceId) as HTMLInputElement;
       if (!volume) {
@@ -528,6 +623,8 @@ export class WebOBS implements OnInit, AfterViewInit, OnDestroy, OnChanges {
 
       // Guardar el dispositivo en la lista
       this.audioOutputDevices.push(device);
+
+      await this.ensureAudioContext(); // importante!!
 
       // Crear un nodo de destino para capturar el audio procesado
       const destinationNode = this.audioContext.createMediaStreamDestination();
@@ -583,24 +680,93 @@ export class WebOBS implements OnInit, AfterViewInit, OnDestroy, OnChanges {
    * @param audioLevel Elemento HTML para visualizar el nivel de audio (HTMLDivElement)
    */
   // TODO: mover a un AudioWorklet
-  async visualizeAudio(stream: MediaStream, audioLevel: HTMLDivElement) {
-    const analyser = this.audioContext.createAnalyser();
-    const source = this.audioContext.createMediaStreamSource(stream);
+  async visualizeAudio(stream: MediaStream, audioLevel: HTMLDivElement, id?: string) {
+    // id para identificar este worklet/nodo (usa stream.id si disponible)
+    const nodeId = id ?? stream.id ?? `stream-${Math.random().toString(36).slice(2, 9)}`;
 
-    source.connect(analyser);
-    analyser.fftSize = 256;
+    // 1) Asegúrate del contexto y del worklet cargado (serializado)
+    await this.loadAudioWorklet(); // ya hace ensureAudioContext internamente
 
-    const dataArray = new Uint8Array(analyser.frequencyBinCount);
-
-    function updateAudioLevel() {
-      analyser.getByteFrequencyData(dataArray);
-      const volume = Math.max(...dataArray) / 255;
-      const percentage = Math.min(volume * 100, 100);
-      audioLevel.style.width = `${percentage}%`; // Ajustar el ancho de la barra
-      requestAnimationFrame(updateAudioLevel);
+    // 2) Si ya existe un nodo para este id, limpiarlo
+    if (this.workletNodes.has(nodeId)) {
+      try {
+        const prevNode = this.workletNodes.get(nodeId)!;
+        prevNode.port.onmessage = null;
+        prevNode.disconnect();
+        this.workletNodes.delete(nodeId);
+      } catch (e) {
+        console.warn('⚠️ Error limpiando prev worklet node', e);
+      }
+      // limpiar fuentes/gains también
+      const prevSource = this.audioSources.get(nodeId);
+      if (prevSource) {
+        try {
+          prevSource.disconnect();
+        } catch (e) {}
+        this.audioSources.delete(nodeId);
+      }
+      const prevGain = this.silentGains.get(nodeId);
+      if (prevGain) {
+        try {
+          prevGain.disconnect();
+        } catch (e) {}
+        this.silentGains.delete(nodeId);
+      }
     }
 
-    updateAudioLevel();
+    // 3) Crear fuente y nodo (usa nombre fijo 'audio-processor')
+    const source = this.audioContext!.createMediaStreamSource(stream);
+    const node = new AudioWorkletNode(this.audioContext!, 'audio-processor');
+
+    // 4) Silent gain
+    const silentGain = this.audioContext!.createGain();
+    silentGain.gain.value = 0;
+
+    // 5) Conexiones: source -> node -> silentGain -> destination (o mixedAudioDestination si quieres)
+    source.connect(node);
+    node.connect(silentGain);
+    // conectamos al destination para que el procesador funcione; usar mixed destination si prefieres
+    silentGain.connect(this.audioContext!.destination);
+
+    // 6) Escuchar mensajes
+    node.port.onmessage = (event: MessageEvent) => {
+      const data = event.data;
+      if (data.event === 'worker-started') console.log('✅ AudioWorklet arrancado');
+      if (data.event === 'pre-worker-started') console.log('🌀 AudioWorklet ya arrancado');
+
+      // RMS directo
+      if (typeof data.rms === 'number') {
+        const percentage = Math.min(data.rms * 300, 100);
+        requestAnimationFrame(() => {
+          audioLevel.style.width = `${percentage}%`;
+        });
+      }
+    };
+
+    // 7) Guardar referencias
+    this.workletNodes.set(nodeId, node);
+    this.audioSources.set(nodeId, source);
+    this.silentGains.set(nodeId, silentGain);
+
+    console.log('🔗 Fuente de audio conectada al worklet:', nodeId);
+  }
+
+  private async ensureAudioContext(): Promise<void> {
+    if (!this.audioContext || this.audioContext.state === 'closed') {
+      this.audioContext = new AudioContext();
+      // crea destino de mezcla si lo necesitas (solo una vez)
+      this.mixedAudioDestination = this.audioContext.createMediaStreamDestination();
+      console.log('🔄 Nuevo AudioContext creado en ensureAudioContext');
+    }
+    // asegurar que está running
+    if (this.audioContext.state === 'suspended') {
+      try {
+        await this.audioContext.resume();
+        console.log('▶️ AudioContext resumed');
+      } catch (err) {
+        console.warn('⚠️ No se pudo reanudar AudioContext:', err);
+      }
+    }
   }
 
   /**

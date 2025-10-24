@@ -1,0 +1,15 @@
+{
+  "compilerOptions": {
+    "target": "ES2020",
+    "module": "ESNext",
+    "moduleResolution": "Node",
+    "lib": ["ES2020", "DOM"],
+    "strict": true,
+    "esModuleInterop": false,
+    "skipLibCheck": true,
+    "noEmitOnError": false,
+    "outDir": "projects/web-obs/src/lib/editor-webcam/assets",
+    "types": []
+  },
+  "include": ["projects/web-obs/src/lib/editor-webcam/workers/*.ts"]
+}
