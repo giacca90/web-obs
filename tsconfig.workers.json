@@ -8,7 +8,7 @@
     "esModuleInterop": false,
     "skipLibCheck": true,
     "noEmitOnError": false,
-    "outDir": "projects/web-obs/src/lib/editor-webcam/assets",
+    "outDir": "scripts",
     "types": []
   },
   "include": ["projects/web-obs/src/lib/editor-webcam/workers/*.ts"]

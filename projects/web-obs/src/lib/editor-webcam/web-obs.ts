@@ -1,6 +1,7 @@
 import { CommonModule } from '@angular/common';
 import { AfterViewInit, Component, ElementRef, EventEmitter, HostListener, Input, OnChanges, OnDestroy, OnInit, Output, QueryList, SimpleChanges, ViewChildren } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { AUDIO_PROCESSOR } from './audio-processor';
 import { AudioConnection } from './types/audio-connection.interface';
 import { AudioElement } from './types/audio-element.interface';
 import { Preset } from './types/preset.interface';
@@ -79,18 +80,14 @@ export class WebOBS implements OnInit, AfterViewInit, OnDestroy, OnChanges {
     this.workletLoadingPromise = (async () => {
       try {
         await this.ensureAudioContext();
-        // Determinar URL (ajusta si necesitas import.meta)
-        let workletUrl = '/assets/audio-processor.worklet.js';
-        if (import.meta?.url) {
-          const candidate = new URL('./assets/audio-processor.worklet.js', import.meta.url).href;
-          if (!candidate.startsWith('file:')) workletUrl = candidate;
-        }
 
-        console.log('🧩 Intentando cargar worklet desde:', workletUrl);
-        const noCacheUrl = `${workletUrl}?v=${Date.now()}`;
+        // Crear un blob con el código del worklet
+        const blob = new Blob([AUDIO_PROCESSOR], { type: 'application/javascript' });
+        const blobUrl = URL.createObjectURL(blob);
 
-        await this.audioContext.audioWorklet.addModule(noCacheUrl);
-        console.log('✅ AudioWorklet module cargado con éxito');
+        console.log('🧩 Cargando AudioWorklet desde blob');
+        await this.audioContext.audioWorklet.addModule(blobUrl);
+        console.log('✅ AudioWorklet cargado correctamente desde blob');
 
         this.workletLoaded = true;
       } catch (err) {
