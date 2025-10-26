@@ -26,7 +26,7 @@
     "start": "ng serve demo-app",
     "tailwind:build": "npx tailwindcss -i ./projects/web-obs/src/styles/tailwind.css -o ./projects/web-obs/src/lib/editor-webcam/assets/tailwind.generated.css --config ./tailwind.config.js --minify",
     "tailwind:watch": "npx tailwindcss -i ./projects/web-obs/src/styles/tailwind.css -o ./projects/web-obs/src/lib/editor-webcam/assets/tailwind.generated.css --config ./tailwind.config.js --watch",
-    "build:workers": "tsc -p tsconfig.workers.json && node create-audio-worklet.js",
+    "build:workers": "tsc -p tsconfig.workers.json && node generate-workers.mjs",
     "build:lib": "npm run tailwind:build && npm run build:workers && ng build web-obs && cp ./docs/README_Angular.md ./dist/web-obs/README.md && cd dist/web-obs && npm pack",
     "build:lib:watch": "npm run build:workers && ng build web-obs --watch",
     "build:elements": "npm run build:workers && ng run web-obs:elements && node generate-package.js && cp ./docs/README_WebComponent.md ./dist/web-obs/elements/README.md && cd dist/web-obs/elements && npm pack",

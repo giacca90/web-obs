@@ -16,9 +16,7 @@ class AudioProcessor extends AudioWorkletProcessor {
 
   override process(inputs: Float32Array[][], outputs: Float32Array[][], parameters: Record<string, Float32Array>): boolean {
     // ⚡ enviar mensaje de arranque la primera vez que llegue audio
-    if (this.initialized) {
-      this.port.postMessage({ event: 'pre-worker-started' });
-    } else {
+    if (!this.initialized) {
       this.port.postMessage({ event: 'worker-started' });
       this.initialized = true;
     }

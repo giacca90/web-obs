@@ -10,10 +10,7 @@ class AudioProcessor extends AudioWorkletProcessor {
     }
     process(inputs, outputs, parameters) {
         // ⚡ enviar mensaje de arranque la primera vez que llegue audio
-        if (this.initialized) {
-            this.port.postMessage({ event: 'pre-worker-started' });
-        }
-        else {
+        if (!this.initialized) {
             this.port.postMessage({ event: 'worker-started' });
             this.initialized = true;
         }

@@ -231,9 +231,6 @@ export class WebOBS implements OnInit, AfterViewInit, OnDestroy, OnChanges {
     const source = this.audioContext.createMediaStreamSource(this.mixedAudioDestination.stream);
     source.connect(gainNode);
 
-    // ⚠️ No conectamos al audioContext.destination para que no se escuche por los altavoces
-    // gainNode.connect(this.audioContext.destination); // <-- comentado intencionadamente
-
     // Slider de volumen (solo afecta la grabación si lo conectas a mixedAudioDestination)
     const volume = document.getElementById('volume-audio-recorder') as HTMLInputElement;
     if (!volume) {
@@ -917,7 +914,6 @@ export class WebOBS implements OnInit, AfterViewInit, OnDestroy, OnChanges {
     try {
       if (typeof this.ensureAudioContext === 'function') {
         await this.ensureAudioContext();
-        return; // salir temprano si existe ensureAudioContext
       }
 
       // fallback si no hay ensureAudioContext
