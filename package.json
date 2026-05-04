@@ -1,6 +1,8 @@
 {
   "name": "web-obs",
   "version": "0.0.15",
+  "license": "MIT",
+  "private": false,
   "description": "Web-OBS es una librería de Angular 20 y un WebComponent que permite crear broadcasts de video y audio directamente ne el navegador.",
   "keywords": [
     "angular",
@@ -30,7 +32,7 @@
     "build:lib": "npm run tailwind:build && npm run build:workers && ng build web-obs && cp ./docs/README_Angular.md ./dist/web-obs/README.md && cd dist/web-obs && npm pack",
     "build:lib:watch": "npm run build:workers && ng build web-obs --watch",
     "build:elements": "npm run build:workers && ng run web-obs:elements && node generate-package.js && cp ./docs/README_WebComponent.md ./dist/web-obs/elements/README.md && cd dist/web-obs/elements && npm pack",
-    "build": "npm run build:lib && npm run build:elements",
+    "build": "npm run build:lib && npm run build:elements && npm run license-report",
     "start:elements": "ng serve web-obs:serve-elements",
     "start:demo": "ng serve demo-app",
     "dev": "clear && concurrently \"npm run tailwind:watch\" \"npm run build:lib:watch\" \"npm run start:demo\"",
@@ -43,7 +45,8 @@
     "publish": "npm run build && npm run publish:web-obs && npm run publish:elements && node publish-visits.js && gh-pages -d dist/web-obs/elements",
     "release:patch": "npm version patch && cd projects/web-obs && npm version patch && cd ../.. && npm run publish",
     "release:minor": "npm version minor && cd projects/web-obs && npm version minor && cd ../.. && npm run publish",
-    "release:major": "npm version major && cd projects/web-obs && npm version major && cd ../.. && npm run publish"
+    "release:major": "npm version major && cd projects/web-obs && npm version major && cd ../.. && npm run publish",
+    "license-report": "license-checker --txt --out THIRD-PARTY-LICENSES.txt && sed -i \"s|$PWD|.|g\" THIRD-PARTY-LICENSES.txt"
   },
   "prettier": {
     "overrides": [
@@ -55,7 +58,6 @@
       }
     ]
   },
-  "private": true,
   "dependencies": {
     "tslib": "^2.8.1"
   },
@@ -87,6 +89,7 @@
     "karma-coverage": "~2.2.1",
     "karma-jasmine": "~5.1.0",
     "karma-jasmine-html-reporter": "~2.1.0",
+    "license-checker": "^25.0.1",
     "ng-packagr": "^20.2.0",
     "ngx-build-plus": "^20.0.0",
     "postcss": "^8.5.6",
