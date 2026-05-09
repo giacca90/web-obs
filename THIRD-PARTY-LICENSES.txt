@@ -1907,8 +1907,8 @@
 │  ├─ publisher: Julian Gruber
 │  ├─ email: mail@juliangruber.com
 │  ├─ url: http://juliangruber.com
-│  ├─ path: ./node_modules/@tufjs/models/node_modules/brace-expansion
-│  └─ licenseFile: ./node_modules/@tufjs/models/node_modules/brace-expansion/LICENSE
+│  ├─ path: ./node_modules/cacache/node_modules/brace-expansion
+│  └─ licenseFile: ./node_modules/cacache/node_modules/brace-expansion/LICENSE
 ├─ braces@3.0.3
 │  ├─ licenses: MIT
 │  ├─ repository: https://github.com/micromatch/braces
@@ -4226,8 +4226,8 @@
 │  ├─ publisher: Isaac Z. Schlueter
 │  ├─ email: i@izs.me
 │  ├─ url: http://blog.izs.me
-│  ├─ path: ./node_modules/@tufjs/models/node_modules/minimatch
-│  └─ licenseFile: ./node_modules/@tufjs/models/node_modules/minimatch/LICENSE
+│  ├─ path: ./node_modules/cacache/node_modules/minimatch
+│  └─ licenseFile: ./node_modules/cacache/node_modules/minimatch/LICENSE
 ├─ minimist@1.2.8
 │  ├─ licenses: MIT
 │  ├─ repository: https://github.com/minimistjs/minimist

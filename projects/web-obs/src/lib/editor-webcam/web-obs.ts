@@ -35,9 +35,9 @@ export class WebOBS implements OnInit, AfterViewInit, OnDestroy, OnChanges {
   context!: CanvasRenderingContext2D; // El contexto de canvas
   editandoDimensiones = false; // Indica si se está editando las dimensiones de un video
   presets = new Map<string, Preset>(); // Presets
-  audioContext: AudioContext = new AudioContext(); // Contexto de audio
-  mixedAudioDestination: MediaStreamAudioDestinationNode = this.audioContext.createMediaStreamDestination(); //Audio de grabación
-  recordAudioDestination: MediaStreamAudioDestinationNode = this.audioContext.createMediaStreamDestination(); //Audio de grabación
+  audioContext!: AudioContext;
+  mixedAudioDestination!: MediaStreamAudioDestinationNode;
+  recordAudioDestination!: MediaStreamAudioDestinationNode;
   emitiendo: boolean = false; // Indica si se está emitiendo
   tiempoGrabacion: string = '00:00:00'; // Tiempo de grabación
   statusMessage: string = ''; // Mensaje de estado para el usuario
@@ -91,8 +91,9 @@ export class WebOBS implements OnInit, AfterViewInit, OnDestroy, OnChanges {
   }
 
   /**
-   * función para cargar el worklet de procesamiento de audio (AudioWorklet)
-   * @returns
+   * @summary Carga el worklet de procesamiento de audio.
+   * @description Carga el AudioWorklet si aún no ha sido cargado, o devuelve la promesa de carga existente.
+   * @returns {Promise<void>} Una promesa que se resuelve cuando el AudioWorklet ha sido cargado.
    */
   async loadAudioWorklet(): Promise<void> {
     if (this.workletLoaded) return;
@@ -124,7 +125,9 @@ export class WebOBS implements OnInit, AfterViewInit, OnDestroy, OnChanges {
   }
 
   /**
-   * Detecta cambios del @Input (desde el padre)
+   * @summary Detecta cambios en los inputs del componente.
+   * @description Reacciona a cambios en los inputs recibidos desde el componente padre.
+   * @param {SimpleChanges} changes Objeto con los cambios detectados.
    */
   ngOnChanges(changes: SimpleChanges) {
     if (changes['isInLive'] && this.isInLive !== undefined) {
@@ -135,7 +138,8 @@ export class WebOBS implements OnInit, AfterViewInit, OnDestroy, OnChanges {
   }
 
   /**
-   * Evento que se emite cuando se cambia el tamaño de la ventana
+   * @summary Manejador de evento de redimensionamiento de ventana.
+   * @description Recalcula los presets y redibuja las conexiones de audio al cambiar el tamaño de la ventana.
    */
   @HostListener('window:resize')
   onResize(): void {
@@ -144,14 +148,16 @@ export class WebOBS implements OnInit, AfterViewInit, OnDestroy, OnChanges {
   }
 
   /**
-   * Método para inicializar la aplicación
+   * @summary Inicializa el componente.
+   * @description Método del ciclo de vida de Angular que inicia la inicialización asíncrona de la aplicación.
    */
   ngOnInit(): void {
     this.initialize().catch((err) => console.error('Error inicializando:', err));
   }
 
   /**
-   * Función que inicializa la aplicación
+   * @summary Inicializa la aplicación.
+   * @description Configura dispositivos, carga archivos y presets.
    */
   private async initialize() {
     try {
@@ -184,7 +190,8 @@ export class WebOBS implements OnInit, AfterViewInit, OnDestroy, OnChanges {
   }
 
   /**
-   * Método para inicializar la aplicación después de la vista
+   * @summary Inicializa el componente después de que la vista ha sido inicializada.
+   * @description Configura el canvas, inicia el bucle de dibujado, inicializa el grabador de audio y los listeners de eventos.
    */
   ngAfterViewInit() {
     this.canvas = this.salida.nativeElement;
@@ -193,40 +200,74 @@ export class WebOBS implements OnInit, AfterViewInit, OnDestroy, OnChanges {
     // Refresca el canvas a la tasa de fotogramas requerida
     this.drawInterval = setInterval(this.drawFrame, 1000 / this.canvasFPS);
 
-    // Inicia a mostrar el audio de grabación
-    const audioGrabacion = this.audioLevelRecorder.nativeElement;
-    if (!audioGrabacion) {
-      console.error('No se pudo obtener el elemento audio-level-recorder');
-      return;
-    }
+    // Inicialización del audio diferida hasta la interacción del usuario
+    this.initAudioRecorder();
 
-    // Crear un gainNode para controlar el volumen (opcional si quieres manipular volumen para la grabación)
-    const gainNode = this.audioContext.createGain();
-    this.audiosElements.push({ id: 'recorder', ele: gainNode });
+    this.initEventListeners();
+    this.loadStaticContent();
+  }
 
-    // Conectar el flujo de audio mixto al gainNode
-    const source = this.audioContext.createMediaStreamSource(this.mixedAudioDestination.stream);
-    source.connect(gainNode);
-    gainNode.connect(this.recordAudioDestination);
+  /**
+   * @summary Inicializa el grabador de audio.
+   * @description Configura el AudioContext, nodos de ganancia y visualización de audio para la grabación.
+   */
+  private initAudioRecorder() {
+    this.ensureAudioContext().then(() => {
+      // Inicia a mostrar el audio de grabación
+      const audioGrabacion = this.audioLevelRecorder?.nativeElement;
+      if (!audioGrabacion) {
+        console.error('No se pudo obtener el elemento audio-level-recorder');
+        return;
+      }
 
-    const sample = this.audioContext.createMediaStreamDestination();
-    gainNode.connect(sample);
+      // Crear un gainNode para controlar el volumen
+      const gainNode = this.audioContext.createGain();
+      this.audiosElements.push({ id: 'recorder', ele: gainNode });
 
-    // Slider de volumen (solo afecta la grabación si lo conectas a mixedAudioDestination)
-    const volume = this.volumeAudioRecorder.nativeElement;
-    if (!volume) {
-      console.error('No se pudo obtener el elemento volume-audio-recorder');
-      return;
-    }
-    volume.oninput = () => {
-      gainNode.gain.value = Number.parseInt(volume.value) / 100;
-    };
+      // Conectar el flujo de audio mixto al gainNode
+      const source = this.audioContext.createMediaStreamSource(this.mixedAudioDestination.stream);
+      source.connect(gainNode);
+      gainNode.connect(this.recordAudioDestination);
 
-    // Visualización de audio mediante Worklet (RMS)
-    this.visualizeAudio(sample.stream, audioGrabacion, 'recorder').catch((err) => console.error('Error visualizando audio:', err));
+      const sample = this.audioContext.createMediaStreamDestination();
+      gainNode.connect(sample);
 
+      // Slider de volumen
+      const volume = this.volumeAudioRecorder?.nativeElement;
+      if (volume) {
+        volume.oninput = () => {
+          gainNode.gain.value = Number.parseInt(volume.value) / 100;
+        };
+      }
+
+      // Visualización de audio mediante Worklet (RMS)
+      this.visualizeAudio(sample.stream, audioGrabacion, 'recorder').catch((err) => console.error('Error visualizando audio:', err));
+    });
+  }
+
+  /**
+   * @summary Inicializa los event listeners.
+   * @description Configura listeners para eventos de teclado y para reanudar el audio en la interacción del usuario.
+   */
+  private initEventListeners() {
     // Escuchar eventos de teclado
     globalThis.window.addEventListener('keydown', this.handleKeydownRef);
+
+    // Añadir listener global para reanudar audio en la primera interacción
+    const resumeAudio = async () => {
+      if (this.audioContext && this.audioContext.state === 'suspended') {
+        await this.audioContext.resume();
+        globalThis.window.removeEventListener('click', resumeAudio);
+      }
+    };
+    globalThis.window.addEventListener('click', resumeAudio);
+  }
+
+  /**
+   * @summary Carga el contenido estático.
+   * @description Carga los archivos y presets guardados previamente.
+   */
+  private loadStaticContent() {
     // Carga los files recibidos (si hay)
     if (this.staticContent?.length > 0) {
       this.loadFiles(this.staticContent);
@@ -249,7 +290,8 @@ export class WebOBS implements OnInit, AfterViewInit, OnDestroy, OnChanges {
   }
 
   /**
-   * Evento para destruir la aplicación
+   * @summary Limpia los recursos al destruir el componente.
+   * @description Detiene todos los flujos de medios, elimina listeners y cierra el AudioContext.
    */
   ngOnDestroy() {
     // 1️⃣ Detener todos los flujos de video
@@ -321,6 +363,10 @@ export class WebOBS implements OnInit, AfterViewInit, OnDestroy, OnChanges {
     }
   }
 
+  /**
+   * @summary Detiene un flujo de medios.
+   * @param stream El flujo de medios a detener.
+   */
   private stopStream(stream: MediaStream) {
     // Detiene todos los tracks de un MediaStream
     for (const track of stream.getAudioTracks()) {
@@ -336,8 +382,9 @@ export class WebOBS implements OnInit, AfterViewInit, OnDestroy, OnChanges {
   }
 
   /**
-   * Metodo para detectar si se está en un movil o un pc
-   * @returns true si se está en un pc, false si se está en un movil
+   * @summary Verifica si el dispositivo es móvil.
+   * @description Comprueba la cadena del User Agent para determinar si se está ejecutando en un dispositivo móvil.
+   * @returns {boolean} True si es móvil, false en caso contrario.
    */
   isMobile(): boolean {
     const ua = navigator.userAgent || (globalThis.window as any).opera;
@@ -345,8 +392,9 @@ export class WebOBS implements OnInit, AfterViewInit, OnDestroy, OnChanges {
   }
 
   /**
-   * Método para manejar eventos de teclado
-   * @param event Evento de teclado (KeyboardEvent)
+   * @summary Maneja eventos de teclado.
+   * @description Detecta atajos de teclado (Ctrl + número) para activar presets.
+   * @param {KeyboardEvent} event El evento de teclado.
    */
   handleKeydown(event: KeyboardEvent) {
     // Verificar si se presionó Ctrl + un número
@@ -361,8 +409,9 @@ export class WebOBS implements OnInit, AfterViewInit, OnDestroy, OnChanges {
   }
 
   /**
-   * Método para iniciar los flujos de video y audio
-   * @param devices Lista de dispositivos de audio y video (MediaDeviceInfo[])
+   * @summary Inicia los flujos de medios (video y audio).
+   * @description Obtiene los streams de los dispositivos de video y audio disponibles y los configura.
+   * @param {MediaDeviceInfo[]} devices Lista de dispositivos de audio y video.
    */
   async startMedias(devices: MediaDeviceInfo[]) {
     // Asignar el video stream a cada dispositivo de video
@@ -390,7 +439,8 @@ export class WebOBS implements OnInit, AfterViewInit, OnDestroy, OnChanges {
   }
 
   /**
-   * Método para actualizar los dispositivos de audio y video
+   * @summary Actualiza la lista de dispositivos de audio y video.
+   * @description Detecta cambios en los dispositivos conectados y actualiza las listas internas.
    */
   async updateDevices() {
     try {
@@ -466,8 +516,10 @@ export class WebOBS implements OnInit, AfterViewInit, OnDestroy, OnChanges {
   }
 
   /**
-   * Método para obtener el flujo de video
-   * @param deviceId ID del dispositivo de video (string)
+   * @summary Obtiene el stream de video de un dispositivo específico.
+   * @description Solicita acceso al stream de video de un dispositivo y configura las constraints óptimas.
+   * @param {string} deviceId El ID del dispositivo de video.
+   * @returns {Promise<void>} Una promesa que se resuelve cuando el stream es obtenido.
    */
   async getVideoStream(deviceId: string) {
     try {
@@ -544,8 +596,10 @@ export class WebOBS implements OnInit, AfterViewInit, OnDestroy, OnChanges {
   }
 
   /**
-   * Método para obtener el flujo de audio
-   * @param deviceId ID del dispositivo de audio (string)
+   * @summary Obtiene el stream de audio de un dispositivo específico.
+   * @description Solicita acceso al stream de audio de un dispositivo, configura el volumen y la visualización.
+   * @param {string} deviceId El ID del dispositivo de audio.
+   * @returns {Promise<void>} Una promesa que se resuelve cuando el stream es obtenido.
    */
   async getAudioStream(deviceId: string): Promise<void> {
     try {
@@ -587,8 +641,10 @@ export class WebOBS implements OnInit, AfterViewInit, OnDestroy, OnChanges {
   }
 
   /**
-   * Función para obtener el flujo de salida de audio
-   * @param device
+   * @summary Obtiene el stream de salida de audio.
+   * @description Configura un dispositivo de salida de audio para reproducir el audio procesado.
+   * @param {MediaDeviceInfo} device El dispositivo de salida de audio.
+   * @returns {Promise<void>} Una promesa que se resuelve cuando el stream de salida es configurado.
    */
   async getAudioOutputStream(device: MediaDeviceInfo) {
     try {
@@ -730,18 +786,12 @@ export class WebOBS implements OnInit, AfterViewInit, OnDestroy, OnChanges {
     // 6) Escuchar mensajes
     node.port.onmessage = (event: MessageEvent) => {
       const data = event.data;
-      if (data.event === 'worker-started')
-        if (data.event === 'pre-worker-started')
-          if (typeof data.rms === 'number') {
-            // console.log('✅ AudioWorklet arrancado');
-            // console.log('🌀 AudioWorklet ya arrancado');
-
-            // RMS directo
-            const percentage = Math.min(data.rms * 300, 100);
-            requestAnimationFrame(() => {
-              audioLevel.style.width = `${percentage}%`;
-            });
-          }
+      if (typeof data.rms === 'number') {
+        const percentage = Math.min(data.rms * 300, 100);
+        requestAnimationFrame(() => {
+          audioLevel.style.width = `${percentage}%`;
+        });
+      }
     };
 
     // 7) Guardar referencias
@@ -753,20 +803,19 @@ export class WebOBS implements OnInit, AfterViewInit, OnDestroy, OnChanges {
   }
 
   /**
-   * Función para asegurar que el AudioContext esté funcionando
+   * @summary Asegura que el AudioContext esté funcionando.
+   * @description Inicializa o reanuda el AudioContext si es necesario.
+   * @returns {Promise<void>} Una promesa que se resuelve cuando el AudioContext está activo.
    */
   private async ensureAudioContext(): Promise<void> {
     if (!this.audioContext || this.audioContext.state === 'closed') {
       this.audioContext = new AudioContext();
-      // crea destino de mezcla si lo necesitas (solo una vez)
       this.mixedAudioDestination = this.audioContext.createMediaStreamDestination();
-      // console.log('🔄 Nuevo AudioContext creado en ensureAudioContext');
+      this.recordAudioDestination = this.audioContext.createMediaStreamDestination();
     }
-    // asegurar que está running
-    if (this.audioContext.state === 'suspended') {
+    if (this.audioContext?.state === 'suspended') {
       try {
         await this.audioContext.resume();
-        // console.log('▶️ AudioContext resumed');
       } catch (err) {
         console.warn('⚠️ No se pudo reanudar AudioContext:', err);
       }
@@ -774,7 +823,9 @@ export class WebOBS implements OnInit, AfterViewInit, OnDestroy, OnChanges {
   }
 
   /**
-   * Función para agregar un flujo de pantalla
+   * @summary Agrega un flujo de pantalla.
+   * @description Solicita al usuario compartir su pantalla o ventana, y añade el stream de video y audio.
+   * @returns {Promise<void>} Una promesa que se resuelve cuando el flujo de pantalla es agregado.
    */
   async addScrean() {
     try {
@@ -857,7 +908,9 @@ export class WebOBS implements OnInit, AfterViewInit, OnDestroy, OnChanges {
   }
 
   /**
-   * Función para añadir archivos y configurar el enrutamiento de audio
+   * @summary Abre un selector de archivos para añadir contenido estático.
+   * @description Permite al usuario seleccionar múltiples archivos de imagen, video o audio para cargar.
+   * @returns {Promise<void>} Una promesa que se resuelve cuando los archivos son seleccionados.
    */
   async addFiles() {
     const input: HTMLInputElement = document.createElement('input');
@@ -882,8 +935,10 @@ export class WebOBS implements OnInit, AfterViewInit, OnDestroy, OnChanges {
   }
 
   /**
-   * Función para cargar archivos
-   * @param files Archivos a cargar (File[])
+   * @summary Carga archivos estáticos seleccionados.
+   * @description Procesa archivos de imagen, video o audio y los añade al editor.
+   * @param {File[]} files Lista de archivos a cargar.
+   * @returns {Promise<void>} Una promesa que se resuelve cuando los archivos son cargados.
    */
   async loadFiles(files: File[]) {
     // Asegura que tenemos AudioContext y mixedAudioDestination
@@ -1145,11 +1200,11 @@ export class WebOBS implements OnInit, AfterViewInit, OnDestroy, OnChanges {
   }
 
   /**
-   * Función para pintar el audio de un archivo de audio
-   * @param file Archivo de audio (File)
+   * @summary Dibuja la forma de onda del audio de un archivo.
+   * @description Decodifica el audio y dibuja visualmente su amplitud en un canvas.
+   * @param {File} file El archivo de audio a dibujar.
+   * @returns {Promise<void>} Una promesa que se resuelve cuando el dibujo termina.
    */
-
-  // TODO: revisar si se puede hacer más eficiente y moverlo a un worker
   async pintaAudio(file: File) {
     const arrayBuffer = await file.arrayBuffer();
     const audioBuffer = await this.audioContext.decodeAudioData(arrayBuffer);
@@ -1205,9 +1260,10 @@ export class WebOBS implements OnInit, AfterViewInit, OnDestroy, OnChanges {
   }
 
   /**
-   * Función para obtener la URL de un archivo utilizando la caché
-   * @param file Archivo (File)
-   * @returns URL del archivo (string)
+   * @summary Obtiene la URL de objeto de un archivo.
+   * @description Utiliza caché para devolver la URL creada con URL.createObjectURL.
+   * @param {File} file El archivo.
+   * @returns {string} La URL del archivo.
    */
   getFileUrl(file: File): string {
     if (!this.fileUrlCache.has(file)) {
@@ -1218,9 +1274,10 @@ export class WebOBS implements OnInit, AfterViewInit, OnDestroy, OnChanges {
   }
 
   /**
-   * Método para cambiar la resolución de la emisión
-   * @param $event Evento de cambio de resolución (Event)
-   * @param res Resolución seleccionada (string)
+   * @summary Cambia la resolución de la emisión.
+   * @description Actualiza el ancho y alto del lienzo de la emisión según la selección.
+   * @param {Event} $event El evento de cambio.
+   * @param {string} res La resolución seleccionada en formato "ancho x alto".
    */
   cambiarResolucion($event: Event, res: string) {
     const selected = this.selected.nativeElement;
@@ -1238,8 +1295,9 @@ export class WebOBS implements OnInit, AfterViewInit, OnDestroy, OnChanges {
   }
 
   /**
-   * Método para cambiar el FPS de la emisión
-   * @param fps FPS seleccionada (string)
+   * @summary Cambia los FPS de la emisión.
+   * @description Actualiza la tasa de fotogramas por segundo y reinicia el intervalo de dibujado.
+   * @param {string} fps Los FPS seleccionados.
    */
   cambiarFPS(fps: string) {
     this.canvasFPS = Number.parseInt(fps);
@@ -1250,10 +1308,10 @@ export class WebOBS implements OnInit, AfterViewInit, OnDestroy, OnChanges {
   }
 
   /**
-   *Empieza el arrastre de un elemento
-   *
-   * @param event Evento de arrastre (MouseEvent)
-   * @param deviceId ID del elemento arrastrado (string)
+   * @summary Inicia el arrastre de un elemento visual.
+   * @description Crea un "ghost" del elemento arrastrado y gestiona su movimiento y redimensionamiento sobre el canvas.
+   * @param {MouseEvent} event El evento de ratón.
+   * @param {string} deviceId El ID del elemento arrastrado.
    */
   mousedown(event: MouseEvent, deviceId: string) {
     if (event.button !== 0) return;
@@ -1496,9 +1554,10 @@ export class WebOBS implements OnInit, AfterViewInit, OnDestroy, OnChanges {
   }
 
   /**
-   * Método para mostrar el menú de filtros
-   * @param event Evento de clic (MouseEvent)
-   * @param ele Elemento con filtros (VideoElement)
+   * @summary Muestra el menú de filtros para un elemento de video.
+   * @description Despliega un menú contextual con opciones de filtro (brillo, contraste, saturación) para el video seleccionado.
+   * @param {MouseEvent} event El evento de ratón.
+   * @param {VideoElement} ele El elemento de video al que se aplicará el filtro.
    */
   showFilterMenu(event: MouseEvent, ele: VideoElement) {
     event.preventDefault(); // Bloquea el menú contextual del navegador
@@ -1558,8 +1617,9 @@ export class WebOBS implements OnInit, AfterViewInit, OnDestroy, OnChanges {
   }
 
   /**
-   * Método para mover el elemento arrastrado en el canvas
-   * @param event Evento de movimiento (MouseEvent)
+   * @summary Maneja el movimiento del ratón sobre el canvas.
+   * @description Detecta si el ratón está sobre un video renderizado y muestra un marco de edición.
+   * @param {MouseEvent} event El evento de movimiento del ratón.
    */
   canvasMouseMove(event: MouseEvent) {
     event.preventDefault();
@@ -1701,7 +1761,8 @@ export class WebOBS implements OnInit, AfterViewInit, OnDestroy, OnChanges {
   }
 
   /**
-   * Método para soltar el elemento arrastrado en el canvas
+   * @summary Maneja la salida del ratón del canvas.
+   * @description Oculta los marcos de edición de los videos cuando el ratón sale del área del canvas.
    */
   canvasMouseLeave() {
     const rendered = this.videosElements.filter((video) => video.painted);
@@ -1716,8 +1777,9 @@ export class WebOBS implements OnInit, AfterViewInit, OnDestroy, OnChanges {
   }
 
   /**
-   * Método para redimensionar el elemento arrastrado en el canvas
-   * @param $event Evento de redimensionamiento (MouseEvent)
+   * @summary Inicia el redimensionamiento de un elemento en el canvas.
+   * @description Permite redimensionar y mover un elemento visual en el canvas, mostrando cruces de posicionamiento y detectando colisiones.
+   * @param {MouseEvent} $event El evento de ratón que inicia el redimensionamiento.
    */
   redimensionado($event: MouseEvent) {
     const canvasContainer = this.canvasContainer.nativeElement;
@@ -1917,13 +1979,14 @@ export class WebOBS implements OnInit, AfterViewInit, OnDestroy, OnChanges {
   }
 
   /**
-   * Función para pintar un elemento en el canvas
-   * No pinta el Canvas, solo añade el elemento formateado a la lista de elementos a pintar
-   * @param element Elemento a pintar (HTMLElement)
-   * @param widthElement Ancho del elemento (number)
-   * @param heightElement Alto del elemento (number)
-   * @param positionX Posición horizontal del elemento (number)
-   * @param positionY Posición vertical del elemento (number)
+   * @summary Prepara un elemento para ser pintado en el canvas.
+   * @description Calcula la escala y posición de un elemento (video o imagen) para que se ajuste correctamente en el canvas.
+   * @param {HTMLElement} element El elemento HTML a pintar.
+   * @param {number} widthElement El ancho visible del elemento.
+   * @param {number} heightElement La altura visible del elemento.
+   * @param {number} positionX La posición X central del elemento en la ventana.
+   * @param {number} positionY La posición Y central del elemento en la ventana.
+   * @returns {VideoElement | undefined} Un objeto VideoElement con la información de pintado, o undefined si el tipo de elemento no es reconocido.
    */
   paintInCanvas(element: HTMLElement, widthElement: number, heightElement: number, positionX: number, positionY: number) {
     if (!this.canvas) {
@@ -1979,8 +2042,10 @@ export class WebOBS implements OnInit, AfterViewInit, OnDestroy, OnChanges {
   }
 
   /**
-   * Función para detectar las colisiones entre elementos
-   * @param principal Elemento principal (HTMLElement)
+   * @summary Detecta colisiones entre un elemento principal y otros elementos o el borde del canvas.
+   * @description Comprueba si el elemento principal se superpone con otros marcos de video o toca los bordes del canvas.
+   * @param {HTMLElement} principal El elemento principal para detectar colisiones.
+   * @returns {HTMLElement[]} Un array de elementos HTML con los que colisiona el elemento principal.
    */
   colisiones(principal: HTMLElement): HTMLElement[] {
     const rect = principal.getBoundingClientRect();
@@ -2007,9 +2072,9 @@ export class WebOBS implements OnInit, AfterViewInit, OnDestroy, OnChanges {
   }
 
   /**
-   * Función para formatear el tiempo de grabación
-   * @param seconds segundos transcurridos (number)
-   * @returns el tiempo en formato hh:mm:ss (string)
+   * @summary Formatea un número de segundos a un formato de tiempo hh:mm:ss.
+   * @param {number} seconds Los segundos a formatear.
+   * @returns {string} El tiempo formateado como "hh:mm:ss".
    */
   private formatTime(seconds: number): string {
     if (Number.isNaN(seconds) || !Number.isFinite(seconds)) {
@@ -2023,7 +2088,8 @@ export class WebOBS implements OnInit, AfterViewInit, OnDestroy, OnChanges {
   }
 
   /**
-   * Método para guardar un preset
+   * @summary Guarda la configuración actual del canvas como un preset.
+   * @description Pide un nombre al usuario y guarda la posición y escala de los elementos pintados en un nuevo preset.
    */
   guardaPreset() {
     const name = prompt('Introduce el nombre del preset \n(El mismo nombre sobrescribe el preset) ', 'Nuevo preset');
@@ -2052,8 +2118,9 @@ export class WebOBS implements OnInit, AfterViewInit, OnDestroy, OnChanges {
   }
 
   /**
-   * Método para detener un elemento
-   * @param ele Elemento a detener (MediaDeviceInfo | MediaStream | File)
+   * @summary Detiene y elimina un elemento de la emisión.
+   * @description Detiene el stream o elimina el archivo, y actualiza las listas de elementos activos y conexiones de audio.
+   * @param {MediaDeviceInfo | MediaStream | File} ele El elemento a detener (dispositivo, stream o archivo).
    */
   stopElemento(ele: MediaDeviceInfo | MediaStream | File) {
     if (ele instanceof MediaDeviceInfo) {
@@ -2089,8 +2156,9 @@ export class WebOBS implements OnInit, AfterViewInit, OnDestroy, OnChanges {
   }
 
   /**
-   * Método para convertir un elemento en pantalla completa
-   * @param ele Elemento a convertir (MediaDeviceInfo | MediaStream | File)
+   * @summary Ajusta un elemento a pantalla completa en el canvas.
+   * @description Calcula el tamaño y posición para que el elemento ocupe todo el canvas.
+   * @param {MediaDeviceInfo | MediaStream | File} ele El elemento a ajustar.
    */
   fullscreen(ele: MediaDeviceInfo | MediaStream | File) {
     let elemento: VideoElement | undefined;
@@ -2131,8 +2199,9 @@ export class WebOBS implements OnInit, AfterViewInit, OnDestroy, OnChanges {
   }
 
   /**
-   * Método para agregar una capa al elemento cuando se emite
-   * @param elemento Elemento a agregar la capa (VideoElement)
+   * @summary Agrega una capa de control sobre un elemento en el editor.
+   * @description Crea botones de control (detener, mover, play/pause para videos) y añade el evento de menú contextual.
+   * @param {VideoElement} elemento El elemento de video sobre el que añadir la capa.
    */
   addCapa(elemento: VideoElement) {
     const divRef = this.deviceDivs.find((el) => el.nativeElement.id === 'div-' + elemento.id) || this.captureDivs.find((el) => el.nativeElement.id === 'div-' + elemento.id) || this.staticDivs.find((el) => el.nativeElement.id === 'div-' + elemento.id);
@@ -2300,10 +2369,11 @@ export class WebOBS implements OnInit, AfterViewInit, OnDestroy, OnChanges {
   }
 
   /**
-   * Método para mover la cruz de posicionamiento
-   * @param eventX Posición horizontal de la cruz (number)
-   * @param eventY Posición vertical de la cruz (number)
-   * @param intersecciones Lista de elementos de intersección (HTMLElement[])
+   * @summary Mueve la cruz de posicionamiento en el editor.
+   * @description Actualiza la posición visual de las líneas guía (cruz) durante el arrastre o redimensionamiento.
+   * @param {number} eventX Posición horizontal del ratón.
+   * @param {number} eventY Posición vertical del ratón.
+   * @param {HTMLElement[]} intersecciones Lista de elementos colisionados.
    */
   moverCruzPosicionamiento(eventX: number, eventY: number, intersecciones: HTMLElement[]) {
     if (!this.cross) {
@@ -2362,7 +2432,9 @@ export class WebOBS implements OnInit, AfterViewInit, OnDestroy, OnChanges {
   }
 
   /**
-   * Método para calcular los presets
+   * @summary Calcula la vista previa de los presets.
+   * @description Renderiza una miniatura de cada preset guardado en su contenedor correspondiente.
+   * @returns {Promise<void>} Una promesa que se resuelve cuando todos los presets han sido calculados.
    */
   async calculatePreset() {
     const keysArray = Array.from(this.presets.keys());
@@ -2434,8 +2506,9 @@ export class WebOBS implements OnInit, AfterViewInit, OnDestroy, OnChanges {
   }
 
   /**
-   * Método para aplicar un preset
-   * @param name Nombre del preset (string)
+   * @summary Aplica un preset guardado.
+   * @description Restaura la posición y escala de los elementos según el preset seleccionado y añade las capas de control.
+   * @param {string} name El nombre del preset a aplicar.
    */
   aplicaPreset(name: string) {
     // Primero, quitamos todas las capas
@@ -2524,8 +2597,8 @@ export class WebOBS implements OnInit, AfterViewInit, OnDestroy, OnChanges {
   }
 
   /**
-   * Método para mover un elemento hacia abajo en el orden de pintado
-   * @param elemento Elemento a mover (VideoElement)
+   * @summary Mueve un elemento hacia abajo en el orden de renderizado.
+   * @param {VideoElement} elemento El elemento a mover.
    */
   moveElementDown(elemento: VideoElement) {
     const index = this.videosElements.findIndex((el) => el.id === elemento.id);
@@ -2535,8 +2608,8 @@ export class WebOBS implements OnInit, AfterViewInit, OnDestroy, OnChanges {
   }
 
   /**
-   * Método para mover un elemento hacia arriba en el orden de pintado
-   * @param elemento Elemento a mover (VideoElement)
+   * @summary Mueve un elemento hacia arriba en el orden de renderizado.
+   * @param {VideoElement} elemento El elemento a mover.
    */
   moveElementUp(elemento: VideoElement) {
     const index = this.videosElements.findIndex((el) => el.id === elemento.id);
@@ -2546,7 +2619,8 @@ export class WebOBS implements OnInit, AfterViewInit, OnDestroy, OnChanges {
   }
 
   /**
-   * Función para dibujar las conexiones de audio
+   * @summary Dibuja las conexiones visuales de audio.
+   * @description Renderiza líneas y contenedores visuales que representan las conexiones entre entradas y salidas de audio.
    */
   drawAudioConnections() {
     // console.log('drawAudioConnections called, connections:', this.audiosConnections.length, 'audioLevelDivs:', this.audioLevelDivs.length);
@@ -2688,10 +2762,18 @@ export class WebOBS implements OnInit, AfterViewInit, OnDestroy, OnChanges {
   }
 
   /**
-   * Método para acabar de crear el enlace de audio
-   * @param $event Evento de arrastre (MouseEvent)
+   * @summary Inicia la creación de una conexión de audio.
+   * @description Maneja el evento de arrastre para comenzar a dibujar una conexión temporal entre nodos de audio.
+   * @param {MouseEvent} $event El evento de ratón.
    */
   audioDown($event: MouseEvent): void {
+    // Asegurar AudioContext inicializado y reanudado al primer clic en la interfaz de audio
+    this.ensureAudioContext().then(() => {
+      if (this.audioContext.state === 'suspended') {
+        this.audioContext.resume();
+      }
+    });
+
     if ($event.target instanceof HTMLInputElement) return;
 
     const conexionesIzquierda = this.conexionesIzquierda.nativeElement;
@@ -2810,7 +2892,8 @@ export class WebOBS implements OnInit, AfterViewInit, OnDestroy, OnChanges {
   }
 
   /**
-   * Método para empezar a emitir
+   * @summary Inicia la emisión de video y audio.
+   * @description Captura el stream del canvas y el stream de audio mixto, y emite el stream combinado.
    */
   emitir() {
     if (!this.canvas) {
@@ -2828,7 +2911,8 @@ export class WebOBS implements OnInit, AfterViewInit, OnDestroy, OnChanges {
   }
 
   /**
-   * Método para detener la emisión
+   * @summary Detiene la emisión.
+   * @description Emite un valor nulo para detener la emisión y actualiza el estado.
    */
   detenerEmision() {
     if (this.emision) {
@@ -2840,7 +2924,9 @@ export class WebOBS implements OnInit, AfterViewInit, OnDestroy, OnChanges {
   }
 
   /**
-   * Método para calcular el tiempo de grabación
+   * @summary Calcula el tiempo de grabación.
+   * @description Inicia un temporizador que actualiza el tiempo de grabación transcurrido.
+   * @returns {Promise<void>}
    */
   async calculaTiempoGrabacion() {
     let tiempo = -1;
@@ -2855,16 +2941,17 @@ export class WebOBS implements OnInit, AfterViewInit, OnDestroy, OnChanges {
   }
 
   /**
-   * Método para guardar los presets
+   * @summary Guarda los presets actuales.
+   * @description Emite un evento para guardar los presets definidos.
    */
   savePresetsFunction() {
     this.savePresets.emit(this.presets);
   }
 
   /**
-   * Método para mostrar el menú contextual del elemento
-   * @param $event Evento de clic (MouseEvent)
-   * @param deviceId ID del elemento (string)
+   * @summary Muestra el menú contextual de filtros.
+   * @param {MouseEvent} $event El evento de clic.
+   * @param {string} deviceId El ID del elemento seleccionado.
    */
   onContextMenu($event: MouseEvent, deviceId: string) {
     $event.preventDefault();
@@ -2883,7 +2970,8 @@ export class WebOBS implements OnInit, AfterViewInit, OnDestroy, OnChanges {
   }
 
   /**
-   * Método para actualizar el estilo del elemento
+   * @summary Actualiza el estilo (filtros) del elemento seleccionado.
+   * @description Aplica los filtros de brillo, contraste y saturación al elemento de video.
    */
   updateStyleElement() {
     if (!this.selectedVideoForFilter) {
@@ -2902,6 +2990,10 @@ export class WebOBS implements OnInit, AfterViewInit, OnDestroy, OnChanges {
     }
   }
 
+  /**
+   * @summary Dibuja un fotograma en el canvas.
+   * @description Limpia el canvas y dibuja todos los elementos de video e imagen activos con sus filtros aplicados.
+   */
   drawFrame = () => {
     // 1️⃣ Cacheamos contexto y canvas para evitar lookups repetidos
     const ctx = this.context;
@@ -2947,6 +3039,12 @@ export class WebOBS implements OnInit, AfterViewInit, OnDestroy, OnChanges {
     }
   };
 
+  /**
+   * @summary Crea un nodo de ganancia de audio (GainNode).
+   * @description Inicializa un GainNode, lo añade a la lista de elementos de audio y establece una conexión con el destino de audio mixto.
+   * @param {string} id El ID único para el nodo de ganancia.
+   * @returns {GainNode} El nodo de ganancia creado.
+   */
   private createGainNode(id: string): GainNode {
     const gainNode = this.audioContext.createGain();
     gainNode.gain.value = 1;
