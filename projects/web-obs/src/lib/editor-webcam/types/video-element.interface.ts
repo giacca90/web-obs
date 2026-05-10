@@ -10,4 +10,5 @@ export interface VideoElement {
     contrast: number;
     saturation: number;
   };
+  srcOrSrcObject?: MediaStream | string | null;
 }

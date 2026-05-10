@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { AfterViewInit, Component, ElementRef, EventEmitter, HostListener, Input, OnChanges, OnDestroy, OnInit, Output, QueryList, SimpleChanges, ViewChild, ViewChildren } from '@angular/core';
+import { AfterViewInit, ChangeDetectorRef, Component, ElementRef, EventEmitter, HostListener, Input, OnChanges, OnDestroy, OnInit, Output, QueryList, SimpleChanges, ViewChild, ViewChildren } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { AUDIO_PROCESSOR } from './audio-processor';
 import { AudioConnection } from './types/audio-connection.interface';
@@ -50,6 +50,8 @@ export class WebOBS implements OnInit, AfterViewInit, OnDestroy, OnChanges {
 
   private workletLoadingPromise: Promise<void> | null = null;
 
+  constructor(private readonly cdr: ChangeDetectorRef) {}
+
   // para múltiples streams
   private readonly mediaElementSources = new Map<HTMLMediaElement, MediaElementAudioSourceNode>();
   private readonly workletNodes = new Map<string, AudioWorkletNode>(); // key: id de stream o generated id
@@ -74,6 +76,7 @@ export class WebOBS implements OnInit, AfterViewInit, OnDestroy, OnChanges {
   @ViewChild('conexionesIzquierda') conexionesIzquierda!: ElementRef<HTMLDivElement>;
   @ViewChild('conexionesDerecha') conexionesDerecha!: ElementRef<HTMLDivElement>;
   @ViewChild('elementosDiv') elementosDiv!: ElementRef<HTMLDivElement>;
+  @ViewChild('presetsDiv') presetsDiv!: ElementRef<HTMLDivElement>;
   @ViewChild('control') controlTemplate!: ElementRef<HTMLDivElement>;
   @ViewChild('selected') selected!: ElementRef<HTMLDivElement>;
   @Input() savedFiles?: File[] | null; // Files guardados del usuario (opcional)
@@ -107,9 +110,7 @@ export class WebOBS implements OnInit, AfterViewInit, OnDestroy, OnChanges {
         const blob = new Blob([AUDIO_PROCESSOR], { type: 'application/javascript' });
         const blobUrl = URL.createObjectURL(blob);
 
-        // console.log('🧩 Cargando AudioWorklet desde blob');
         await this.audioContext.audioWorklet.addModule(blobUrl);
-        // console.log('✅ AudioWorklet cargado correctamente desde blob');
 
         this.workletLoaded = true;
       } catch (err) {
@@ -172,7 +173,6 @@ export class WebOBS implements OnInit, AfterViewInit, OnDestroy, OnChanges {
       this.startMedias(devices);
 
       navigator.mediaDevices.ondevicechange = async () => {
-        // console.log('Cambio detectado en los dispositivos');
         await this.updateDevices();
       };
 
@@ -255,7 +255,7 @@ export class WebOBS implements OnInit, AfterViewInit, OnDestroy, OnChanges {
 
     // Añadir listener global para reanudar audio en la primera interacción
     const resumeAudio = async () => {
-      if (this.audioContext && this.audioContext.state === 'suspended') {
+      if (this.audioContext?.state === 'suspended') {
         await this.audioContext.resume();
         globalThis.window.removeEventListener('click', resumeAudio);
       }
@@ -294,33 +294,23 @@ export class WebOBS implements OnInit, AfterViewInit, OnDestroy, OnChanges {
    * @description Detiene todos los flujos de medios, elimina listeners y cierra el AudioContext.
    */
   ngOnDestroy() {
-    // 1️⃣ Detener todos los flujos de video
-    for (const stream of this.streams) {
-      this.stopStream(stream);
-    }
+    this.stopAllStreams();
+    this.removeListeners();
+    this.cleanupAudioResources();
+  }
 
-    // 2️⃣ Detener todas las capturas de pantalla
-    for (const captura of this.capturas) {
-      this.stopStream(captura);
-    }
+  private stopAllStreams() {
+    for (const stream of this.streams) this.stopStream(stream);
+    for (const captura of this.capturas) this.stopStream(captura);
+    for (const track of this.audiosCapturas) if (track.readyState === 'live') track.stop();
+  }
 
-    // 3️⃣ Detener todas las capturas de audio (si son tracks sueltos)
-    for (const track of this.audiosCapturas) {
-      track.stop();
-    }
-
-    // 4️⃣ Eliminar el listener de teclado correctamente
-    // IMPORTANTE: bind(this) crea una nueva función, así que debemos guardar la referencia
+  private removeListeners() {
     globalThis.window.removeEventListener('keydown', this.handleKeydownRef);
+  }
 
+  private cleanupAudioResources() {
     try {
-      // detener streams (tus loops actuales)
-      for (const stream of this.streams) this.stopStream(stream);
-      for (const captura of this.capturas) this.stopStream(captura);
-      for (const track of this.audiosCapturas) if (track.readyState === 'live') track.stop();
-      if (this.handleKeydownRef) globalThis.window.removeEventListener('keydown', this.handleKeydownRef);
-
-      // Desconectar todos workletNodes
       for (const [id, node] of this.workletNodes) {
         try {
           node.port.onmessage = null;
@@ -332,7 +322,6 @@ export class WebOBS implements OnInit, AfterViewInit, OnDestroy, OnChanges {
       }
       this.workletNodes.clear();
 
-      // Desconectar sources/gains
       for (const [id, src] of this.audioSources) {
         try {
           src.disconnect();
@@ -341,6 +330,7 @@ export class WebOBS implements OnInit, AfterViewInit, OnDestroy, OnChanges {
         }
       }
       this.audioSources.clear();
+
       for (const [id, g] of this.silentGains) {
         try {
           g.disconnect();
@@ -350,11 +340,8 @@ export class WebOBS implements OnInit, AfterViewInit, OnDestroy, OnChanges {
       }
       this.silentGains.clear();
 
-      // Cerrar context
       if (this.audioContext && this.audioContext.state !== 'closed') {
-        this.audioContext.close().catch((err) => {
-          console.warn('⚠️ Error cerrando AudioContext:', err);
-        });
+        this.audioContext.close().catch((err) => console.warn('⚠️ Error cerrando AudioContext:', err));
       }
     } finally {
       this.workletLoaded = false;
@@ -408,6 +395,134 @@ export class WebOBS implements OnInit, AfterViewInit, OnDestroy, OnChanges {
     }
   }
 
+  aplicaPreset(name: string) {
+    this._removeExistingLayers();
+
+    const preset = this.presets.get(name);
+    if (!preset) {
+      console.error('Missing preset');
+      return;
+    }
+
+    this._resetVideoElements();
+    this._applyPresetElements(preset);
+    this._reorderVideoElements(preset);
+    this._addPresetLayer(name);
+    this._addLayersToPaintedElements();
+  }
+
+  private _removeExistingLayers() {
+    const elementosDiv = this.elementosDiv.nativeElement;
+    if (!elementosDiv) return;
+
+    for (const elemento of this.videosElements) {
+      elementosDiv.querySelector('#capa-' + CSS.escape(elemento.id))?.remove();
+    }
+
+    for (const key of Array.from(this.presets.keys())) {
+      elementosDiv.querySelector(`#capa-${CSS.escape(key)}`)?.remove();
+    }
+  }
+
+  private _resetVideoElements() {
+    for (const elemento of this.videosElements) {
+      elemento.painted = false;
+      elemento.scale = 1;
+      elemento.position = null;
+    }
+  }
+
+  private _applyPresetElements(preset: Preset) {
+    for (const element of preset.elements) {
+      const ele = this.videosElements.find((el) => el.id === element.id);
+      if (ele) {
+        ele.scale = element.scale;
+        ele.position = element.position;
+        ele.painted = true;
+      }
+    }
+  }
+
+  private _reorderVideoElements(preset: Preset) {
+    for (let i = 0; i < preset.elements.length; i++) {
+      const presetElement = preset.elements[i];
+      const index = this.videosElements.findIndex((el) => el.id === presetElement.id);
+      if (index !== -1) {
+        const [element] = this.videosElements.splice(index, 1);
+        this.videosElements.splice(i, 0, element);
+      }
+    }
+  }
+
+  private _addPresetLayer(name: string) {
+    const presetDiv = this.presetsDiv.nativeElement.querySelector(`#preset-${CSS.escape(name)}`);
+    if (!presetDiv) return;
+
+    const capa = this.capaTemplate.nativeElement.cloneNode(true) as HTMLDivElement;
+    capa.id = 'capa-' + name;
+    capa.querySelector('#buttonxcapa')?.addEventListener('click', () => capa.remove());
+    capa.classList.remove('hidden');
+    capa.style.zIndex = '10';
+    (presetDiv.parentElement as HTMLDivElement).appendChild(capa);
+  }
+
+  private _addLayersToPaintedElements() {
+    for (const elemento of this.videosElements.filter((e) => e.painted)) {
+      this.addCapa(elemento);
+    }
+  }
+
+  /**
+   * @summary Finaliza la interacción de arrastre.
+   * @description Lógica compartida para soltar el elemento arrastrado, restaurar estados y limpiar listeners.
+   */
+  /**
+   * @summary Finaliza el proceso de arrastre de un elemento.
+   * @description Calcula la posición final en el canvas, actualiza el estado del elemento y limpia los eventos y elementos temporales.
+   * @param {MouseEvent} upEvent Evento de soltar el ratón.
+   * @param {HTMLElement} ghost Elemento visual ghost.
+   * @param {Function} mousemove Referencia a la función de movimiento para eliminar el listener.
+   * @param {Function} mouseup Referencia a la función de subida para eliminar el listener.
+   * @param {Function} wheel Referencia a la función de scroll para eliminar el listener.
+   */
+  private _handleDragEnd(upEvent: MouseEvent, ghost: HTMLElement, mousemove: (e: MouseEvent) => void, mouseup: (e: MouseEvent) => void, wheel: (e: WheelEvent) => void) {
+    if (!this.dragVideo || !this.canvas) {
+      console.error('No hay video arrastrando o canvas');
+      return;
+    }
+
+    const rect = this.canvas.getBoundingClientRect();
+    const isMouseOverCanvas: boolean = upEvent.clientX >= rect.left && upEvent.clientX <= rect.right && upEvent.clientY >= rect.top && upEvent.clientY <= rect.bottom;
+
+    if (isMouseOverCanvas) {
+      const ghostRect = ghost.getBoundingClientRect();
+      const result: VideoElement | undefined = this.paintInCanvas(ghost as HTMLVideoElement | HTMLImageElement, ghostRect.width, ghostRect.height, upEvent.clientX, upEvent.clientY);
+      if (!result) {
+        console.error('Missing result');
+        return;
+      }
+      this.dragVideo.scale = result.scale;
+      this.dragVideo.position = result.position;
+      this.dragVideo.painted = result.painted;
+
+      this.addCapa(this.dragVideo);
+      if (this.cross) {
+        this.cross.nativeElement.style.display = 'none';
+      }
+    }
+
+    this.canvas.style.border = '1px solid black';
+    this.dragVideo = null;
+    ghost.remove();
+    if (this.cross) {
+      this.cross.nativeElement.style.display = 'none';
+    }
+    document.removeEventListener('pointermove', mousemove);
+    document.removeEventListener('wheel', wheel);
+    document.removeEventListener('pointerup', mouseup);
+    document.body.classList.remove('cursor-grabbing');
+  }
+
   /**
    * @summary Inicia los flujos de medios (video y audio).
    * @description Obtiene los streams de los dispositivos de video y audio disponibles y los configura.
@@ -444,75 +559,46 @@ export class WebOBS implements OnInit, AfterViewInit, OnDestroy, OnChanges {
    */
   async updateDevices() {
     try {
-      // Enumerar nuevamente los dispositivos disponibles
       const allDevices = await navigator.mediaDevices.enumerateDevices();
-
-      // Identificar dispositivos nuevos y agregarlos
-      for (const device of allDevices) {
-        if (device.kind === 'videoinput') {
-          const exists = this.videoDevices.some((d) => d.deviceId === device.deviceId);
-          if (!exists) {
-            // console.log('Dispositivo nuevo detectado:', device.label || 'Sin nombre');
-            // Agregar el dispositivo a la lista
-            this.videoDevices.push(device);
-            this.getVideoStream(device.deviceId);
-          }
-        }
-
-        if (device.kind === 'audioinput') {
-          const exists = this.audioDevices.some((d) => d.deviceId === device.deviceId);
-          if (!exists) {
-            // console.log('Dispositivo nuevo detectado:', device.label || 'Sin nombre');
-            // Agregar el dispositivo a la lista
-            this.audioDevices.push(device);
-            this.getAudioStream(device.deviceId);
-          }
-        }
-      }
-
-      // Identificar dispositivos de video desconectados y eliminarlos
-      const disconnectedVideoDevices = this.videoDevices.filter((device) => !allDevices.some((d) => d.deviceId === device.deviceId));
-
-      if (disconnectedVideoDevices.length > 0) {
-        // Limpiar recursos de dispositivos desconectados
-        for (const device of disconnectedVideoDevices) {
-          // console.log('Dispositivo desconectado:', device.label || 'Sin nombre');
-
-          // Detener flujos activos asociados al dispositivo
-          if (device.kind === 'videoinput' || device.kind === 'audioinput') {
-            const element = this.elementosDiv.nativeElement.querySelector(`#${CSS.escape(device.deviceId)}`) as HTMLVideoElement | HTMLAudioElement;
-            if (element?.srcObject) {
-              const stream = element.srcObject as MediaStream;
-              this.stopStream(stream);
-              element.srcObject = null; // Limpiar la referencia al flujo
-            }
-          }
-        }
-      }
-
-      // Identificar dispositivos de audio desconectados y eliminarlos
-      const disconnectedDevices = this.audioDevices.filter((device) => !allDevices.some((d) => d.deviceId === device.deviceId));
-
-      if (disconnectedDevices.length > 0) {
-        // Limpiar recursos de dispositivos desconectados
-        for (const device of disconnectedDevices) {
-          // console.log('Dispositivo desconectado:', device.label || 'Sin nombre');
-
-          // Detener flujos activos asociados al dispositivo
-          if (device.kind === 'videoinput' || device.kind === 'audioinput') {
-            const element = this.elementosDiv.nativeElement.querySelector(`#${CSS.escape(device.deviceId)}`) as HTMLVideoElement | HTMLAudioElement;
-            if (element?.srcObject) {
-              const stream = element.srcObject as MediaStream;
-              this.stopStream(stream);
-              element.srcObject = null; // Limpiar la referencia al flujo
-            }
-          }
-        }
-      }
-      // console.log('Dispositivos actualizados:', this.videoDevices + '\n' + this.audioDevices);
+      this.addNewDevices(allDevices);
+      this.removeDisconnectedDevices(allDevices);
     } catch (error) {
       console.error('Error al actualizar dispositivos:', error);
     }
+  }
+
+  /**
+   * @summary Añade nuevos dispositivos detectados a las listas correspondientes.
+   * @param {MediaDeviceInfo[]} allDevices Lista completa de dispositivos detectados.
+   */
+  private addNewDevices(allDevices: MediaDeviceInfo[]) {
+    for (const device of allDevices) {
+      if (device.kind === 'videoinput' && !this.videoDevices.some((d) => d.deviceId === device.deviceId)) {
+        this.videoDevices.push(device);
+        this.getVideoStream(device.deviceId);
+      } else if (device.kind === 'audioinput' && !this.audioDevices.some((d) => d.deviceId === device.deviceId)) {
+        this.audioDevices.push(device);
+        this.getAudioStream(device.deviceId);
+      }
+    }
+  }
+
+  /**
+   * @summary Elimina dispositivos que ya no están conectados.
+   * @param {MediaDeviceInfo[]} allDevices Lista completa de dispositivos actualmente conectados.
+   */
+  private removeDisconnectedDevices(allDevices: MediaDeviceInfo[]) {
+    const disconnected = [...this.videoDevices.filter((d) => !allDevices.some((ad) => ad.deviceId === d.deviceId)), ...this.audioDevices.filter((d) => !allDevices.some((ad) => ad.deviceId === d.deviceId))];
+
+    for (const device of disconnected) {
+      const element = this.elementosDiv.nativeElement.querySelector(`#${CSS.escape(device.deviceId)}`) as HTMLVideoElement | HTMLAudioElement;
+      if (element?.srcObject) {
+        this.stopStream(element.srcObject as MediaStream);
+        element.srcObject = null;
+      }
+    }
+    this.videoDevices = this.videoDevices.filter((d) => allDevices.some((ad) => ad.deviceId === d.deviceId));
+    this.audioDevices = this.audioDevices.filter((d) => allDevices.some((ad) => ad.deviceId === d.deviceId));
   }
 
   /**
@@ -798,8 +884,6 @@ export class WebOBS implements OnInit, AfterViewInit, OnDestroy, OnChanges {
     this.workletNodes.set(nodeId, node);
     this.audioSources.set(nodeId, source);
     this.silentGains.set(nodeId, silentGain);
-
-    // console.log('🔗 Fuente de audio conectada al worklet:', nodeId);
   }
 
   /**
@@ -845,7 +929,7 @@ export class WebOBS implements OnInit, AfterViewInit, OnDestroy, OnChanges {
           console.error('No se pudo encontrar el elemento con id div-' + stream.id);
           return;
         }
-        const resolution = div.nativeElement.querySelector('.resolution-label');
+        const resolution = div.nativeElement.querySelector('#resolution');
         if (!resolution) {
           console.error('No se pudo encontrar el elemento con id resolution');
           return;
@@ -879,12 +963,12 @@ export class WebOBS implements OnInit, AfterViewInit, OnDestroy, OnChanges {
           gainNode.connect(this.mixedAudioDestination);
           const sample = this.audioContext.createMediaStreamDestination();
           gainNode.connect(sample);
-          const volumeRef = this.volumeInputs.find((el) => el.nativeElement.id === 'volume-' + stream.id);
-          if (!volumeRef) {
-            console.error('No se pudo encontrar la referencia volume-' + stream.id);
+
+          const volume = div.nativeElement.querySelector('#volume-' + stream.id) as HTMLInputElement;
+          if (!volume) {
+            console.error('No se pudo encontrar el elemento de volumen para el stream:', stream.id);
             return;
           }
-          const volume = volumeRef.nativeElement;
           volume.oninput = () => {
             gainNode.gain.value = Number.parseInt(volume.value) / 100;
           };
@@ -941,21 +1025,7 @@ export class WebOBS implements OnInit, AfterViewInit, OnDestroy, OnChanges {
    * @returns {Promise<void>} Una promesa que se resuelve cuando los archivos son cargados.
    */
   async loadFiles(files: File[]) {
-    // Asegura que tenemos AudioContext y mixedAudioDestination
-    try {
-      if (typeof this.ensureAudioContext === 'function') {
-        await this.ensureAudioContext();
-      }
-
-      // fallback si no hay ensureAudioContext
-      if (!this.audioContext || this.audioContext.state === 'closed') {
-        this.audioContext = new AudioContext();
-        this.mixedAudioDestination = this.audioContext.createMediaStreamDestination();
-        // console.log('🔄 AudioContext (fallback) creado en loadFiles');
-      }
-    } catch (err) {
-      console.warn('⚠️ No se pudo asegurar AudioContext en loadFiles:', err);
-    }
+    await this.ensureAudioContextSafe();
 
     for (const file of files) {
       const div = this.staticDivs.find((el) => el.nativeElement.id === 'div-' + file.name);
@@ -964,299 +1034,179 @@ export class WebOBS implements OnInit, AfterViewInit, OnDestroy, OnChanges {
         continue;
       }
 
-      try {
-        if (file.type.startsWith('image/')) {
-          const img = this.staticDivs.find((el) => el.nativeElement.id === 'div-' + file.name)?.nativeElement.querySelector('img');
-          if (img) {
-            const elemento: VideoElement = {
-              id: file.name,
-              element: img,
-              painted: false,
-              scale: 1,
-              position: null,
-            };
-            this.videosElements.push(elemento);
-          } else {
-            console.warn('Imagen no encontrada en DOM:', file.name);
-          }
-        } else if (file.type.startsWith('video/')) {
-          const video = this.staticDivs.find((el) => el.nativeElement.id === 'div-' + file.name)?.nativeElement.querySelector('video');
-          if (!video) {
-            console.warn('Video element no encontrado en DOM:', file.name);
-            continue;
-          }
-
-          const elemento: VideoElement = {
-            id: file.name,
-            element: video,
-            painted: false,
-            scale: 1,
-            position: null,
-          };
-          this.videosElements.push(elemento);
-
-          // Añadir control de audio
-          this.audiosArchivos.push(file.name);
-
-          // Crear gainNode y registrar en arrays
-          const gainNode = this.createGainNode(file.name);
-
-          // Aseguramos que onplaying sólo asigna la lógica (reemplaza anterior)
-          video.onplaying = () => {
-            const audioLevelRef = this.audioLevelDivs.find((el) => el.nativeElement.id === 'audio-level-' + file.name);
-            if (!audioLevelRef) {
-              console.error('No se pudo encontrar la referencia audio-level-' + file.name);
-              return;
-            }
-            const audioDiv = audioLevelRef.nativeElement;
-
-            // Reutilizar source si ya existe para este media element
-            let source = this.mediaElementSources.get(video);
-            if (!source) {
-              source = this.audioContext.createMediaElementSource(video);
-              this.mediaElementSources.set(video, source);
-            }
-
-            // Conexiones
-            try {
-              source.connect(gainNode);
-            } catch (e) {
-              console.warn('⚠️ No se pudo conectar source->gain (video):', e);
-            }
-
-            try {
-              gainNode.connect(this.mixedAudioDestination);
-            } catch (e) {
-              console.warn('⚠️ No se pudo conectar gain->mixedAudioDestination (video):', e);
-            }
-
-            // Crear sample stream para visualización
-            const sample = this.audioContext.createMediaStreamDestination();
-            try {
-              gainNode.connect(sample);
-            } catch (e) {
-              console.warn('⚠️ No se pudo conectar gain->sample (video):', e);
-            }
-
-            // Slider de volumen
-            const volumeRef = this.volumeInputs.find((el) => el.nativeElement.id === 'volume-' + file.name);
-            if (!volumeRef) {
-              console.error('No se encontró la referencia volume-' + file.name);
-              return;
-            }
-            const volume = volumeRef.nativeElement;
-            volume.oninput = () => {
-              gainNode.gain.value = Number.parseInt(volume.value, 10) / 100;
-            };
-
-            // Visualización mediante Worklet (no await necesario)
-            this.visualizeAudio(sample.stream, audioDiv, file.name).catch((err) => {
-              console.error('Error visualizando audio (video):', err);
-            });
-          };
-        } else if (file.type.startsWith('audio/')) {
-          this.audiosArchivos.push(file.name);
-          const audioLevelRef = this.audioLevelDivs.find((el) => el.nativeElement.id === 'audio-level-' + file.name);
-          if (!audioLevelRef) {
-            console.error('No se pudo encontrar la referencia audio-level-' + file.name);
-            continue;
-          }
-          const audioDiv = audioLevelRef.nativeElement;
-
-          // Crear elemento <audio>
-          const audio: HTMLAudioElement = document.createElement('audio');
-          audio.src = this.getFileUrl(file);
-          audio.load();
-
-          // Registrar gain y conexiones
-          const gainNode = this.createGainNode(file.name);
-
-          // Asignar onplaying (reemplaza cualquier handler previo)
-          audio.onplaying = () => {
-            const audioDivLocal = audioDiv;
-
-            // Reutilizar source si ya existe
-            let source = this.mediaElementSources.get(audio);
-            if (!source) {
-              source = this.audioContext.createMediaElementSource(audio);
-              this.mediaElementSources.set(audio, source);
-            }
-
-            try {
-              source.connect(gainNode);
-            } catch (e) {
-              console.warn('⚠️ No se pudo conectar source->gain (audio):', e);
-            }
-
-            try {
-              gainNode.connect(this.mixedAudioDestination);
-            } catch (e) {
-              console.warn('⚠️ No se pudo conectar gain->mixedAudioDestination (audio):', e);
-            }
-
-            const sample = this.audioContext.createMediaStreamDestination();
-            try {
-              gainNode.connect(sample);
-            } catch (e) {
-              console.warn('⚠️ No se pudo conectar gain->sample (audio):', e);
-            }
-
-            const volumeRef = this.volumeInputs.find((el) => el.nativeElement.id === 'volume-' + file.name);
-            if (!volumeRef) {
-              console.error('No se encontró la referencia volume-' + file.name);
-              return;
-            }
-            const volume = volumeRef.nativeElement;
-            volume.oninput = () => {
-              gainNode.gain.value = Number.parseInt(volume.value, 10) / 100;
-            };
-
-            // Inicia visualización
-            this.visualizeAudio(sample.stream, audioDivLocal, file.name).catch((err) => {
-              console.error('Error visualizando audio (file):', err);
-            });
-          };
-
-          // Controles del UI (play/pause/restart/loop/progress)
-          const playPause: HTMLButtonElement | null = audioDiv.querySelector('#play-pause');
-          const play: SVGElement | null = audioDiv.querySelector('#play');
-          const pause: SVGElement | null = audioDiv.querySelector('#pause');
-          const restart: HTMLButtonElement | null = audioDiv.querySelector('#restart');
-          const loop: HTMLButtonElement | null = audioDiv.querySelector('#loop');
-          const loopOff: SVGElement | null = audioDiv.querySelector('#loop-off');
-          const loopOn: SVGElement | null = audioDiv.querySelector('#loop-on');
-          const time: HTMLSpanElement | null = audioDiv.querySelector('#time');
-          const progress: HTMLInputElement | null = audioDiv.querySelector('#progress');
-
-          if (!audioDiv || !playPause || !restart || !loop || !time || !progress) {
-            console.error('Missing elements for audio controls:', file.name);
-          } else {
-            playPause.onclick = () => {
-              if (audio.paused) {
-                audio.play().catch((e) => console.error('Error play audio:', e));
-                if (play) play.style.display = 'none';
-                if (pause) pause.style.display = 'block';
-              } else {
-                audio.pause();
-                if (play) play.style.display = 'block';
-                if (pause) pause.style.display = 'none';
-              }
-            };
-            restart.onclick = () => {
-              audio.currentTime = 0;
-            };
-            loop.onclick = () => {
-              if (audio.loop) {
-                audio.loop = false;
-                if (loopOff) loopOff.style.display = 'block';
-                if (loopOn) loopOn.style.display = 'none';
-              } else {
-                audio.loop = true;
-                if (loopOff) loopOff.style.display = 'none';
-                if (loopOn) loopOn.style.display = 'block';
-              }
-            };
-
-            audio.onloadedmetadata = () => {
-              const duration = this.formatTime(audio.duration);
-              const timeStart = this.formatTime(audio.currentTime);
-              if (time) time.innerText = `${timeStart} / ${duration}`;
-              audio.ontimeupdate = () => {
-                if (!time || !progress) return;
-                const percentage = (audio.currentTime / audio.duration) * 100;
-                progress.value = percentage.toString();
-                const currentTime = this.formatTime(audio.currentTime);
-                time.innerText = `${currentTime} / ${duration}`;
-
-                progress.oninput = () => {
-                  const newTime = (Number.parseInt(progress.value, 10) / 100) * audio.duration;
-                  audio.currentTime = newTime;
-                  const currentTime = this.formatTime(audio.currentTime);
-                  time.innerText = `${currentTime} / ${duration}`;
-                };
-
-                // Cambia el color de las barras de audio
-                const audioStreamDiv: HTMLDivElement | null | undefined = this.elementosDiv.nativeElement.querySelector(`#div-${CSS.escape(file.name)}`)?.querySelector('#audio-stream') as HTMLDivElement | null;
-                if (!audioStreamDiv) return;
-                const audioBars = audioStreamDiv.querySelectorAll('div');
-                const currentSample = Math.floor((audio.currentTime / audio.duration) * audioStreamDiv.offsetWidth);
-                const threshold = audioBars.length < audioStreamDiv.offsetWidth * 2;
-                for (let i = 0; i < audioBars.length; i++) {
-                  const bar = audioBars[i] as HTMLElement;
-                  const condition = threshold ? i <= currentSample : i / 2 <= currentSample;
-                  bar.style.backgroundColor = condition ? '#16a34a' : '#1d4ed8';
-                }
-              }; // ontimeupdate end
-
-              // Dibuja el flujo de audio
-              this.pintaAudio(file);
-            }; // onloadedmetadata end
-          } // controls else end
-        } // file type branches end
-      } catch (err) {
-        console.error('Error procesando file', file.name, err);
+      if (file.type.startsWith('image/')) {
+        this.processImageFile(file);
+      } else if (file.type.startsWith('video/')) {
+        this.processVideoFile(file);
+      } else if (file.type.startsWith('audio/')) {
+        this.processAudioFile(file);
       }
-    } // for files end
+    }
   }
 
   /**
-   * @summary Dibuja la forma de onda del audio de un archivo.
-   * @description Decodifica el audio y dibuja visualmente su amplitud en un canvas.
-   * @param {File} file El archivo de audio a dibujar.
-   * @returns {Promise<void>} Una promesa que se resuelve cuando el dibujo termina.
+   * @summary Asegura que el AudioContext esté activo de forma segura.
    */
-  async pintaAudio(file: File) {
-    const arrayBuffer = await file.arrayBuffer();
-    const audioBuffer = await this.audioContext.decodeAudioData(arrayBuffer);
-    const container = this.staticDivs.find((el) => el.nativeElement.id === 'div-' + file.name)?.nativeElement.querySelector('#audio-stream') as HTMLDivElement | null;
-    if (!container) {
-      console.error('No se encontró el elemento con id div-' + file.name);
+  private async ensureAudioContextSafe() {
+    try {
+      if (typeof this.ensureAudioContext === 'function') {
+        await this.ensureAudioContext();
+      }
+      if (!this.audioContext || this.audioContext.state === 'closed') {
+        this.audioContext = new AudioContext();
+        this.mixedAudioDestination = this.audioContext.createMediaStreamDestination();
+      }
+    } catch (err) {
+      console.warn('⚠️ No se pudo asegurar AudioContext:', err);
+    }
+  }
+
+  /**
+   * @summary Procesa un archivo de imagen y lo añade a los elementos de video.
+   * @param {File} file El archivo de imagen.
+   */
+  private processImageFile(file: File) {
+    const img = this.staticDivs.find((el) => el.nativeElement.id === 'div-' + file.name)?.nativeElement.querySelector('img');
+    if (img) {
+      this.videosElements.push({
+        id: file.name,
+        element: img,
+        painted: false,
+        scale: 1,
+        position: null,
+      });
+    } else {
+      console.warn('Imagen no encontrada en DOM:', file.name);
+    }
+  }
+
+  /**
+   * @summary Procesa un archivo de video, lo añade a los elementos y configura su audio.
+   * @param {File} file El archivo de video.
+   */
+  private processVideoFile(file: File) {
+    const video = this.staticDivs.find((el) => el.nativeElement.id === 'div-' + file.name)?.nativeElement.querySelector('video');
+    if (!video) {
+      console.warn('Video element no encontrado en DOM:', file.name);
       return;
     }
-    const canvasWidth = container.offsetWidth;
-    const canvasHeight = container.offsetHeight;
-    const sampleDataLeft = audioBuffer.getChannelData(0); // Canal izquierdo
-    const sampleStepLeft = Math.floor(sampleDataLeft.length / canvasWidth);
-    let sampleDataRight = null;
-    let sampleStepRight = null;
-    if (audioBuffer.numberOfChannels > 1) {
-      sampleDataRight = audioBuffer.getChannelData(1); // Canal derecho
-      sampleStepRight = Math.floor(sampleDataRight.length / canvasWidth);
+
+    this.videosElements.push({
+      id: file.name,
+      element: video,
+      painted: false,
+      scale: 1,
+      position: null,
+    });
+
+    this.audiosArchivos.push(file.name);
+    video.onplaying = () => this.setupMediaElementAudio(video, file.name);
+  }
+
+  /**
+   * @summary Procesa un archivo de audio, lo carga y configura sus controles.
+   * @param {File} file El archivo de audio.
+   */
+  private processAudioFile(file: File) {
+    this.audiosArchivos.push(file.name);
+    const audioLevelRef = this.audioLevelDivs.find((el) => el.nativeElement.id === 'audio-level-' + file.name);
+    if (!audioLevelRef) {
+      console.error('No se pudo encontrar la referencia audio-level-' + file.name);
+      return;
     }
+    const audioDiv = audioLevelRef.nativeElement;
 
-    for (let i = 0; i < canvasWidth; i++) {
-      const sampleIndexLeft = i * sampleStepLeft;
-      const amplitudeLeft = Math.abs(sampleDataLeft[sampleIndexLeft]);
-      const barHeightLeft = amplitudeLeft * canvasHeight;
+    const audio: HTMLAudioElement = document.createElement('audio');
+    audio.src = this.getFileUrl(file);
+    audio.load();
 
-      const barLeft = document.createElement('div');
-      barLeft.style.position = 'absolute';
-      barLeft.style.left = `${i}px`;
-      barLeft.style.width = '1px';
-      if (audioBuffer.numberOfChannels === 1) {
-        barLeft.style.height = `${barHeightLeft}px`;
-        barLeft.style.bottom = '0px';
+    audio.onplaying = () => this.setupAudioElement(audio, file.name, audioDiv);
+    this.setupAudioControls(audio, audioDiv, file);
+  }
+
+  /**
+   * @summary Configura el audio para un elemento multimedia (video o audio).
+   * @param {HTMLVideoElement | HTMLAudioElement} element El elemento multimedia.
+   * @param {string} id ID único del elemento.
+   */
+  private setupMediaElementAudio(element: HTMLVideoElement | HTMLAudioElement, id: string) {
+    const audioLevelRef = this.audioLevelDivs.find((el) => el.nativeElement.id === 'audio-level-' + id);
+    if (!audioLevelRef) return;
+    const audioDiv = audioLevelRef.nativeElement;
+    this.setupAudioElement(element as HTMLMediaElement, id, audioDiv);
+  }
+
+  /**
+   * @summary Inicializa los nodos de audio y la visualización para un elemento.
+   * @param {HTMLMediaElement} element El elemento multimedia.
+   * @param {string} id ID único.
+   * @param {HTMLDivElement} audioDiv Contenedor para la visualización del nivel de audio.
+   */
+  private setupAudioElement(element: HTMLMediaElement, id: string, audioDiv: HTMLDivElement) {
+    const gainNode = this.createGainNode(id);
+    let source = this.mediaElementSources.get(element);
+    if (!source) {
+      source = this.audioContext.createMediaElementSource(element);
+      this.mediaElementSources.set(element, source);
+    }
+    source.connect(gainNode);
+    gainNode.connect(this.mixedAudioDestination);
+    const sample = this.audioContext.createMediaStreamDestination();
+    gainNode.connect(sample);
+
+    const volumeRef = this.volumeInputs.find((el) => el.nativeElement.id === 'volume-' + id);
+    if (volumeRef) {
+      volumeRef.nativeElement.oninput = () => (gainNode.gain.value = Number.parseInt(volumeRef.nativeElement.value, 10) / 100);
+    }
+    this.visualizeAudio(sample.stream, audioDiv, id).catch((err) => console.error('Error visualizando audio:', err));
+  }
+
+  /**
+   * @summary Configura los controles interactivos (play, pause, loop, progreso) para un audio.
+   * @param {HTMLAudioElement} audio El elemento de audio.
+   * @param {HTMLDivElement} audioDiv El contenedor de controles.
+   * @param {File} file El archivo original.
+   */
+  private setupAudioControls(audio: HTMLAudioElement, audioDiv: HTMLDivElement, file: File) {
+    const controls = {
+      playPause: audioDiv.querySelector('#play-pause') as HTMLButtonElement,
+      play: audioDiv.querySelector('#play') as SVGElement,
+      pause: audioDiv.querySelector('#pause') as SVGElement,
+      restart: audioDiv.querySelector('#restart') as HTMLButtonElement,
+      loop: audioDiv.querySelector('#loop') as HTMLButtonElement,
+      loopOff: audioDiv.querySelector('#loop-off') as SVGElement,
+      loopOn: audioDiv.querySelector('#loop-on') as SVGElement,
+      time: audioDiv.querySelector('#time') as HTMLSpanElement,
+      progress: audioDiv.querySelector('#progress') as HTMLInputElement,
+    };
+    if (!controls.playPause || !controls.restart || !controls.loop || !controls.time || !controls.progress) return;
+
+    controls.playPause.onclick = () => {
+      if (audio.paused) {
+        audio.play();
+        controls.play.style.display = 'none';
+        controls.pause.style.display = 'block';
       } else {
-        barLeft.style.height = `${barHeightLeft / 2}px`;
-        barLeft.style.bottom = '50%';
+        audio.pause();
+        controls.play.style.display = 'block';
+        controls.pause.style.display = 'none';
       }
-      barLeft.style.backgroundColor = '#1d4ed8';
-      container.appendChild(barLeft);
+    };
+    controls.restart.onclick = () => (audio.currentTime = 0);
+    controls.loop.onclick = () => {
+      audio.loop = !audio.loop;
+      controls.loopOff.style.display = audio.loop ? 'none' : 'block';
+      controls.loopOn.style.display = audio.loop ? 'block' : 'none';
+    };
 
-      if (sampleDataRight && sampleStepRight) {
-        const sampleIndexRight = i * sampleStepRight;
-        const amplitudeRight = Math.abs(sampleDataRight[sampleIndexRight]);
-        const barHeightRight = amplitudeRight * canvasHeight;
-        const barRight = document.createElement('div');
-        barRight.style.position = 'absolute';
-        barRight.style.left = `${i}px`;
-        barRight.style.width = '1px';
-        barRight.style.height = `${barHeightRight / 2}px`;
-        barRight.style.top = '50%';
-        barRight.style.backgroundColor = '#1d4ed8';
-        container.appendChild(barRight);
-      }
-    }
+    audio.onloadedmetadata = () => {
+      const duration = this.formatTime(audio.duration);
+      audio.ontimeupdate = () => {
+        const percentage = (audio.currentTime / audio.duration) * 100;
+        controls.progress.value = percentage.toString();
+        controls.time.innerText = `${this.formatTime(audio.currentTime)} / ${duration}`;
+      };
+    };
   }
 
   /**
@@ -1417,7 +1367,6 @@ export class WebOBS implements OnInit, AfterViewInit, OnDestroy, OnChanges {
     document.addEventListener('wheel', wheel, { passive: false });
 
     // Evento para mover el ghost
-    const canvasContainer = this.canvasContainer.nativeElement;
     const cross = this.cross.nativeElement;
 
     cross.style.display = 'block';
@@ -1427,139 +1376,179 @@ export class WebOBS implements OnInit, AfterViewInit, OnDestroy, OnChanges {
     if (horizontal) horizontal.style.display = 'none';
 
     const mousemove = (moveEvent: MouseEvent) => {
-      try {
-        if (!this.dragVideo || !this.canvas) {
-          console.error('No hay video arrastrando o canvas');
-          return;
-        }
-
-        updateGhostPosition(moveEvent.clientX, moveEvent.clientY, ghost);
-
-        const rect = this.canvas.getBoundingClientRect();
-        const ghostRect = ghost.getBoundingClientRect();
-
-        // Calcular las coordenadas de intersección
-        const intersection = {
-          left: Math.max(rect.left, ghostRect.left),
-          top: Math.max(rect.top, ghostRect.top),
-          right: Math.min(rect.right, ghostRect.right),
-          bottom: Math.min(rect.bottom, ghostRect.bottom),
-        };
-
-        // Verificar si hay intersección
-        const isIntersecting = intersection.left < intersection.right && intersection.top < intersection.bottom;
-
-        // Verificar si el ghost está completamente contenido dentro del canvas
-        const isFullyContained = ghostRect.left >= rect.left && ghostRect.top >= rect.top && ghostRect.right <= rect.right && ghostRect.bottom <= rect.bottom;
-
-        if (isIntersecting) {
-          ghost.style.clipPath = `polygon(
-			        ${((intersection.left - ghostRect.left) / ghostRect.width) * 100}% 
-			        ${((intersection.top - ghostRect.top) / ghostRect.height) * 100}%, 
-			        ${((intersection.right - ghostRect.left) / ghostRect.width) * 100}% 
-			        ${((intersection.top - ghostRect.top) / ghostRect.height) * 100}%, 
-			        ${((intersection.right - ghostRect.left) / ghostRect.width) * 100}% 
-			        ${((intersection.bottom - ghostRect.top) / ghostRect.height) * 100}%, 
-			        ${((intersection.left - ghostRect.left) / ghostRect.width) * 100}% 
-			        ${((intersection.bottom - ghostRect.top) / ghostRect.height) * 100}%
-					)`;
-
-          if (isFullyContained) {
-            ghost.style.border = '2px solid #1d4ed8';
-            this.canvas.style.border = '2px solid #1d4ed8';
-          } else {
-            ghost.style.border = '2px solid #b91c1c';
-            this.canvas.style.border = '2px solid #b91c1c';
-          }
-        } else {
-          ghost.style.clipPath = 'none'; // Restaurar si no hay intersección
-          ghost.style.border = '1px solid black';
-          this.canvas.style.border = '1px solid black';
-        }
-
-        const intersecciones = this.colisiones(ghost);
-
-        if (isIntersecting) {
-          // Mostrar la cruz
-          this.moverCruzPosicionamiento(moveEvent.clientX, moveEvent.clientY, intersecciones);
-
-          if (intersecciones.length > 0) {
-            ghost.style.border = '2px solid #b91c1c';
-          } else {
-            ghost.style.border = '2px solid #1d4ed8';
-          }
-          for (const elemento of intersecciones) {
-            if (elemento.id === 'canvas-container') {
-              if (this.canvas) {
-                this.canvas.style.border = '2px solid #b91c1c';
-              }
-            } else {
-              elemento.style.border = '2px solid #b91c1c';
-              elemento.style.visibility = 'visible';
-            }
-          }
-        } else {
-          vertical.style.display = 'none';
-          horizontal.style.display = 'none';
-        }
-      } catch (error) {
-        console.error('Error al mover el video: ', error);
-      }
+      this.handleDragMove(moveEvent, ghost, vertical, horizontal);
     };
     document.addEventListener('pointermove', mousemove);
 
     // Evento para soltar el ratón
     const mouseup = (upEvent: MouseEvent) => {
-      if (!this.dragVideo || !this.canvas) {
-        console.error('No hay video arrastrando o canvas');
-        return;
-      }
+      this._handleDragEnd(upEvent, ghost, mousemove, mouseup, wheel);
+    };
+    document.addEventListener('pointerup', mouseup);
+  }
 
+  /**
+   * @summary Maneja el movimiento del elemento "ghost" durante el arrastre.
+   * @param {MouseEvent} moveEvent Evento de movimiento del ratón.
+   * @param {HTMLElement} ghost Elemento visual que representa el objeto arrastrado.
+   * @param {HTMLElement} vertical Línea guía vertical.
+   * @param {HTMLElement} horizontal Línea guía horizontal.
+   */
+  private handleDragMove(moveEvent: MouseEvent, ghost: HTMLElement, vertical: HTMLElement, horizontal: HTMLElement) {
+    try {
+      if (!this.dragVideo || !this.canvas) return;
+
+      this.updateGhostPosition(moveEvent.clientX, moveEvent.clientY, ghost);
       const rect = this.canvas.getBoundingClientRect();
-      const isMouseOverCanvas: boolean = upEvent.clientX >= rect.left && upEvent.clientX <= rect.right && upEvent.clientY >= rect.top && upEvent.clientY <= rect.bottom;
+      const ghostRect = ghost.getBoundingClientRect();
+      const intersection = this.getIntersection(rect, ghostRect);
+      const isIntersecting = intersection.left < intersection.right && intersection.top < intersection.bottom;
 
-      if (isMouseOverCanvas) {
-        const ghostRect = ghost.getBoundingClientRect();
-        const result: VideoElement | undefined = this.paintInCanvas(ghost, ghostRect.width, ghostRect.height, upEvent.clientX, upEvent.clientY);
-        // Guardar datos en el objeto VideoElement
-        if (!result) {
-          console.error('Missing result');
-          return;
-        }
-        this.dragVideo.scale = result.scale;
-        this.dragVideo.position = result.position;
-        this.dragVideo.painted = result.painted;
+      this.updateGhostStyles(ghost, intersection, ghostRect, isIntersecting);
 
-        // Añade una capa encima al elemento transmitido
-        this.addCapa(this.dragVideo);
-        // Quita la cruz de posicionamiento
-        if (this.cross) {
-          this.cross.nativeElement.style.display = 'none';
-        }
+      if (isIntersecting) {
+        const intersecciones = this.colisiones(ghost);
+        this.moverCruzPosicionamiento(moveEvent.clientX, moveEvent.clientY, intersecciones);
+        this.updateCanvasAndCollisionStyles(intersecciones, ghost);
+      } else {
+        vertical.style.display = 'none';
+        horizontal.style.display = 'none';
       }
+    } catch (error) {
+      console.error('Error al mover el video: ', error);
+    }
+  }
 
-      // Restaurar estado
+  /**
+   * @summary Calcula la intersección entre el canvas y el elemento ghost.
+   * @param {DOMRect} rect Rectángulo del canvas.
+   * @param {DOMRect} ghostRect Rectángulo del elemento ghost.
+   * @returns {Object} Coordenadas de la intersección.
+   */
+  private getIntersection(rect: DOMRect, ghostRect: DOMRect) {
+    return {
+      left: Math.max(rect.left, ghostRect.left),
+      top: Math.max(rect.top, ghostRect.top),
+      right: Math.min(rect.right, ghostRect.right),
+      bottom: Math.min(rect.bottom, ghostRect.bottom),
+    };
+  }
+
+  /**
+   * @summary Actualiza los estilos visuales del ghost basándose en su posición y colisión.
+   * @param {HTMLElement} ghost Elemento ghost.
+   * @param {any} intersection Datos de intersección.
+   * @param {DOMRect} ghostRect Rectángulo del ghost.
+   * @param {boolean} isIntersecting Indica si hay intersección con el canvas.
+   */
+  private updateGhostStyles(ghost: HTMLElement, intersection: any, ghostRect: DOMRect, isIntersecting: boolean) {
+    if (!this.canvas) return;
+    const rect = this.canvas.getBoundingClientRect();
+    const isFullyContained = ghostRect.left >= rect.left && ghostRect.top >= rect.top && ghostRect.right <= rect.right && ghostRect.bottom <= rect.bottom;
+
+    if (isIntersecting) {
+      ghost.style.clipPath = `polygon(${((intersection.left - ghostRect.left) / ghostRect.width) * 100}% ${((intersection.top - ghostRect.top) / ghostRect.height) * 100}%, ${((intersection.right - ghostRect.left) / ghostRect.width) * 100}% ${((intersection.top - ghostRect.top) / ghostRect.height) * 100}%, ${((intersection.right - ghostRect.left) / ghostRect.width) * 100}% ${((intersection.bottom - ghostRect.top) / ghostRect.height) * 100}%, ${((intersection.left - ghostRect.left) / ghostRect.width) * 100}% ${((intersection.bottom - ghostRect.top) / ghostRect.height) * 100}%)`;
+      const color = isFullyContained ? '#1d4ed8' : '#b91c1c';
+      ghost.style.border = `2px solid ${color}`;
+      this.canvas.style.border = `2px solid ${color}`;
+    } else {
+      ghost.style.clipPath = 'none';
+      ghost.style.border = '1px solid black';
       this.canvas.style.border = '1px solid black';
-      this.dragVideo = null;
-      ghost.remove();
-      if (this.cross) {
-        this.cross.nativeElement.style.display = 'none';
+    }
+  }
+
+  /**
+   * @summary Actualiza los estilos del canvas y elementos en colisión durante el arrastre.
+   * @param {HTMLElement[]} intersecciones Lista de elementos con los que colisiona el ghost.
+   * @param {HTMLElement} ghost Elemento ghost.
+   */
+  private updateCanvasAndCollisionStyles(intersecciones: HTMLElement[], ghost: HTMLElement) {
+    if (intersecciones.length > 0) {
+      ghost.style.border = '2px solid #b91c1c';
+    } else {
+      ghost.style.border = '2px solid #1d4ed8';
+    }
+    for (const elemento of intersecciones) {
+      if (elemento.id === 'canvas-container') {
+        if (this.canvas) this.canvas.style.border = '2px solid #b91c1c';
+      } else {
+        elemento.style.border = '2px solid #b91c1c';
+        elemento.style.visibility = 'visible';
       }
-      document.removeEventListener('pointermove', mousemove);
-      document.removeEventListener('wheel', wheel);
-      document.removeEventListener('pointerup', mouseup);
-      document.body.classList.remove('cursor-grabbing');
+    }
+  }
+
+  /**
+   * @summary Inicia el proceso de arrastre de un elemento de video.
+   * @description Crea un elemento "fantasma" que sigue al ratón y gestiona la interacción con el canvas.
+   * @param {MouseEvent} event El evento de ratón que inició el arrastre.
+   * @param {VideoElement} video El elemento de video que se está arrastrando.
+   */
+  private iniciarArrastre(event: MouseEvent, video: VideoElement) {
+    if (!this.canvas) return;
+
+    this.dragVideo = video;
+    const videoRect = (video.element as HTMLElement).getBoundingClientRect();
+
+    const ghost = document.createElement('div');
+    ghost.id = 'video-ghost';
+    ghost.style.position = 'fixed';
+    ghost.style.width = `${videoRect.width}px`;
+    ghost.style.height = `${videoRect.height}px`;
+    ghost.style.top = `${event.clientY - videoRect.height / 2}px`;
+    ghost.style.left = `${event.clientX - videoRect.width / 2}px`;
+    ghost.style.zIndex = '1000';
+    ghost.style.pointerEvents = 'none';
+    ghost.style.border = '1px solid black';
+    ghost.style.boxSizing = 'border-box';
+    ghost.style.overflow = 'hidden';
+    ghost.style.backgroundColor = 'rgba(0,0,0,0.5)';
+    const src = video.element instanceof HTMLImageElement ? video.element.src : (video.element as HTMLVideoElement).currentSrc;
+    ghost.innerHTML = `<img src="${src}" style="width: 100%; height: 100%; object-fit: cover; opacity: 0.7;">`;
+    document.body.appendChild(ghost);
+
+    this.canvas.style.border = '1px solid black';
+    document.body.classList.add('cursor-grabbing');
+
+    if (this.cross) {
+      this.cross.nativeElement.style.display = 'block';
+      const vertical = this.cross.nativeElement.querySelector('#vertical') as HTMLDivElement;
+      const horizontal = this.cross.nativeElement.querySelector('#orizontal') as HTMLDivElement;
+      if (vertical) vertical.style.display = 'none';
+      if (horizontal) horizontal.style.display = 'none';
+    }
+
+    const wheel = (wheelEvent: WheelEvent) => {
+      if (!this.dragVideo) return;
+      const scaleFactor = wheelEvent.deltaY > 0 ? 0.9 : 1.1;
+      this.dragVideo.scale *= scaleFactor;
+      ghost.style.width = `${videoRect.width * this.dragVideo.scale}px`;
+      ghost.style.height = `${videoRect.height * this.dragVideo.scale}px`;
+      ghost.style.top = `${event.clientY - (videoRect.height * this.dragVideo.scale) / 2}px`;
+      ghost.style.left = `${event.clientX - (videoRect.width * this.dragVideo.scale) / 2}px`;
+    };
+    document.addEventListener('wheel', wheel);
+
+    const mousemove = (moveEvent: MouseEvent) => {
+      const vertical = this.cross?.nativeElement.querySelector('#vertical') as HTMLDivElement;
+      const horizontal = this.cross?.nativeElement.querySelector('#orizontal') as HTMLDivElement;
+      this.handleDragMove(moveEvent, ghost, vertical, horizontal);
+    };
+    document.addEventListener('pointermove', mousemove);
+
+    const mouseup = (upEvent: MouseEvent) => {
+      this._handleDragEnd(upEvent, ghost, mousemove, mouseup, wheel);
     };
     document.addEventListener('pointerup', mouseup);
   }
 
   /**
    * @summary Muestra el menú de filtros para un elemento de video.
-   * @description Despliega un menú contextual con opciones de filtro (brillo, contraste, saturación) para el video seleccionado.
-   * @param {MouseEvent} event El evento de ratón.
-   * @param {VideoElement} ele El elemento de video al que se aplicará el filtro.
+   * @param {MouseEvent} event Evento de ratón.
+   * @param {VideoElement} ele Elemento de video seleccionado.
    */
-  showFilterMenu(event: MouseEvent, ele: VideoElement) {
+  private showFilterMenu(event: MouseEvent, ele: VideoElement) {
     event.preventDefault(); // Bloquea el menú contextual del navegador
     event.stopPropagation();
 
@@ -1623,141 +1612,151 @@ export class WebOBS implements OnInit, AfterViewInit, OnDestroy, OnChanges {
    */
   canvasMouseMove(event: MouseEvent) {
     event.preventDefault();
-    const canvasContainer = this.canvasContainer.nativeElement;
-    if (!this.canvas) {
-      console.error('Missing canvas');
-      this.canvas = this.salida.nativeElement;
-      if (!this.canvas) {
-        console.error('No se pudo obtener el canvas');
-        return;
-      }
-      return;
-    }
-    if (!canvasContainer) {
-      console.error('Missing canvasContainer');
-      return;
-    }
-    // TODO: revisar si se puede eliminar
-    if (this.editandoDimensiones) {
-      return;
-    }
+    if (this.editandoDimensiones) return;
 
-    const rect = this.canvas.getBoundingClientRect();
-    // Obtener las coordenadas relativas al tamaño visible del canvas
-    const mousex = Math.max(0, Math.round(event.clientX - rect.left)); // Redondear y evitar valores negativos
-    const mousey = Math.max(0, Math.round(event.clientY - rect.top)); // Redondear y evitar valores negativos
-
-    // Relación de escala entre el tamaño interno del canvas y el tamaño visible
-    const scaleX = this.canvas.width / rect.width; // Relación horizontal
-    const scaleY = this.canvas.height / rect.height; // Relación vertical
-
-    // Obtener las coordenadas internas (relativas al tamaño interno del canvas)
-    const internalMouseX = mousex * scaleX;
-    const internalMouseY = mousey * scaleY;
-
-    // Obtener las coordenadas de cada video renderizado
+    const { internalMouseX, internalMouseY, scaleX, scaleY } = this._getMouseInternalCoordinates(event);
     const rendered = this.videosElements
       .filter((video) => video.painted)
-      .slice() // clona
-      .reverse(); // invierte
+      .slice()
+      .reverse();
     const originalGhost = this.marcoTemplate.nativeElement;
     let finded = false;
+
     for (const video of rendered) {
-      let videoWidth: number = 0;
-      let videoHeight: number = 0;
-      if (video.element instanceof HTMLVideoElement) {
-        videoWidth = video.element.videoWidth * video.scale;
-        videoHeight = video.element.videoHeight * video.scale;
-      } else if (video.element instanceof HTMLImageElement) {
-        videoWidth = video.element.naturalWidth * video.scale;
-        videoHeight = video.element.naturalHeight * video.scale;
-      } else {
-        console.error('Tipo de elemento no reconocido');
-      }
-      // Coordenadas del video en el canvas
+      const { videoWidth, videoHeight } = this._getVideoDimensions(video);
       const videoLeft = video.position ? video.position.x : 0;
       const videoTop = video.position ? video.position.y : 0;
 
-      // Comprobar si el ratón está dentro del área del video
       const isMouseOverVideo = internalMouseX >= videoLeft && internalMouseX <= videoLeft + videoWidth && internalMouseY >= videoTop && internalMouseY <= videoTop + videoHeight;
 
-      // Buscar el elemento "ghost"
-      let ghostDiv = canvasContainer.querySelector(`#marco-${CSS.escape(video.id)}`) as HTMLDivElement;
+      let ghostDiv = this.canvasContainer.nativeElement.querySelector(`#marco-${CSS.escape(video.id)}`) as HTMLDivElement;
       if (!ghostDiv) {
-        ghostDiv = originalGhost.cloneNode(true) as HTMLDivElement;
-        const tiradores: NodeListOf<HTMLDivElement> = ghostDiv.querySelectorAll('[id*="tirador-"]'); // Seleccionar los tiradores
-        for (const tirador of tiradores) {
-          tirador.addEventListener('pointerdown', (event: MouseEvent) => {
-            this.redimensionado(event); // Llamar a la función original
-          });
-        }
-
-        if (!ghostDiv) {
-          console.error('Missing ghostDiv');
-          return;
-        }
-
-        ghostDiv.id = 'marco-' + video.id;
-        canvasContainer.appendChild(ghostDiv);
+        ghostDiv = this._createGhostDiv(video, originalGhost);
       }
 
       if (isMouseOverVideo && !finded) {
-        //// console.log(video.id);
-        // Calcular la posición y tamaño del "ghost" en el espacio visible del canvas
-        const ghostLeft = videoLeft / scaleX; // Convertir a coordenadas internas del canvas
-        const ghostTop = videoTop / scaleY; // Convertir a coordenadas internas del canvas
-        const ghostWidth = videoWidth / scaleX; // Ajustar el tamaño para la visualización
-        const ghostHeight = videoHeight / scaleY; // Ajustar el tamaño para la visualización
-
-        // Crear o actualizar el elemento del "ghost"
-        ghostDiv.style.position = 'absolute'; // Asegurarse de que el ghostDiv se posicione correctamente
-        ghostDiv.style.left = `${ghostLeft}px`; // Colocar el "ghost" en la posición correcta
-        ghostDiv.style.top = `${ghostTop}px`; // Colocar el "ghost" en la posición correcta
-        ghostDiv.style.width = `${ghostWidth}px`; // Ajustar el ancho del "ghost"
-        ghostDiv.style.height = `${ghostHeight}px`; // Ajustar la altura del "ghost"
-        ghostDiv.style.visibility = 'visible'; // Hacerlo visible
-
-        const buttonX = ghostDiv.querySelector('#buttonx') as HTMLButtonElement;
-        buttonX.onclick = () => {
-          video.painted = false;
-          video.position = null;
-          video.scale = 1;
-          ghostDiv.remove();
-          // Eliminar el elemento del DOM usando la referencia nativa si está disponible
-          const capaElement = this.elementosDiv.nativeElement.querySelector(`#capa-${CSS.escape(video.id)}`);
-          if (capaElement) {
-            capaElement.remove();
-          }
-          const marcoElement = this.elementosDiv.nativeElement.querySelector(`#marco-${CSS.escape(video.id)}`) as HTMLElement;
-          if (marcoElement) {
-            marcoElement.remove();
-          }
-        };
-
-        ghostDiv.addEventListener('pointermove', this.boundCanvasMouseMove);
-
-        // Calcular la longitud de la línea diagonal (de esquina superior izquierda a inferior derecha)
-        const diagonalLength = Math.sqrt(Math.pow(ghostDiv.clientWidth, 2) + Math.pow(ghostDiv.clientHeight, 2));
-
-        const line1 = ghostDiv.querySelector('#line1') as HTMLDivElement;
-        line1.style.width = `${diagonalLength}px`;
-        line1.style.transform = `rotate(${Math.atan2(ghostDiv.clientHeight, ghostDiv.clientWidth)}rad)`;
-
-        const line2 = ghostDiv.querySelector('#line2') as HTMLDivElement;
-        // Aplicar estilos dinámicos
-        line2.style.width = `${diagonalLength}px`;
-        line2.style.transform = `rotate(${-Math.atan2(ghostDiv.clientHeight, ghostDiv.clientWidth)}rad)`;
-
-        // Colocar la línea en la esquina superior derecha
-        line2.style.right = '0px';
-        line2.style.top = '0px';
+        this._updateGhostDivVisibility(ghostDiv, videoLeft, videoTop, videoWidth, videoHeight, scaleX, scaleY);
+        this._setupGhostDivActions(ghostDiv, video);
+        this._updateGhostDivDiagonals(ghostDiv);
         finded = true;
       } else {
-        // Eliminar el elemento del "ghost" si ya no está sobre el video
         ghostDiv.style.visibility = 'hidden';
         ghostDiv.removeEventListener('pointermove', this.boundCanvasMouseMove);
       }
     }
+  }
+
+  /**
+   * @summary Obtiene las coordenadas internas del ratón relativas al canvas.
+   * @param {MouseEvent} event Evento de ratón.
+   * @returns {Object} Coordenadas internas y escalas.
+   */
+  private _getMouseInternalCoordinates(event: MouseEvent) {
+    const rect = this.canvas.getBoundingClientRect();
+    const mousex = Math.max(0, Math.round(event.clientX - rect.left));
+    const mousey = Math.max(0, Math.round(event.clientY - rect.top));
+    const scaleX = this.canvas.width / rect.width;
+    const scaleY = this.canvas.height / rect.height;
+    return {
+      internalMouseX: mousex * scaleX,
+      internalMouseY: mousey * scaleY,
+      scaleX,
+      scaleY,
+    };
+  }
+
+  /**
+   * @summary Obtiene las dimensiones actuales (escaladas) de un video o imagen.
+   * @param {any} video Objeto de video o imagen.
+   * @returns {Object} Ancho y alto calculados.
+   */
+  private _getVideoDimensions(video: any) {
+    let videoWidth = 0;
+    let videoHeight = 0;
+    if (video.element instanceof HTMLVideoElement) {
+      videoWidth = video.element.videoWidth * video.scale;
+      videoHeight = video.element.videoHeight * video.scale;
+    } else if (video.element instanceof HTMLImageElement) {
+      videoWidth = video.element.naturalWidth * video.scale;
+      videoHeight = video.element.naturalHeight * video.scale;
+    } else {
+      console.error('Tipo de elemento no reconocido');
+    }
+    return { videoWidth, videoHeight };
+  }
+
+  /**
+   * @summary Crea un div "ghost" (marco de edición) para un elemento.
+   * @param {any} video Elemento de video.
+   * @param {any} originalGhost Plantilla del marco.
+   * @returns {HTMLDivElement} El div creado.
+   */
+  private _createGhostDiv(video: any, originalGhost: any) {
+    const ghostDiv = originalGhost.cloneNode(true) as HTMLDivElement;
+    const tiradores: NodeListOf<HTMLDivElement> = ghostDiv.querySelectorAll('[id*="tirador-"]');
+    for (const tirador of tiradores) {
+      tirador.addEventListener('pointerdown', (event: MouseEvent) => {
+        this.redimensionado(event);
+      });
+    }
+    ghostDiv.id = 'marco-' + video.id;
+    this.canvasContainer.nativeElement.appendChild(ghostDiv);
+    return ghostDiv;
+  }
+
+  /**
+   * @summary Actualiza la visibilidad y posición de un marco de edición.
+   * @param {HTMLDivElement} ghostDiv El marco de edición.
+   * @param {number} videoLeft Posición X.
+   * @param {number} videoTop Posición Y.
+   * @param {number} videoWidth Ancho.
+   * @param {number} videoHeight Alto.
+   * @param {number} scaleX Escala horizontal.
+   * @param {number} scaleY Escala vertical.
+   */
+  private _updateGhostDivVisibility(ghostDiv: HTMLDivElement, videoLeft: number, videoTop: number, videoWidth: number, videoHeight: number, scaleX: number, scaleY: number) {
+    ghostDiv.style.position = 'absolute';
+    ghostDiv.style.left = `${videoLeft / scaleX}px`;
+    ghostDiv.style.top = `${videoTop / scaleY}px`;
+    ghostDiv.style.width = `${videoWidth / scaleX}px`;
+    ghostDiv.style.height = `${videoHeight / scaleY}px`;
+    ghostDiv.style.visibility = 'visible';
+  }
+
+  /**
+   * @summary Configura las acciones (como eliminar) en un marco de edición.
+   * @param {HTMLDivElement} ghostDiv El marco de edición.
+   * @param {any} video El elemento asociado.
+   */
+  private _setupGhostDivActions(ghostDiv: HTMLDivElement, video: any) {
+    const buttonX = ghostDiv.querySelector('#buttonx') as HTMLButtonElement;
+    buttonX.onclick = () => {
+      video.painted = false;
+      video.position = null;
+      video.scale = 1;
+      ghostDiv.remove();
+      const capaElement = this.elementosDiv.nativeElement.querySelector(`#capa-${CSS.escape(video.id)}`);
+      if (capaElement) capaElement.remove();
+      const marcoElement = this.elementosDiv.nativeElement.querySelector(`#marco-${CSS.escape(video.id)}`) as HTMLElement;
+      if (marcoElement) marcoElement.remove();
+    };
+    ghostDiv.addEventListener('pointermove', this.boundCanvasMouseMove);
+  }
+
+  /**
+   * @summary Actualiza las líneas diagonales de un marco de edición.
+   * @param {HTMLDivElement} ghostDiv El marco de edición.
+   */
+  private _updateGhostDivDiagonals(ghostDiv: HTMLDivElement) {
+    const diagonalLength = Math.sqrt(Math.pow(ghostDiv.clientWidth, 2) + Math.pow(ghostDiv.clientHeight, 2));
+    const line1 = ghostDiv.querySelector('#line1') as HTMLDivElement;
+    line1.style.width = `${diagonalLength}px`;
+    line1.style.transform = `rotate(${Math.atan2(ghostDiv.clientHeight, ghostDiv.clientWidth)}rad)`;
+    const line2 = ghostDiv.querySelector('#line2') as HTMLDivElement;
+    line2.style.width = `${diagonalLength}px`;
+    line2.style.transform = `rotate(${-Math.atan2(ghostDiv.clientHeight, ghostDiv.clientWidth)}rad)`;
+    line2.style.right = '0px';
+    line2.style.top = '0px';
   }
 
   /**
@@ -1783,271 +1782,214 @@ export class WebOBS implements OnInit, AfterViewInit, OnDestroy, OnChanges {
    */
   redimensionado($event: MouseEvent) {
     const canvasContainer = this.canvasContainer.nativeElement;
-    const tiradorId = ($event.target as HTMLElement).id; // ID del tirador
-    const ghostId = ($event.target as HTMLElement).parentElement?.id; // ID del padre
+    const tiradorId = ($event.target as HTMLElement).id;
+    const ghostId = ($event.target as HTMLElement).parentElement?.id;
     const posicionInicial = { x: $event.clientX, y: $event.clientY };
+
     if (!tiradorId || !ghostId || !canvasContainer || !this.canvas) {
-      console.error('Missing tiradorId, ghostId, canvasContainer or canvas');
-      return;
-    }
-    const ghostDiv = canvasContainer.querySelector(`#${CSS.escape(ghostId)}`) as HTMLElement;
-    if (!ghostDiv) {
-      console.error('Missing ghostDiv');
+      console.error('Missing required elements for resizing');
       return;
     }
 
+    const ghostDiv = canvasContainer.querySelector(`#${CSS.escape(ghostId)}`) as HTMLElement;
+    if (!ghostDiv) return;
+
+    this._startResizing(ghostDiv);
+
+    const mouseMove = ($event2: MouseEvent) => {
+      const difX = $event2.clientX - posicionInicial.x;
+      const difY = $event2.clientY - posicionInicial.y;
+
+      this._handleResizingStep(ghostDiv, tiradorId, difX, difY);
+
+      posicionInicial.x = $event2.clientX;
+      posicionInicial.y = $event2.clientY;
+
+      this._updateResizingUI(ghostDiv);
+    };
+
+    const mouseup = () => {
+      this._finishResizing(ghostDiv, ghostId, mouseMove, mouseup);
+    };
+
+    canvasContainer.addEventListener('pointermove', mouseMove);
+    canvasContainer.addEventListener('pointerup', mouseup);
+  }
+
+  /**
+   * @summary Inicia el estado de redimensionamiento.
+   * @param {HTMLElement} ghostDiv El marco que se va a redimensionar.
+   */
+  private _startResizing(ghostDiv: HTMLElement) {
     this.editandoDimensiones = true;
-    // Añadir la cruz de posicionamiento
     if (this.cross) {
       this.cross.nativeElement.style.display = 'block';
     }
-    let intersecciones = this.colisiones(ghostDiv);
+    this._updateResizingUI(ghostDiv);
+  }
 
-    // Calcular el centro del ghost para posicionar las lineas
+  /**
+   * @summary Maneja un paso individual (movimiento del ratón) durante el redimensionamiento.
+   * @param {HTMLElement} ghostDiv El marco.
+   * @param {string} tiradorId ID del tirador usado.
+   * @param {number} difX Diferencia en X.
+   * @param {number} difY Diferencia en Y.
+   */
+  private _handleResizingStep(ghostDiv: HTMLElement, tiradorId: string, difX: number, difY: number) {
+    if (!this.canvas) return;
+    this.canvas.style.border = '2px solid #1d4ed8';
+
+    const canvasContainer = this.canvasContainer.nativeElement;
+    const elementos: NodeListOf<HTMLDivElement> = canvasContainer.querySelectorAll('[id^="marco"]');
+    for (const elemento of elementos) {
+      if (elemento.id !== ghostDiv.id) {
+        elemento.style.visibility = 'hidden';
+      }
+    }
+
+    this.handleResizing(tiradorId, difX, difY, ghostDiv, this._recalculaDiagonales.bind(this));
+  }
+
+  /**
+   * @summary Recalcula las líneas diagonales de un marco tras un cambio de tamaño.
+   * @param {HTMLElement} ghostDiv El marco.
+   */
+  private _recalculaDiagonales(ghostDiv: HTMLElement) {
+    const linea1: HTMLDivElement | null = ghostDiv.querySelector('#line1');
+    const linea2: HTMLDivElement | null = ghostDiv.querySelector('#line2');
+
+    if (!linea1 || !linea2) return;
+
+    const diagonalLength = Math.sqrt(Math.pow(ghostDiv.clientWidth, 2) + Math.pow(ghostDiv.clientHeight, 2));
+    const angle = Math.atan2(ghostDiv.clientHeight, ghostDiv.clientWidth);
+
+    linea1.style.width = `${diagonalLength}px`;
+    linea1.style.transform = `rotate(${angle}rad)`;
+
+    linea2.style.width = `${diagonalLength}px`;
+    linea2.style.transform = `rotate(${-angle}rad)`;
+    linea2.style.right = '0px';
+    linea2.style.top = '0px';
+  }
+
+  /**
+   * @summary Actualiza la interfaz de usuario (colisiones, cruces) durante el redimensionamiento.
+   * @param {HTMLElement} ghostDiv El marco.
+   */
+  private _updateResizingUI(ghostDiv: HTMLElement) {
+    if (!this.canvas) return;
+    const intersecciones = this.colisiones(ghostDiv);
     const rect = this.canvas.getBoundingClientRect();
     const centroX = ghostDiv.offsetLeft + ghostDiv.offsetWidth / 2 + rect.x;
     const centroY = ghostDiv.offsetTop + ghostDiv.offsetHeight / 2 + rect.y;
+
     this.moverCruzPosicionamiento(centroX, centroY, intersecciones);
+
+    ghostDiv.style.border = intersecciones.length > 0 ? '2px solid #b91c1c' : '2px solid #1d4ed8';
+
     for (const elemento of intersecciones) {
       if (elemento.id === 'canvas-container') {
-        if (this.canvas) {
-          this.canvas.style.border = '2px solid #b91c1c';
-        }
+        this.canvas.style.border = '2px solid #b91c1c';
       } else {
         elemento.style.border = '2px solid #b91c1c';
         elemento.style.visibility = 'visible';
       }
     }
+  }
 
-    // En evento mousemove, se calcula la diferencia de posición entre el momento del click y el movimiento
-    const mouseMove = ($event2: MouseEvent) => {
-      const difX = $event2.clientX - posicionInicial.x;
-      const difY = $event2.clientY - posicionInicial.y;
-      if (!this.canvas) {
-        console.error('Missing canvas');
-        return;
-      }
-      this.canvas.style.border = '2px solid #1d4ed8';
-      const elementos: NodeListOf<HTMLDivElement> = canvasContainer.querySelectorAll('[id^="marco"]');
-      for (const elemento of elementos) {
-        if (elemento.id !== ghostDiv.id) {
-          elemento.style.visibility = 'hidden';
-        }
-      }
+  /**
+   * @summary Finaliza el proceso de redimensionamiento y actualiza el elemento en el canvas.
+   * @param {HTMLElement} ghostDiv El marco.
+   * @param {string} ghostId ID del marco.
+   * @param {any} moveFn Referencia a la función de movimiento para eliminar el listener.
+   * @param {any} upFn Referencia a la función de subida para eliminar el listener.
+   */
+  private _finishResizing(ghostDiv: HTMLElement, ghostId: string, moveFn: any, upFn: any) {
+    if (!this.canvas) return;
 
-      // Función para recalcular las líneas diagonales
-      const recalculaDiagonales = () => {
-        const linea1: HTMLDivElement | null = ghostDiv.querySelector('#line1');
-        const linea2: HTMLDivElement | null = ghostDiv.querySelector('#line2');
+    const canvasContainer = this.canvasContainer.nativeElement;
+    const elemento: VideoElement | undefined = this.videosElements.find((el) => el.id === ghostId.substring(6));
 
-        if (!linea1 || !linea2) {
-          console.error('Missing linea1 or linea2');
-          return;
-        }
-
-        // Calcular la longitud de la línea diagonal (de esquina superior izquierda a inferior derecha)
-        const diagonalLength = Math.sqrt(Math.pow(ghostDiv.clientWidth, 2) + Math.pow(ghostDiv.clientHeight, 2));
-
-        linea1.style.width = `${diagonalLength}px`;
-        linea1.style.transform = `rotate(${Math.atan2(ghostDiv.clientHeight, ghostDiv.clientWidth)}rad)`;
-
-        linea2.style.width = `${diagonalLength}px`;
-        linea2.style.transform = `rotate(${-Math.atan2(ghostDiv.clientHeight, ghostDiv.clientWidth)}rad)`;
-
-        // Colocar la línea en la esquina superior derecha
-        linea2.style.right = '0px';
-        linea2.style.top = '0px';
-      };
-
-      switch (tiradorId) {
-        case 'tirador-tl':
-          // Mueve la esquina superior izquierda
-          ghostDiv.style.left = `${ghostDiv.offsetLeft + difX}px`;
-          ghostDiv.style.top = `${ghostDiv.offsetTop + difY}px`;
-
-          // Mueve la esquina inferior derecha
-          ghostDiv.style.width = `${ghostDiv.offsetWidth - difX}px`;
-          ghostDiv.style.height = `${ghostDiv.offsetHeight - difY}px`;
-          recalculaDiagonales();
-          break;
-
-        case 'tirador-tr':
-          // Mueve la esquina superior derecha
-          ghostDiv.style.top = `${ghostDiv.offsetTop + difY}px`;
-
-          // Mueve la esquina inferior izquierda
-          ghostDiv.style.width = `${ghostDiv.offsetWidth + difX}px`;
-          ghostDiv.style.height = `${ghostDiv.offsetHeight - difY}px`;
-          recalculaDiagonales();
-          break;
-
-        case 'tirador-bl':
-          // Mueve la esquina inferior izquierda
-          ghostDiv.style.left = `${ghostDiv.offsetLeft + difX}px`;
-          ghostDiv.style.height = `${ghostDiv.offsetHeight + difY}px`;
-
-          // Mueve la esquina superior derecha
-          ghostDiv.style.width = `${ghostDiv.offsetWidth - difX}px`;
-          recalculaDiagonales();
-          break;
-
-        case 'tirador-br':
-          // Mueve la esquina inferior derecha
-          ghostDiv.style.width = `${ghostDiv.offsetWidth + difX}px`;
-          ghostDiv.style.height = `${ghostDiv.offsetHeight + difY}px`;
-          recalculaDiagonales();
-          break;
-
-        case 'tirador-center':
-          ghostDiv.style.left = `${ghostDiv.offsetLeft + difX}px`;
-          ghostDiv.style.top = `${ghostDiv.offsetTop + difY}px`;
-          break;
-        default:
-          console.error('Tirador desconocido');
-          break;
-      }
-      // Actualiza las posiciones del mouse para el próximo movimiento
-      posicionInicial.x = $event2.clientX;
-      posicionInicial.y = $event2.clientY;
-
-      // Actualiza las posiciones de la cruz de posicionamiento
-      // Calcular el centro del ghost para posicionar las lineas
-      intersecciones = this.colisiones(ghostDiv);
-      const rect = this.canvas.getBoundingClientRect();
-      const centroX = ghostDiv.offsetLeft + ghostDiv.offsetWidth / 2 + rect.x;
-      const centroY = ghostDiv.offsetTop + ghostDiv.offsetHeight / 2 + rect.y;
-      this.moverCruzPosicionamiento(centroX, centroY, intersecciones);
-
-      if (intersecciones.length > 0) {
-        ghostDiv.style.border = '2px solid #b91c1c';
-      } else {
-        ghostDiv.style.border = '2px solid #1d4ed8';
-      }
-
-      for (const elemento of intersecciones) {
-        if (elemento.id === 'canvas-container') {
-          if (this.canvas) {
-            this.canvas.style.border = '2px solid #b91c1c';
-          }
-        } else {
-          elemento.style.border = '2px solid #b91c1c';
-          elemento.style.visibility = 'visible';
-        }
-      }
-    };
-    canvasContainer.addEventListener('pointermove', mouseMove);
-
-    // Evento mouseup
-    const mouseup = () => {
-      if (!this.canvas) {
-        console.error('Missing canvas');
-        return;
-      }
-      const elemento: VideoElement | undefined = this.videosElements.find((el) => el.id === ghostId.substring(6));
-      if (!elemento?.element) {
-        console.error('Missing elemento or elemento.element');
-        return;
-      }
+    if (elemento?.element) {
       const ghostRect = ghostDiv.getBoundingClientRect();
-      const result: VideoElement | undefined = this.paintInCanvas(elemento.element, ghostRect.width, ghostRect.height, ghostRect.left + ghostRect.width / 2, ghostRect.top + ghostRect.height / 2);
-      // Guardar datos en el objeto VideoElement
-      if (!result) {
-        console.error('Missing result');
-        return;
-      }
-      elemento.position = result.position;
-      elemento.scale = result.scale; // Escala que garantiza el tamaño correcto en el canvas
-      elemento.painted = true; // Marcamos el video como "pintado"
+      const result = this.paintInCanvas(elemento.element as any, ghostRect.width, ghostRect.height, ghostRect.left + ghostRect.width / 2, ghostRect.top + ghostRect.height / 2);
 
-      // Restaurar estado
-      canvasContainer.removeEventListener('pointermove', mouseMove);
-      canvasContainer.removeEventListener('pointerup', mouseup);
-      if (this.cross) {
-        this.cross.nativeElement.style.display = 'none';
+      if (result) {
+        elemento.position = result.position;
+        elemento.scale = result.scale;
+        elemento.painted = true;
       }
-      const elementos: NodeListOf<HTMLDivElement> = canvasContainer.querySelectorAll('[id^="marco"]');
-      for (const elemento of elementos) {
-        if (elemento.id !== ghostDiv.id) {
-          elemento.style.border = '1px solid black';
-        }
+    }
+
+    canvasContainer.removeEventListener('pointermove', moveFn);
+    canvasContainer.removeEventListener('pointerup', upFn);
+
+    if (this.cross) {
+      this.cross.nativeElement.style.display = 'none';
+    }
+
+    const elementos: NodeListOf<HTMLDivElement> = canvasContainer.querySelectorAll('[id^="marco"]');
+    for (const el of elementos) {
+      if (el.id !== ghostDiv.id) {
+        el.style.border = '1px solid black';
       }
-      this.canvas.style.border = '1px solid black';
-      ghostDiv.style.visibility = 'hidden';
-      this.editandoDimensiones = false;
-    };
-    canvasContainer.addEventListener('pointerup', mouseup);
+    }
+
+    this.canvas.style.border = '1px solid black';
+    ghostDiv.style.visibility = 'hidden';
+    this.editandoDimensiones = false;
   }
 
   /**
-   * @summary Prepara un elemento para ser pintado en el canvas.
-   * @description Calcula la escala y posición de un elemento (video o imagen) para que se ajuste correctamente en el canvas.
-   * @param {HTMLElement} element El elemento HTML a pintar.
-   * @param {number} widthElement El ancho visible del elemento.
-   * @param {number} heightElement La altura visible del elemento.
-   * @param {number} positionX La posición X central del elemento en la ventana.
-   * @param {number} positionY La posición Y central del elemento en la ventana.
-   * @returns {VideoElement | undefined} Un objeto VideoElement con la información de pintado, o undefined si el tipo de elemento no es reconocido.
+   * @summary Lógica central para calcular las nuevas dimensiones según el tirador usado.
+   * @param {string} tiradorId ID del tirador.
+   * @param {number} difX Diferencia en X.
+   * @param {number} difY Diferencia en Y.
+   * @param {HTMLElement} ghostDiv El marco.
+   * @param {Function} recalculaDiagonales Función para actualizar las diagonales.
    */
-  paintInCanvas(element: HTMLElement, widthElement: number, heightElement: number, positionX: number, positionY: number) {
-    if (!this.canvas) {
-      console.error('Missing canvas');
-      return;
+  private handleResizing(tiradorId: string, difX: number, difY: number, ghostDiv: HTMLElement, recalculaDiagonales: (ghostDiv: HTMLElement) => void) {
+    switch (tiradorId) {
+      case 'tirador-tl':
+        ghostDiv.style.left = `${ghostDiv.offsetLeft + difX}px`;
+        ghostDiv.style.top = `${ghostDiv.offsetTop + difY}px`;
+        ghostDiv.style.width = `${ghostDiv.offsetWidth - difX}px`;
+        ghostDiv.style.height = `${ghostDiv.offsetHeight - difY}px`;
+        recalculaDiagonales(ghostDiv);
+        break;
+      case 'tirador-tr':
+        ghostDiv.style.top = `${ghostDiv.offsetTop + difY}px`;
+        ghostDiv.style.width = `${ghostDiv.offsetWidth + difX}px`;
+        ghostDiv.style.height = `${ghostDiv.offsetHeight - difY}px`;
+        recalculaDiagonales(ghostDiv);
+        break;
+      case 'tirador-bl':
+        ghostDiv.style.left = `${ghostDiv.offsetLeft + difX}px`;
+        ghostDiv.style.height = `${ghostDiv.offsetHeight + difY}px`;
+        ghostDiv.style.width = `${ghostDiv.offsetWidth - difX}px`;
+        recalculaDiagonales(ghostDiv);
+        break;
+      case 'tirador-br':
+        ghostDiv.style.width = `${ghostDiv.offsetWidth + difX}px`;
+        ghostDiv.style.height = `${ghostDiv.offsetHeight + difY}px`;
+        recalculaDiagonales(ghostDiv);
+        break;
+      case 'tirador-center':
+        ghostDiv.style.left = `${ghostDiv.offsetLeft + difX}px`;
+        ghostDiv.style.top = `${ghostDiv.offsetTop + difY}px`;
+        break;
+      default:
+        console.error('Tirador desconocido');
+        break;
     }
-    const rect = this.canvas.getBoundingClientRect();
-
-    // Relación de escala entre el tamaño visual y el interno del canvas
-    const scaleX = this.canvas.width / rect.width;
-    const scaleY = this.canvas.height / rect.height;
-
-    // Dimensiones del ghost en el documento
-    const ghostWidthInCanvas = widthElement * scaleX; // Ajustado al canvas
-    const ghostHeightInCanvas = heightElement * scaleY;
-
-    // Dimensiones originales del video
-    let originalWidth: number = 0;
-    let originalHeight: number = 0;
-    if (element instanceof HTMLVideoElement) {
-      originalWidth = element.videoWidth;
-      originalHeight = element.videoHeight;
-    } else if (element instanceof HTMLImageElement) {
-      originalWidth = element.naturalWidth;
-      originalHeight = element.naturalHeight;
-    } else {
-      console.error('Tipo de elemento no reconocido');
-      return;
-    }
-
-    // Calculamos la escala requerida
-    const requiredScaleX = ghostWidthInCanvas / originalWidth;
-    const requiredScaleY = ghostHeightInCanvas / originalHeight;
-    const requiredScale = Math.min(requiredScaleX, requiredScaleY);
-
-    // Dimensiones escaladas
-    const scaledWidth = originalWidth * requiredScale;
-    const scaledHeight = originalHeight * requiredScale;
-
-    // Ajustamos la posición para centrar el ratón en el video escalado
-    const canvasX = (positionX - rect.left) * scaleX - scaledWidth / 2;
-    const canvasY = (positionY - rect.top) * scaleY - scaledHeight / 2;
-
-    // Devuelve un VideoElement con la información de la imagen da pintar
-    const videoElement: VideoElement = {
-      id: element.id,
-      element: element,
-      painted: true,
-      scale: requiredScale,
-      position: { x: canvasX, y: canvasY },
-    };
-    return videoElement;
   }
 
   /**
-   * @summary Detecta colisiones entre un elemento principal y otros elementos o el borde del canvas.
-   * @description Comprueba si el elemento principal se superpone con otros marcos de video o toca los bordes del canvas.
-   * @param {HTMLElement} principal El elemento principal para detectar colisiones.
-   * @returns {HTMLElement[]} Un array de elementos HTML con los que colisiona el elemento principal.
+   * @summary Calcula las intersecciones de un elemento con otros elementos en el canvas.
+   * @param {HTMLElement} principal El elemento principal que se está arrastrando o redimensionando.
+   * @returns {HTMLElement[]} Lista de elementos que colisionan con el elemento principal.
    */
-  colisiones(principal: HTMLElement): HTMLElement[] {
+  private colisiones(principal: HTMLElement): HTMLElement[] {
     const rect = principal.getBoundingClientRect();
     const elementosIntersecados: HTMLElement[] = [];
     const canvasContainer = this.canvasContainer.nativeElement;
@@ -2072,6 +2014,67 @@ export class WebOBS implements OnInit, AfterViewInit, OnDestroy, OnChanges {
   }
 
   /**
+   * @summary Pinta un elemento (video o imagen) en el canvas con la escala y posición correctas.
+   * @param {HTMLVideoElement | HTMLImageElement} element El elemento de video o imagen a pintar.
+   * @param {number} width El ancho del elemento en el DOM.
+   * @param {number} height La altura del elemento en el DOM.
+   * @param {number} clientX La posición X del ratón en la ventana.
+   * @param {number} clientY La posición Y del ratón en la ventana.
+   * @returns {VideoElement} Un objeto VideoElement con la escala y posición calculadas.
+   */
+  private paintInCanvas(element: HTMLVideoElement | HTMLImageElement, widthElement: number, heightElement: number, clientX: number, clientY: number): VideoElement {
+    if (!this.canvas) {
+      console.error('Missing canvas');
+      return {} as VideoElement;
+    }
+    const rect = this.canvas.getBoundingClientRect();
+
+    // Relación de escala entre el tamaño visual y el interno del canvas
+    const scaleX = this.canvas.width / rect.width;
+    const scaleY = this.canvas.height / rect.height;
+
+    // Dimensiones del ghost en el documento
+    const ghostWidthInCanvas = widthElement * scaleX; // Ajustado al canvas
+    const ghostHeightInCanvas = heightElement * scaleY;
+
+    // Dimensiones originales del video
+    let originalWidth: number = 0;
+    let originalHeight: number = 0;
+    if (element instanceof HTMLVideoElement) {
+      originalWidth = element.videoWidth;
+      originalHeight = element.videoHeight;
+    } else if (element instanceof HTMLImageElement) {
+      originalWidth = element.naturalWidth;
+      originalHeight = element.naturalHeight;
+    } else {
+      console.error('Tipo de elemento no reconocido');
+      return {} as VideoElement;
+    }
+
+    // Calculamos la escala requerida
+    const requiredScaleX = ghostWidthInCanvas / originalWidth;
+    const requiredScaleY = ghostHeightInCanvas / originalHeight;
+    const requiredScale = Math.min(requiredScaleX, requiredScaleY);
+
+    // Dimensiones escaladas
+    const scaledWidth = originalWidth * requiredScale;
+    const scaledHeight = originalHeight * requiredScale;
+
+    // Ajustamos la posición para centrar el ratón en el video escalado
+    const canvasX = (clientX - rect.left) * scaleX - scaledWidth / 2;
+    const canvasY = (clientY - rect.top) * scaleY - scaledHeight / 2;
+
+    // Devuelve un VideoElement con la información de la imagen da pintar
+    return {
+      id: element.id,
+      element: element,
+      painted: true,
+      scale: requiredScale,
+      position: { x: canvasX, y: canvasY },
+    };
+  }
+
+  /**
    * @summary Formatea un número de segundos a un formato de tiempo hh:mm:ss.
    * @param {number} seconds Los segundos a formatear.
    * @returns {string} El tiempo formateado como "hh:mm:ss".
@@ -2092,29 +2095,48 @@ export class WebOBS implements OnInit, AfterViewInit, OnDestroy, OnChanges {
    * @description Pide un nombre al usuario y guarda la posición y escala de los elementos pintados en un nuevo preset.
    */
   guardaPreset() {
+    console.log('guardaPreset called');
     const name = prompt('Introduce el nombre del preset \n(El mismo nombre sobrescribe el preset) ', 'Nuevo preset');
-    if (name) {
-      const videoElements: VideoElement[] = [];
-      for (const elemento of this.videosElements) {
-        if (elemento.painted && elemento.element) {
-          const newE: VideoElement = structuredClone(elemento);
+    if (!name) return;
 
-          newE.element = elemento.element.cloneNode(true) as HTMLVideoElement;
-          if (elemento.element instanceof HTMLVideoElement && newE.element instanceof HTMLVideoElement) {
-            newE.element.srcObject = elemento.element.srcObject;
-            newE.element.load();
-          } else if (elemento.element instanceof HTMLImageElement && newE.element instanceof HTMLImageElement) {
-            newE.element.src = elemento.element.src;
-          }
-          videoElements.push(newE);
-        }
-      }
-      this.presets.set(name, {
-        elements: videoElements,
-        shortcut: 'ctrl+' + (this.presets.size + 1),
-      });
-      setTimeout(() => this.calculatePreset(), 100);
+    const videoElements = this.createVideoElementsList();
+    this.presets.set(name, {
+      elements: videoElements,
+      shortcut: 'ctrl+' + (this.presets.size + 1),
+    });
+    setTimeout(() => this.calculatePreset(), 100);
+  }
+
+  /**
+   * @summary Crea una lista de VideoElements listos para ser guardados en un preset.
+   * @returns {VideoElement[]} Lista de elementos filtrados y mapeados.
+   */
+  private createVideoElementsList(): VideoElement[] {
+    return this.videosElements.filter((el) => el.painted && el.element).map((el) => this.mapToVideoElement(el));
+  }
+
+  /**
+   * @summary Mapea un elemento interno a la estructura de VideoElement para persistencia.
+   * @param {any} el Elemento a mapear.
+   * @returns {VideoElement} Objeto mapeado.
+   */
+  private mapToVideoElement(el: any): VideoElement {
+    let srcOrSrcObject: MediaStream | string | null = null;
+    if (el.element instanceof HTMLVideoElement) {
+      srcOrSrcObject = el.element.srcObject as MediaStream;
+    } else if (el.element instanceof HTMLImageElement) {
+      srcOrSrcObject = el.element.src;
     }
+
+    return {
+      id: el.id,
+      element: null,
+      painted: el.painted,
+      scale: el.scale,
+      position: el.position ? { ...el.position } : null,
+      filters: el.filters ? { ...el.filters } : undefined,
+      srcOrSrcObject,
+    };
   }
 
   /**
@@ -2157,26 +2179,29 @@ export class WebOBS implements OnInit, AfterViewInit, OnDestroy, OnChanges {
 
   /**
    * @summary Ajusta un elemento a pantalla completa en el canvas.
-   * @description Calcula el tamaño y posición para que el elemento ocupe todo el canvas.
+   * @description Calcula el tamaño y posición para que el elemento ocupe el canvas entero.
    * @param {MediaDeviceInfo | MediaStream | File} ele El elemento a ajustar.
    */
   fullscreen(ele: MediaDeviceInfo | MediaStream | File) {
     let elemento: VideoElement | undefined;
-    if (ele instanceof MediaDeviceInfo) {
-      elemento = this.videosElements.find((el) => el.id === ele.deviceId);
-    } else if (ele instanceof MediaStream) {
-      elemento = this.videosElements.find((el) => el.id === ele.id);
-    } else if (ele instanceof File) {
-      elemento = this.videosElements.find((el) => el.id === ele.name);
-    } else {
-      console.error('Tipo desconocido');
-      return;
+
+    // Intento de encontrar el ID independientemente del tipo
+    const id = (ele as any).deviceId || (ele as any).id || (ele as any).name;
+
+    // Buscar en videosElements
+    elemento = this.videosElements.find((el) => el.id === id);
+
+    // Fallback especial para MediaStream
+    if (!elemento && ele instanceof MediaStream) {
+      const videoTrackId = ele.getVideoTracks()[0]?.id;
+      elemento = this.videosElements.find((el) => el.id === videoTrackId);
     }
 
     if (!elemento) {
-      console.error('No se encontro el elemento');
+      console.error('No se encontro el elemento con id:', id);
       return;
     }
+
     if (!elemento.element) {
       console.error('No se encontro el elemento.element');
       return;
@@ -2187,9 +2212,9 @@ export class WebOBS implements OnInit, AfterViewInit, OnDestroy, OnChanges {
     }
 
     const rect = this.canvas.getBoundingClientRect();
-    const x = rect.x + rect.width / 2;
-    const y = rect.y + rect.height / 2;
-    const result = this.paintInCanvas(elemento.element, rect.width, rect.height, x, y);
+    const x = rect.left + rect.width / 2;
+    const y = rect.top + rect.height / 2;
+    const result = this.paintInCanvas(elemento.element as HTMLVideoElement | HTMLImageElement, rect.width, rect.height, x, y);
     if (result && elemento.element) {
       elemento.position = result.position;
       elemento.scale = result.scale;
@@ -2369,6 +2394,22 @@ export class WebOBS implements OnInit, AfterViewInit, OnDestroy, OnChanges {
   }
 
   /**
+   * @summary Actualiza la posición del elemento ghost para que siga al ratón.
+   * @param {number} x Coordenada X del ratón.
+   * @param {number} y Coordenada Y del ratón.
+   * @param {HTMLElement} element Elemento a posicionar.
+   */
+  private updateGhostPosition(x: number, y: number, element: HTMLElement) {
+    const elementWidth = element.offsetWidth;
+    const elementHeight = element.offsetHeight;
+    const offsetX = elementWidth / 2;
+    const offsetY = elementHeight / 2 - window.scrollY;
+
+    element.style.left = `${x - offsetX}px`;
+    element.style.top = `${y - offsetY}px`;
+  }
+
+  /**
    * @summary Mueve la cruz de posicionamiento en el editor.
    * @description Actualiza la posición visual de las líneas guía (cruz) durante el arrastre o redimensionamiento.
    * @param {number} eventX Posición horizontal del ratón.
@@ -2437,163 +2478,98 @@ export class WebOBS implements OnInit, AfterViewInit, OnDestroy, OnChanges {
    * @returns {Promise<void>} Una promesa que se resuelve cuando todos los presets han sido calculados.
    */
   async calculatePreset() {
-    const keysArray = Array.from(this.presets.keys());
-    for (const key of keysArray) {
-      const presetDiv = this.elementosDiv.nativeElement.querySelector(`#preset-${CSS.escape(key)}`);
-      if (!presetDiv) {
-        console.error('Preset ' + key + ' no encontrado');
-        return;
+    console.log('calculatePreset called');
+    this.cdr.detectChanges();
+    setTimeout(() => {
+      for (const [key, preset] of this.presets.entries()) {
+        const presetDiv = this.presetsDiv.nativeElement.querySelector(`[id="preset-${key}"]`);
+        console.log(`Buscando presetDiv para key: ${key}, encontrado: ${!!presetDiv}`);
+        if (!presetDiv) continue;
+
+        presetDiv.innerHTML = '';
+        this.renderPresetElements(presetDiv as HTMLElement, preset.elements);
       }
-      presetDiv.innerHTML = '';
-      const pre = this.presets.get(key);
-      if (!pre) {
-        console.error('Preset ' + key + ' no encontrado');
-        return;
-      }
-      for (const element of pre.elements) {
-        let ele;
-        let width;
-        let height;
-        if (element.element instanceof HTMLVideoElement) {
-          ele = document.createElement('video');
-          const originalStream = element.element.srcObject as MediaStream;
-          width = element.element.videoWidth;
-          height = element.element.videoHeight;
+    }, 50);
+  }
 
-          if (originalStream) {
-            // Crear un nuevo flujo vacío
-            const newStream = new MediaStream();
+  /**
+   * @summary Renderiza los elementos de un preset en un contenedor específico.
+   * @param {HTMLElement} presetDiv Contenedor del preset.
+   * @param {VideoElement[]} elements Elementos a renderizar.
+   */
+  private renderPresetElements(presetDiv: HTMLElement, elements: VideoElement[]) {
+    const divRect = presetDiv.getBoundingClientRect();
+    if (!this.canvas) return;
 
-            // Copiar todas las pistas (video, audio) al nuevo flujo
-            for (const track of originalStream.getTracks()) {
-              newStream.addTrack(track);
-            }
+    const scaleX = (this.canvas.width || 1920) / (divRect.width || 100);
+    const scaleY = (this.canvas.height || 1080) / (divRect.height || 100);
 
-            // Asignar el nuevo flujo al video
-            ele.srcObject = newStream;
-            ele.autoplay = true;
-            ele.muted = true;
-          }
-        } else if (element.element instanceof HTMLImageElement) {
-          ele = document.createElement('img');
-          ele.src = element.element.src;
-          ele.alt = element.element.id;
-          width = element.element.naturalWidth;
-          height = element.element.naturalHeight;
-        } else {
-          console.error('Tipo desconocido');
-          return;
-        }
+    for (const element of elements) {
+      const ele = this.createPresetElement(element);
+      if (!ele || !element.position) continue;
 
-        // Calculamos la escala y posición en el div respecto al canvas
-        const divRect = presetDiv.getBoundingClientRect();
-        if (!this.canvas || !element.position) {
-          console.error('Missing this.canvas or element.position');
-          return;
-        }
-        // Relación de escala entre el tamaño interno del canvas y el tamaño del div
-        const scaleX = this.canvas.width / divRect.width;
-        const scaleY = this.canvas.height / divRect.height;
-        // Calculamos la posición en el div
-        ele.style.position = 'absolute';
-        ele.style.left = `${element.position.x / scaleX}px`;
-        ele.style.top = `${element.position.y / scaleY}px`;
-        ele.style.width = `${(width * element.scale) / scaleX}px`;
-        ele.style.height = `${(height * element.scale) / scaleY}px`;
-        presetDiv.appendChild(ele);
-      }
+      const { width, height } = this._getPresetElementDimensions(element);
+
+      Object.assign(ele.style, {
+        position: 'absolute',
+        left: `${element.position.x / scaleX}px`,
+        top: `${element.position.y / scaleY}px`,
+        width: `${(width * element.scale) / scaleX}px`,
+        height: `${(height * element.scale) / scaleY}px`,
+        objectFit: 'cover',
+      });
+
+      presetDiv.appendChild(ele);
     }
   }
 
   /**
-   * @summary Aplica un preset guardado.
-   * @description Restaura la posición y escala de los elementos según el preset seleccionado y añade las capas de control.
-   * @param {string} name El nombre del preset a aplicar.
+   * @summary Obtiene las dimensiones originales de un elemento de preset.
+   * @param {VideoElement} element El elemento del preset.
+   * @returns {{width: number, height: number}} Dimensiones calculadas.
    */
-  aplicaPreset(name: string) {
-    // Primero, quitamos todas las capas
-    // quitamos las capas de cada elemento pintado
-    const elementosDiv = this.elementosDiv.nativeElement;
-    if (!elementosDiv) {
-      console.error('Missing elementosDiv');
-      return;
-    }
-    for (const elemento of this.videosElements) {
-      const capa = elementosDiv.querySelector('#capa-' + CSS.escape(elemento.id));
-      if (capa) {
-        capa.remove();
+  private _getPresetElementDimensions(element: VideoElement): { width: number; height: number } {
+    let width = 1280;
+    let height = 720;
+
+    if (element.srcOrSrcObject instanceof MediaStream) {
+      const videoTrack = element.srcOrSrcObject.getVideoTracks()[0];
+      if (videoTrack) {
+        const settings = videoTrack.getSettings();
+        width = settings.width || 1280;
+        height = settings.height || 720;
       }
+    } else if (typeof element.srcOrSrcObject === 'string') {
+      width = element.element instanceof HTMLImageElement ? element.element.naturalWidth : 100;
+      height = element.element instanceof HTMLImageElement ? element.element.naturalHeight : 100;
     }
 
-    // Quitamos las capas de cada preset
-    const keysArray = Array.from(this.presets.keys());
-    for (const key of keysArray) {
-      const capa = this.elementosDiv.nativeElement.querySelector(`#capa-${CSS.escape(key)}`);
-      if (capa) {
-        capa.remove();
-      }
+    return { width, height };
+  }
+
+  /**
+   * @summary Crea un elemento visual (video o imagen) para la miniatura de un preset.
+   * @param {VideoElement} element Datos del elemento.
+   * @returns {HTMLElement | null} El elemento creado o null.
+   */
+  private createPresetElement(element: VideoElement): HTMLElement | null {
+    console.log('Creando preset element:', element.srcOrSrcObject);
+    if (element.srcOrSrcObject instanceof MediaStream) {
+      const ele = document.createElement('video');
+      ele.srcObject = element.srcOrSrcObject.clone();
+      ele.autoplay = true;
+      ele.muted = true;
+      ele.playsInline = true;
+      ele.style.pointerEvents = 'none';
+      ele.play().catch((e) => console.error('Error al reproducir el video del preset:', e));
+      return ele;
+    } else if (typeof element.srcOrSrcObject === 'string') {
+      const ele = document.createElement('img');
+      ele.src = element.srcOrSrcObject;
+      ele.style.pointerEvents = 'none';
+      return ele;
     }
-
-    // Borramos el contenido del canvas
-    const preset = this.presets.get(name);
-    if (!preset) {
-      console.error('Missing preset');
-      return;
-    }
-    for (const elemento of this.videosElements) {
-      elemento.painted = false;
-      elemento.scale = 1;
-      elemento.position = null;
-    }
-
-    // Pintamo cada elemento del preset
-    for (const element of preset.elements) {
-      const ele = this.videosElements.find((el) => el.id === element.id);
-      if (!ele) {
-        console.error('Missing ele');
-        return;
-      }
-
-      ele.scale = element.scale;
-      ele.position = element.position;
-      ele.painted = true;
-    }
-
-    // Reorganizar los elementos
-    for (let i = 0; i < preset.elements.length; i++) {
-      const presetElement = preset.elements[i];
-      const index = this.videosElements.findIndex((el) => el.id === presetElement.id);
-
-      if (index === -1) continue;
-
-      // Mover el elemento encontrado a la posición `i`
-      const [element] = this.videosElements.splice(index, 1);
-      this.videosElements.splice(i, 0, element);
-    }
-
-    // Añadir capa al preset activado
-    const capaBase = this.capaTemplate.nativeElement;
-    const presetDiv = this.elementosDiv.nativeElement.querySelector(`#preset-${CSS.escape(name)}`);
-    if (!presetDiv) {
-      console.error('Missing presetDiv');
-      return;
-    }
-    const parentDiv = presetDiv.parentElement as HTMLDivElement;
-    const capa = capaBase.cloneNode(true) as HTMLDivElement;
-    capa.id = 'capa-' + name;
-    const xBotton = capa.querySelector('#buttonxcapa') as HTMLButtonElement;
-    xBotton.onclick = () => {
-      capa.remove();
-    };
-    capa.classList.remove('hidden');
-    capa.style.zIndex = '10';
-    parentDiv.appendChild(capa);
-
-    // Añadir capa a cada elemento pintado
-    const pintados = this.videosElements.filter((elemento) => elemento.painted);
-    for (const elemento of pintados) {
-      this.addCapa(elemento);
-    }
+    return null;
   }
 
   /**
@@ -2623,12 +2599,10 @@ export class WebOBS implements OnInit, AfterViewInit, OnDestroy, OnChanges {
    * @description Renderiza líneas y contenedores visuales que representan las conexiones entre entradas y salidas de audio.
    */
   drawAudioConnections() {
-    // console.log('drawAudioConnections called, connections:', this.audiosConnections.length, 'audioLevelDivs:', this.audioLevelDivs.length);
     setTimeout(() => {
       if (!this.audiosElements.length) return;
 
       const audios = this.audios.nativeElement;
-      // console.log('Audios container:', audios);
       if (!audios) return;
 
       const audiosRect = audios.getBoundingClientRect();
@@ -2636,14 +2610,8 @@ export class WebOBS implements OnInit, AfterViewInit, OnDestroy, OnChanges {
       const conexionesIzquierda = this.conexionesIzquierda.nativeElement;
       const conexionesDerecha = this.conexionesDerecha.nativeElement;
 
-      // console.log('Elements found:', { audiosList: !!audiosList, conexionesIzquierda: !!conexionesIzquierda, conexionesDerecha: !!conexionesDerecha });
+      if (!audiosList || !conexionesIzquierda || !conexionesDerecha) return;
 
-      if (!audiosList || !conexionesIzquierda || !conexionesDerecha) {
-        console.error('Missing required elements');
-        return;
-      }
-
-      // Limpiar contenedores
       conexionesIzquierda.innerHTML = '';
       conexionesDerecha.innerHTML = '';
 
@@ -2653,112 +2621,129 @@ export class WebOBS implements OnInit, AfterViewInit, OnDestroy, OnChanges {
       conexionesIzquierda.style.width = `${connectionWidth * totalConnections}px`;
       audiosList.style.width = `${audiosRect.width - 2 - connectionWidth * totalConnections}px`;
 
-      // Helper: generar color aleatorio
-      const getRandomColor = () => {
-        const letters = '0123456789ABCDEF';
-        let color = '#';
-        for (let i = 0; i < 6; i++) {
-          color += letters[Math.floor(Math.random() * 16)];
-        }
-        color += 'f0'; // alpha
-        return color;
-      };
-
-      // Iterar sobre conexiones
       for (let i = 0; i < this.audiosConnections.length; i++) {
-        const elemento = this.audiosConnections[i];
-
-        const entradaRef = this.audioLevelDivs.find((el) => el.nativeElement.id === `audio-level-${elemento.idEntrada}`);
-        let salidaRef: ElementRef<HTMLDivElement> | undefined;
-
-        if (elemento.idSalida === 'recorder') {
-          salidaRef = this.audioLevelRecorder;
-        } else {
-          salidaRef = this.audioLevelDivs.find((el) => el.nativeElement.id === `audio-level-${elemento.idSalida}`);
-        }
-
-        // console.log('Searching for:', `audio-level-${elemento.idEntrada}`, `audio-level-${elemento.idSalida}`);
-        // console.log('Found:', !!entradaRef, !!salidaRef);
-
-        if (!entradaRef || !salidaRef) {
-          console.error('Missing audio elements for connection', elemento);
-          continue;
-        }
-
-        const audioEntrada = entradaRef.nativeElement;
-        const audioSalida = salidaRef.nativeElement;
-
-        const entradaRect = audioEntrada.getBoundingClientRect();
-        const salidaRect = audioSalida.getBoundingClientRect();
-
-        const start = {
-          x: entradaRect.left - audiosRect.left,
-          y: entradaRect.top - audiosRect.top + entradaRect.height / 2 + audios.scrollTop,
-        };
-        const end = {
-          x: salidaRect.left - audiosRect.left,
-          y: salidaRect.top - audiosRect.top + salidaRect.height / 2 + audios.scrollTop,
-        };
-
-        // Crear el contenedor visual
-        const square = document.createElement('div');
-        square.style.position = 'absolute';
-        square.style.border = '2px solid';
-        square.style.borderRightWidth = '0px';
-        square.style.borderColor = getRandomColor();
-        square.style.left = `${start.x - connectionWidth * (i + 1)}px`;
-        square.style.top = `${start.y}px`;
-        square.style.width = `${connectionWidth * (i + 1)}px`;
-        square.style.height = `${Math.abs(end.y - start.y)}px`; // Asegurar altura positiva
-        square.style.zIndex = `${500 - (i + 1) * 10}`;
-
-        // Añadir al DOM
-        conexionesIzquierda.appendChild(square);
-
-        // Botón de eliminar
-        const deleteButton = document.createElement('button');
-        deleteButton.innerText = 'X';
-        deleteButton.style.position = 'absolute';
-        deleteButton.style.width = '1rem';
-        deleteButton.style.height = '1rem';
-        deleteButton.style.borderRadius = '9999px';
-        deleteButton.style.display = 'none';
-        deleteButton.style.alignItems = 'center';
-        deleteButton.style.justifyContent = 'center';
-        deleteButton.style.top = '0';
-        deleteButton.style.right = '0';
-
-        deleteButton.onclick = () => {
-          this.audiosConnections.splice(i, 1);
-          try {
-            elemento.entrada.disconnect(elemento.salida);
-          } catch (e) {
-            if (!(e instanceof DOMException && e.name === 'InvalidAccessError')) {
-              console.warn('⚠️ Error al desconectar nodos de audio:', e);
-            }
-          }
-          square.remove();
-        };
-
-        // Hover
-        square.addEventListener('pointerenter', () => {
-          square.style.borderLeftWidth = '4px';
-          square.style.borderTopWidth = '4px';
-          square.style.borderBottomWidth = '4px';
-          deleteButton.style.display = 'flex';
-        });
-
-        square.addEventListener('pointerleave', () => {
-          square.style.borderLeftWidth = '2px';
-          square.style.borderTopWidth = '2px';
-          square.style.borderBottomWidth = '2px';
-          deleteButton.style.display = 'none';
-        });
-
-        square.appendChild(deleteButton);
-        conexionesIzquierda.appendChild(square);
+        this._drawSingleAudioConnection(i, audiosRect, connectionWidth);
       }
-    }, 100); // Mantengo timeout si es necesario
+    }, 100);
+  }
+
+  /**
+   * @summary Dibuja una única conexión de audio visual.
+   * @param {number} index Índice de la conexión.
+   * @param {DOMRect} audiosRect Rectángulo del contenedor de audio.
+   * @param {number} connectionWidth Ancho de la línea de conexión.
+   */
+  private _drawSingleAudioConnection(index: number, audiosRect: DOMRect, connectionWidth: number) {
+    const connection = this.audiosConnections[index];
+    const entradaRef = this.audioLevelDivs.find((el) => el.nativeElement.id === `audio-level-${connection.idEntrada}`);
+    const salidaRef = connection.idSalida === 'recorder' ? this.audioLevelRecorder : this.audioLevelDivs.find((el) => el.nativeElement.id === `audio-level-${connection.idSalida}`);
+
+    if (!entradaRef || !salidaRef) return;
+
+    const start = this._getConnectionPoint(entradaRef.nativeElement, audiosRect);
+    const end = this._getConnectionPoint(salidaRef.nativeElement, audiosRect);
+
+    const square = this._createConnectionSquare(index, start, end, connectionWidth);
+    const deleteButton = this._createConnectionDeleteButton(index, connection, square);
+
+    this._setupConnectionHover(square, deleteButton);
+
+    square.appendChild(deleteButton);
+    this.conexionesIzquierda.nativeElement.appendChild(square);
+  }
+
+  /**
+   * @summary Obtiene el punto de conexión visual relativo al contenedor.
+   * @param {HTMLElement} element Elemento de nivel de audio.
+   * @param {DOMRect} audiosRect Rectángulo del contenedor.
+   * @returns {Object} Coordenadas X e Y.
+   */
+  private _getConnectionPoint(element: HTMLElement, audiosRect: DOMRect): { x: number; y: number } {
+    const rect = element.getBoundingClientRect();
+    return {
+      x: rect.left - audiosRect.left,
+      y: rect.top - audiosRect.top + rect.height / 2 + this.audios.nativeElement.scrollTop,
+    };
+  }
+
+  /**
+   * @summary Crea el elemento visual (cuadrado/línea) de la conexión.
+   * @param {number} index Índice.
+   * @param {any} start Punto de inicio.
+   * @param {any} end Punto de fin.
+   * @param {number} connectionWidth Ancho.
+   * @returns {HTMLDivElement} El div de la conexión.
+   */
+  private _createConnectionSquare(index: number, start: any, end: any, connectionWidth: number): HTMLDivElement {
+    const square = document.createElement('div');
+    square.style.position = 'absolute';
+    square.style.border = '2px solid';
+    square.style.borderRightWidth = '0px';
+    square.style.borderColor = this._getRandomColor();
+    square.style.left = `${start.x - connectionWidth * (index + 1)}px`;
+    square.style.top = `${Math.min(start.y, end.y)}px`;
+    square.style.width = `${connectionWidth * (index + 1)}px`;
+    square.style.height = `${Math.abs(end.y - start.y)}px`;
+    square.style.zIndex = `${500 - (index + 1) * 10}`;
+    return square;
+  }
+
+  /**
+   * @summary Crea el botón de eliminación para una conexión de audio.
+   * @param {number} index Índice.
+   * @param {AudioConnection} connection Objeto de conexión.
+   * @param {HTMLElement} square Elemento visual de la conexión.
+   * @returns {HTMLButtonElement} El botón creado.
+   */
+  private _createConnectionDeleteButton(index: number, connection: AudioConnection, square: HTMLElement): HTMLButtonElement {
+    const btn = document.createElement('button');
+    btn.innerText = 'X';
+    btn.style.cssText = 'position:absolute;width:1rem;height:1rem;border-radius:9999px;display:none;align-items:center;justify-content:center;top:0;right:0;';
+
+    btn.onclick = () => {
+      this.audiosConnections.splice(index, 1);
+      try {
+        connection.entrada.disconnect(connection.salida);
+      } catch (e) {
+        if (!(e instanceof DOMException && e.name === 'InvalidAccessError')) {
+          console.warn('⚠️ Error al desconectar nodos de audio:', e);
+        }
+      }
+      square.remove();
+      this.drawAudioConnections();
+    };
+    return btn;
+  }
+
+  /**
+   * @summary Configura los efectos de hover para una conexión de audio.
+   * @param {HTMLElement} square Elemento visual.
+   * @param {HTMLElement} deleteButton Botón de eliminar.
+   */
+  private _setupConnectionHover(square: HTMLElement, deleteButton: HTMLElement) {
+    square.addEventListener('pointerenter', () => {
+      square.style.borderWidth = '4px';
+      square.style.borderRightWidth = '0px';
+      deleteButton.style.display = 'flex';
+    });
+    square.addEventListener('pointerleave', () => {
+      square.style.borderWidth = '2px';
+      square.style.borderRightWidth = '0px';
+      deleteButton.style.display = 'none';
+    });
+  }
+
+  /**
+   * @summary Genera un color hexadecimal aleatorio para las líneas de audio.
+   * @returns {string} Color en formato hexadecimal.
+   */
+  private _getRandomColor(): string {
+    const letters = '0123456789ABCDEF';
+    let color = '#';
+    for (let i = 0; i < 6; i++) {
+      color += letters[Math.floor(Math.random() * 16)];
+    }
+    return color + 'f0';
   }
 
   /**
@@ -2767,128 +2752,111 @@ export class WebOBS implements OnInit, AfterViewInit, OnDestroy, OnChanges {
    * @param {MouseEvent} $event El evento de ratón.
    */
   audioDown($event: MouseEvent): void {
-    // Asegurar AudioContext inicializado y reanudado al primer clic en la interfaz de audio
     this.ensureAudioContext().then(() => {
-      if (this.audioContext.state === 'suspended') {
-        this.audioContext.resume();
-      }
+      if (this.audioContext.state === 'suspended') this.audioContext.resume();
     });
 
     if ($event.target instanceof HTMLInputElement) return;
 
-    const conexionesIzquierda = this.conexionesIzquierda.nativeElement;
-    if (!conexionesIzquierda) {
-      console.error('Missing conexionesIzquierda');
-      return;
-    }
-
     const audios = this.audios.nativeElement;
-    if (!audios) {
-      console.error('Missing audios');
-      return;
-    }
+    const conexionesIzquierda = this.conexionesIzquierda.nativeElement;
+    if (!audios || !conexionesIzquierda) return;
 
     const audiosRect = audios.getBoundingClientRect();
     const elementoStart = document.elementFromPoint($event.clientX, $event.clientY);
+    const startPos = {
+      x: $event.clientX - audiosRect.left,
+      y: $event.clientY - audiosRect.top + audios.scrollTop,
+    };
 
-    const initialScrollTop = audios.scrollTop; // 📌 Guardamos el scroll al inicio
-
-    const startX = $event.clientX - audiosRect.left;
-    const startY = $event.clientY - audiosRect.top + initialScrollTop; // ✅ Se guarda con el scroll inicial
-
-    const conexionTemp = document.createElement('div');
-    conexionTemp.style.position = 'absolute';
-    conexionTemp.style.border = '2px solid';
-    conexionTemp.style.borderRightWidth = '0px';
-    conexionTemp.style.borderStyle = 'dashed';
-    conexionTemp.style.borderColor = 'black';
-    conexionTemp.style.left = `${startX}px`;
-    conexionTemp.style.top = `${startY}px`;
-    conexionTemp.style.width = `1px`;
-    conexionTemp.style.height = `1px`;
-
+    const conexionTemp = this._createTempConnectionElement(startPos);
     conexionesIzquierda.appendChild(conexionTemp);
 
-    // Evento para mover y actualizar el tamaño del cuadrado
-    const audioMove = ($event2: MouseEvent) => {
-      const actualX = $event2.clientX - audiosRect.left;
-      const actualY = $event2.clientY - audiosRect.top + audios.scrollTop; // ✅ Se ajusta dinámicamente con el scroll actual
-      if (actualX < startX) {
+    const audioMove = (e: MouseEvent) => {
+      const actualX = e.clientX - audiosRect.left;
+      const actualY = e.clientY - audiosRect.top + audios.scrollTop;
+
+      if (actualX < startPos.x) {
         conexionTemp.style.left = `${actualX}px`;
-        conexionTemp.style.width = `${startX - actualX}px`;
-      }
-      if (actualY < startY) {
-        conexionTemp.style.top = `${actualY}px`;
-        conexionTemp.style.height = `${startY - actualY}px`;
+        conexionTemp.style.width = `${startPos.x - actualX}px`;
       } else {
-        conexionTemp.style.top = `${startY}px`;
-        conexionTemp.style.height = `${actualY - startY}px`;
+        conexionTemp.style.left = `${startPos.x}px`;
+        conexionTemp.style.width = `${actualX - startPos.x}px`;
+      }
+
+      if (actualY < startPos.y) {
+        conexionTemp.style.top = `${actualY}px`;
+        conexionTemp.style.height = `${startPos.y - actualY}px`;
+      } else {
+        conexionTemp.style.top = `${startPos.y}px`;
+        conexionTemp.style.height = `${actualY - startPos.y}px`;
       }
     };
 
-    // Evento para finalizar el dibujo cuando se suelta el mouse
-    const audioUp = ($event3: MouseEvent) => {
+    const audioUp = (e: MouseEvent) => {
       audios.removeEventListener('pointermove', audioMove);
       audios.removeEventListener('pointerup', audioUp);
-
-      const offsetX = Number.parseInt(conexionTemp.style.width) + 2; // Puedes ajustar este valor según sea necesario
-      conexionTemp.remove();
-
-      const elementoFinal = document.elementFromPoint($event3.clientX + offsetX, $event3.clientY);
-      if (!elementoFinal) {
-        console.error('Missing elementoFinal');
-        return;
-      }
-      if (!elementoStart) {
-        console.error('Missing elementoStart');
-        return;
-      }
-      let idElementoStrart = elementoStart.id;
-      if (idElementoStrart.startsWith('audio-level-')) {
-        idElementoStrart = idElementoStrart.substring(12);
-      } else if (idElementoStrart.startsWith('audio-')) {
-        idElementoStrart = idElementoStrart.substring(6);
-      } else if (idElementoStrart.startsWith('volume-')) {
-        idElementoStrart = idElementoStrart.substring(7);
-      } else {
-        console.error('Tipo desconocido');
-        return;
-      }
-      let idElementoFinal = elementoFinal.id;
-      if (idElementoFinal.startsWith('audio-level-')) {
-        idElementoFinal = idElementoFinal.substring(12);
-      } else if (idElementoFinal.startsWith('audio-')) {
-        idElementoFinal = idElementoFinal.substring(6);
-      } else if (idElementoFinal.startsWith('volume-')) {
-        idElementoFinal = idElementoFinal.substring(7);
-      } else {
-        console.error('Tipo desconocido');
-        return;
-      }
-
-      if (idElementoStrart === idElementoFinal) return;
-
-      const startElement = this.audiosElements.find((element: AudioElement) => element.id === idElementoStrart);
-      const endElement = this.audiosElements.find((element: AudioElement) => element.id === idElementoFinal);
-      if (startElement === undefined || endElement === undefined) {
-        console.error('Elementos no encontrados');
-        return;
-      }
-      if (endElement.id === 'audio-recorder') {
-        endElement.ele = this.mixedAudioDestination;
-      }
-      startElement.ele.connect(endElement.ele);
-      this.audiosConnections.push({
-        idEntrada: idElementoStrart,
-        entrada: startElement.ele as GainNode,
-        idSalida: idElementoFinal,
-        salida: endElement.ele as MediaStreamAudioDestinationNode,
-      });
-      this.drawAudioConnections();
+      this._finalizeAudioConnection(e, elementoStart, conexionTemp);
     };
 
     audios.addEventListener('pointermove', audioMove);
     audios.addEventListener('pointerup', audioUp);
+  }
+
+  /**
+   * @summary Crea un elemento temporal para visualizar la conexión mientras se arrastra.
+   * @param {Object} pos Posición inicial.
+   * @returns {HTMLDivElement} El elemento temporal.
+   */
+  private _createTempConnectionElement(pos: { x: number; y: number }): HTMLDivElement {
+    const el = document.createElement('div');
+    el.style.cssText = `position:absolute;border:2px dashed black;border-right-width:0px;left:${pos.x}px;top:${pos.y}px;width:1px;height:1px;`;
+    return el;
+  }
+
+  /**
+   * @summary Finaliza la creación de una conexión de audio y establece el vínculo real entre nodos.
+   * @param {MouseEvent} event Evento de ratón.
+   * @param {Element | null} elementoStart Elemento donde comenzó la conexión.
+   * @param {HTMLDivElement} conexionTemp Elemento visual temporal.
+   */
+  private _finalizeAudioConnection(event: MouseEvent, elementoStart: Element | null, conexionTemp: HTMLDivElement) {
+    const offsetX = Number.parseInt(conexionTemp.style.width) + 2;
+    conexionTemp.remove();
+
+    const elementoFinal = document.elementFromPoint(event.clientX + offsetX, event.clientY);
+    const idStart = this._getAudioElementId(elementoStart);
+    const idFinal = this._getAudioElementId(elementoFinal);
+
+    if (!idStart || !idFinal || idStart === idFinal) return;
+
+    const startNode = this.audiosElements.find((el) => el.id === idStart);
+    const endNode = this.audiosElements.find((el) => el.id === idFinal);
+
+    if (startNode && endNode) {
+      const targetNode = endNode.id === 'audio-recorder' ? this.mixedAudioDestination : endNode.ele;
+      startNode.ele.connect(targetNode);
+      this.audiosConnections.push({
+        idEntrada: idStart,
+        entrada: startNode.ele as GainNode,
+        idSalida: idFinal,
+        salida: targetNode as MediaStreamAudioDestinationNode,
+      });
+      this.drawAudioConnections();
+    }
+  }
+
+  /**
+   * @summary Extrae el ID del dispositivo de audio a partir de un elemento del DOM.
+   * @param {Element | null} element El elemento del DOM.
+   * @returns {string | null} El ID extraído o null.
+   */
+  private _getAudioElementId(element: Element | null): string | null {
+    if (!element?.id) return null;
+    if (element.id.startsWith('audio-level-')) return element.id.substring(12);
+    if (element.id.startsWith('audio-')) return element.id.substring(6);
+    if (element.id.startsWith('volume-')) return element.id.substring(7);
+    return element.id;
   }
 
   /**

@@ -36,6 +36,7 @@
   height: auto; /* deja que se ajuste según el ancho */
   aspect-ratio: 16/9 !important;
   transition: border-width 0.2s ease; /* para hover sobre el elemento */
+  overflow: hidden; /* Evita que los elementos del preset se salgan */
 }
 
 /* "group cursor-pointer relative flex aspect-video! max-h-[33vh] h-auto 
