@@ -16,6 +16,13 @@
   border-radius: 0.5rem;
 }
 
+.vertical-slider {
+  writing-mode: vertical-lr;
+  direction: rtl;
+  width: 8px;
+  height: 100%;
+}
+
 [part="canvas"] {
   display: block;
   background-color: var(--web-obs-canvas-bg);

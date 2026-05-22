@@ -123,7 +123,7 @@
               <path fill-rule="evenodd" clip-rule="evenodd" d="M12 2C8.55884 2 5.76923 4.81123 5.76923 8.27907V12.9302C5.76923 16.3981 8.55884 19.2093 12 19.2093C15.4412 19.2093 18.2308 16.3981 18.2308 12.9302V8.27907C18.2308 4.81124 15.4412 2 12 2ZM9.67822 7.39068C9.40039 7.12597 9.3881 6.6844 9.65078 6.40441L10.1538 6.88372C9.65078 6.40441 9.65154 6.40361 9.65154 6.40361L9.65231 6.40279L9.65388 6.40114L9.65716 6.3977L9.66431 6.39036C9.66934 6.38527 9.67489 6.37977 9.68099 6.37391C9.69318 6.36218 9.70751 6.349 9.72413 6.33461C9.75739 6.3058 9.79962 6.27232 9.85184 6.23613C9.95658 6.16357 10.0997 6.0814 10.2887 6.00438C10.6676 5.84997 11.2189 5.72093 12 5.72093C12.7811 5.72093 13.3324 5.84997 13.7113 6.00438C13.9003 6.0814 14.0434 6.16357 14.1482 6.23613C14.2004 6.27232 14.2426 6.3058 14.2759 6.33461C14.2925 6.349 14.3068 6.36218 14.319 6.37391C14.3251 6.37977 14.3307 6.38527 14.3357 6.39036L14.3428 6.3977L14.3461 6.40114L14.3477 6.40279L14.3485 6.40361C14.3485 6.40361 14.3492 6.40441 13.8562 6.87412L14.3492 6.40441C14.6119 6.6844 14.5996 7.12597 14.3218 7.39068C14.0536 7.64624 13.6359 7.64354 13.371 7.39112L13.3637 7.38596C13.3426 7.37132 13.2885 7.33721 13.1922 7.29795C13.0004 7.2198 12.6287 7.11628 12 7.11628C11.3713 7.11628 10.9996 7.2198 10.8078 7.29795C10.7115 7.33721 10.6574 7.37132 10.6363 7.38596L10.629 7.39112C10.3641 7.64354 9.94645 7.64624 9.67822 7.39068ZM9.67822 10.1814C9.40039 9.91667 9.3881 9.4751 9.65078 9.19511L10.1538 9.67442C9.65078 9.19511 9.65154 9.19431 9.65154 9.19431L9.65231 9.19349L9.65388 9.19183L9.65716 9.1884L9.66431 9.18106C9.66934 9.17597 9.67489 9.17047 9.68099 9.16461C9.69318 9.15288 9.70751 9.13969 9.72413 9.1253C9.75739 9.0965 9.79962 9.06301 9.85184 9.02683C9.95658 8.95427 10.0997 8.8721 10.2887 8.79507C10.6676 8.64067 11.2189 8.51163 12 8.51163C12.7811 8.51163 13.3324 8.64067 13.7113 8.79507C13.9003 8.8721 14.0434 8.95427 14.1482 9.02683C14.2004 9.06301 14.2426 9.0965 14.2759 9.1253C14.2925 9.13969 14.3068 9.15288 14.319 9.16461C14.3251 9.17047 14.3307 9.17597 14.3357 9.18106L14.3428 9.1884L14.3461 9.19183L14.3477 9.19349L14.3485 9.19431C14.3485 9.19431 14.3492 9.1951 13.8562 9.66482L14.3492 9.19511C14.6119 9.4751 14.5996 9.91667 14.3218 10.1814C14.0536 10.4369 13.6359 10.4342 13.371 10.1818L13.3637 10.1767C13.3426 10.162 13.2885 10.1279 13.1922 10.0886C13.0004 10.0105 12.6287 9.90698 12 9.90698C11.3713 9.90698 10.9996 10.0105 10.8078 10.0886C10.7115 10.1279 10.6574 10.162 10.6363 10.1767L10.629 10.1818C10.3641 10.4342 9.94645 10.4369 9.67822 10.1814Z" fill="currentColor" />
             </svg>
             <div #audioLevelDiv [id]="'audio-level-' + fileName" class="audio-level"></div>
-            <input #volumeInput type="range" [id]="'volume-' + fileName" min="0" max="100" step="0.1" value="100" class="bg-opacity-30 absolute z-20 m-2 hidden h-2 w-[90%] cursor-pointer appearance-none rounded-lg border border-black bg-gray-300 pl-0 accent-gray-500 group-hover:block dark:border-gray-400" />
+            <input #volumeInput type="range" [id]="'volume-' + fileName" min="0" max="100" step="0.1" value="100" (contextmenu)="onAudioContextMenu($event, 'audio-' + fileName)" class="bg-opacity-30 absolute z-20 m-2 hidden h-2 w-[90%] cursor-pointer appearance-none rounded-lg border border-black bg-gray-300 pl-0 accent-gray-500 group-hover:block dark:border-gray-400" />
           </div>
         }
         <!-- Lista de entradas de audio (capturas) -->
@@ -138,7 +138,7 @@
               <path fill-rule="evenodd" clip-rule="evenodd" d="M12 2C8.55884 2 5.76923 4.81123 5.76923 8.27907V12.9302C5.76923 16.3981 8.55884 19.2093 12 19.2093C15.4412 19.2093 18.2308 16.3981 18.2308 12.9302V8.27907C18.2308 4.81124 15.4412 2 12 2ZM9.67822 7.39068C9.40039 7.12597 9.3881 6.6844 9.65078 6.40441L10.1538 6.88372C9.65078 6.40441 9.65154 6.40361 9.65154 6.40361L9.65231 6.40279L9.65388 6.40114L9.65716 6.3977L9.66431 6.39036C9.66934 6.38527 9.67489 6.37977 9.68099 6.37391C9.69318 6.36218 9.70751 6.349 9.72413 6.33461C9.75739 6.3058 9.79962 6.27232 9.85184 6.23613C9.95658 6.16357 10.0997 6.0814 10.2887 6.00438C10.6676 5.84997 11.2189 5.72093 12 5.72093C12.7811 5.72093 13.3324 5.84997 13.7113 6.00438C13.9003 6.0814 14.0434 6.16357 14.1482 6.23613C14.2004 6.27232 14.2426 6.3058 14.2759 6.33461C14.2925 6.349 14.3068 6.36218 14.319 6.37391C14.3251 6.37977 14.3307 6.38527 14.3357 6.39036L14.3428 6.3977L14.3461 6.40114L14.3477 6.40279L14.3485 6.40361C14.3485 6.40361 14.3492 6.40441 13.8562 6.87412L14.3492 6.40441C14.6119 6.6844 14.5996 7.12597 14.3218 7.39068C14.0536 7.64624 13.6359 7.64354 13.371 7.39112L13.3637 7.38596C13.3426 7.37132 13.2885 7.33721 13.1922 7.29795C13.0004 7.2198 12.6287 7.11628 12 7.11628C11.3713 7.11628 10.9996 7.2198 10.8078 7.29795C10.7115 7.33721 10.6574 7.37132 10.6363 7.38596L10.629 7.39112C10.3641 7.64354 9.94645 7.64624 9.67822 7.39068ZM9.67822 10.1814C9.40039 9.91667 9.3881 9.4751 9.65078 9.19511L10.1538 9.67442C9.65078 9.19511 9.65154 9.19431 9.65154 9.19431L9.65231 9.19349L9.65388 9.19183L9.65716 9.1884L9.66431 9.18106C9.66934 9.17597 9.67489 9.17047 9.68099 9.16461C9.69318 9.15288 9.70751 9.13969 9.72413 9.1253C9.75739 9.0965 9.79962 9.06301 9.85184 9.02683C9.95658 8.95427 10.0997 8.8721 10.2887 8.79507C10.6676 8.64067 11.2189 8.51163 12 8.51163C12.7811 8.51163 13.3324 8.64067 13.7113 8.79507C13.9003 8.8721 14.0434 8.95427 14.1482 9.02683C14.2004 9.06301 14.2426 9.0965 14.2759 9.1253C14.2925 9.13969 14.3068 9.15288 14.319 9.16461C14.3251 9.17047 14.3307 9.17597 14.3357 9.18106L14.3428 9.1884L14.3461 9.19183L14.3477 9.19349L14.3485 9.19431C14.3485 9.19431 14.3492 9.1951 13.8562 9.66482L14.3492 9.19511C14.6119 9.4751 14.5996 9.91667 14.3218 10.1814C14.0536 10.4369 13.6359 10.4342 13.371 10.1818L13.3637 10.1767C13.3426 10.162 13.2885 10.1279 13.1922 10.0886C13.0004 10.0105 12.6287 9.90698 12 9.90698C11.3713 9.90698 10.9996 10.0105 10.8078 10.0886C10.7115 10.1279 10.6574 10.162 10.6363 10.1767L10.629 10.1818C10.3641 10.4342 9.94645 10.4369 9.67822 10.1814Z" fill="currentColor" />
             </svg>
             <div #audioLevelDiv [id]="'audio-level-' + captura.id" class="audio-level"></div>
-            <input #volumeInput type="range" [id]="'volume-' + captura.id" min="0" max="100" step="0.1" value="100" class="bg-opacity-30 absolute z-20 m-2 hidden h-2 w-[90%] cursor-pointer appearance-none rounded-lg border border-black bg-gray-300 pl-0 accent-gray-500 group-hover:block dark:border-gray-400" />
+            <input #volumeInput type="range" [id]="'volume-' + captura.id" min="0" max="100" step="0.1" value="100" (contextmenu)="onAudioContextMenu($event, 'audio-' + captura.id)" class="bg-opacity-30 absolute z-20 m-2 hidden h-2 w-[90%] cursor-pointer appearance-none rounded-lg border border-black bg-gray-300 pl-0 accent-gray-500 group-hover:block dark:border-gray-400" />
           </div>
         }
         <!-- Lista de entradas de audio -->
@@ -153,7 +153,7 @@
               <path fill-rule="evenodd" clip-rule="evenodd" d="M12 2C8.55884 2 5.76923 4.81123 5.76923 8.27907V12.9302C5.76923 16.3981 8.55884 19.2093 12 19.2093C15.4412 19.2093 18.2308 16.3981 18.2308 12.9302V8.27907C18.2308 4.81124 15.4412 2 12 2ZM9.67822 7.39068C9.40039 7.12597 9.3881 6.6844 9.65078 6.40441L10.1538 6.88372C9.65078 6.40441 9.65154 6.40361 9.65154 6.40361L9.65231 6.40279L9.65388 6.40114L9.65716 6.3977L9.66431 6.39036C9.66934 6.38527 9.67489 6.37977 9.68099 6.37391C9.69318 6.36218 9.70751 6.349 9.72413 6.33461C9.75739 6.3058 9.79962 6.27232 9.85184 6.23613C9.95658 6.16357 10.0997 6.0814 10.2887 6.00438C10.6676 5.84997 11.2189 5.72093 12 5.72093C12.7811 5.72093 13.3324 5.84997 13.7113 6.00438C13.9003 6.0814 14.0434 6.16357 14.1482 6.23613C14.2004 6.27232 14.2426 6.3058 14.2759 6.33461C14.2925 6.349 14.3068 6.36218 14.319 6.37391C14.3251 6.37977 14.3307 6.38527 14.3357 6.39036L14.3428 6.3977L14.3461 6.40114L14.3477 6.40279L14.3485 6.40361C14.3485 6.40361 14.3492 6.40441 13.8562 6.87412L14.3492 6.40441C14.6119 6.6844 14.5996 7.12597 14.3218 7.39068C14.0536 7.64624 13.6359 7.64354 13.371 7.39112L13.3637 7.38596C13.3426 7.37132 13.2885 7.33721 13.1922 7.29795C13.0004 7.2198 12.6287 7.11628 12 7.11628C11.3713 7.11628 10.9996 7.2198 10.8078 7.29795C10.7115 7.33721 10.6574 7.37132 10.6363 7.38596L10.629 7.39112C10.3641 7.64354 9.94645 7.64624 9.67822 7.39068ZM9.67822 10.1814C9.40039 9.91667 9.3881 9.4751 9.65078 9.19511L10.1538 9.67442C9.65078 9.19511 9.65154 9.19431 9.65154 9.19431L9.65231 9.19349L9.65388 9.19183L9.65716 9.1884L9.66431 9.18106C9.66934 9.17597 9.67489 9.17047 9.68099 9.16461C9.69318 9.15288 9.70751 9.13969 9.72413 9.1253C9.75739 9.0965 9.79962 9.06301 9.85184 9.02683C9.95658 8.95427 10.0997 8.8721 10.2887 8.79507C10.6676 8.64067 11.2189 8.51163 12 8.51163C12.7811 8.51163 13.3324 8.64067 13.7113 8.79507C13.9003 8.8721 14.0434 8.95427 14.1482 9.02683C14.2004 9.06301 14.2426 9.0965 14.2759 9.1253C14.2925 9.13969 14.3068 9.15288 14.319 9.16461C14.3251 9.17047 14.3307 9.17597 14.3357 9.18106L14.3428 9.1884L14.3461 9.19183L14.3477 9.19349L14.3485 9.19431C14.3485 9.19431 14.3492 9.1951 13.8562 9.66482L14.3492 9.19511C14.6119 9.4751 14.5996 9.91667 14.3218 10.1814C14.0536 10.4369 13.6359 10.4342 13.371 10.1818L13.3637 10.1767C13.3426 10.162 13.2885 10.1279 13.1922 10.0886C13.0004 10.0105 12.6287 9.90698 12 9.90698C11.3713 9.90698 10.9996 10.0105 10.8078 10.0886C10.7115 10.1279 10.6574 10.162 10.6363 10.1767L10.629 10.1818C10.3641 10.4342 9.94645 10.4369 9.67822 10.1814Z" fill="currentColor" />
             </svg>
             <div #audioLevelDiv [id]="'audio-level-' + device.deviceId" class="audio-level"></div>
-            <input #volumeInput type="range" [id]="'volume-' + device.deviceId" min="0" max="100" step="0.1" value="100" class="bg-opacity-30 absolute z-20 m-2 hidden h-2 w-[90%] cursor-pointer appearance-none rounded-lg border border-black bg-gray-300 pl-0 accent-gray-500 group-hover:block dark:border-gray-400" />
+            <input #volumeInput type="range" [id]="'volume-' + device.deviceId" min="0" max="100" step="0.1" value="100" (contextmenu)="onAudioContextMenu($event, 'audio-' + device.deviceId)" class="bg-opacity-30 absolute z-20 m-2 hidden h-2 w-[90%] cursor-pointer appearance-none rounded-lg border border-black bg-gray-300 pl-0 accent-gray-500 group-hover:block dark:border-gray-400" />
           </div>
         }
         <!-- Audio de grabación -->
@@ -168,7 +168,7 @@
             <path fill-rule="evenodd" clip-rule="evenodd" d="M3.46447 3.46447C2 4.92893 2 7.28595 2 12C2 16.714 2 19.0711 3.46447 20.5355C4.92893 22 7.28595 22 12 22C16.714 22 19.0711 22 20.5355 20.5355C22 19.0711 22 16.714 22 12C22 7.28595 22 4.92893 20.5355 3.46447C19.0711 2 16.714 2 12 2C7.28595 2 4.92893 2 3.46447 3.46447ZM13.2609 13.75C12.9375 13.2449 12.75 12.6443 12.75 12C12.75 10.2051 14.2051 8.75 16 8.75C17.7949 8.75 19.25 10.2051 19.25 12C19.25 13.7949 17.7949 15.25 16 15.25H8C6.20507 15.25 4.75 13.7949 4.75 12C4.75 10.2051 6.20507 8.75 8 8.75C9.79493 8.75 11.25 10.2051 11.25 12C11.25 12.6443 11.0625 13.2449 10.7391 13.75H13.2609Z" fill="currentColor" />
           </svg>
           <div #audioLevelRecorder class="audio-level"></div>
-          <input #volumeAudioRecorder type="range" min="0" max="100" step="0.1" value="100" class="bg-opacity-30 absolute z-20 m-2 hidden h-2 w-[90%] cursor-pointer appearance-none rounded-lg border border-black bg-gray-300 pl-0 accent-gray-500 group-hover:block dark:border-gray-400" />
+          <input #volumeAudioRecorder type="range" min="0" max="100" step="0.1" value="100" (contextmenu)="onAudioContextMenu($event, 'audio-recorder')" class="bg-opacity-30 absolute z-20 m-2 hidden h-2 w-[90%] cursor-pointer appearance-none rounded-lg border border-black bg-gray-300 pl-0 accent-gray-500 group-hover:block dark:border-gray-400" />
         </div>
 
         <!-- Lista de salidas de audio -->
@@ -183,7 +183,7 @@
               <path fill-rule="evenodd" clip-rule="evenodd" d="M4 10C4 6.22876 4 4.34315 5.17157 3.17157C6.34315 2 8.22876 2 12 2C15.7712 2 17.6569 2 18.8284 3.17157C20 4.34315 20 6.22876 20 10V14C20 17.7712 20 19.6569 18.8284 20.8284C17.6569 22 15.7712 22 12 22C8.22876 22 6.34315 22 5.17157 20.8284C4 19.6569 4 17.7712 4 14V10ZM7.25 14C7.25 11.3766 9.37665 9.25 12 9.25C14.6234 9.25 16.75 11.3766 16.75 14C16.75 16.6234 14.6234 18.75 12 18.75C9.37665 18.75 7.25 16.6234 7.25 14ZM10 5.25C9.58579 5.25 9.25 5.58579 9.25 6C9.25 6.41421 9.58579 6.75 10 6.75H14C14.4142 6.75 14.75 6.41421 14.75 6C14.75 5.58579 14.4142 5.25 14 5.25H10Z" fill="currentColor" />
             </svg>
             <div #audioLevelDiv [id]="'audio-level-' + device.deviceId" class="audio-level"></div>
-            <input #volumeInput type="range" [id]="'volume-' + device.deviceId" min="0" max="100" step="0.1" value="100" class="bg-opacity-30 absolute z-20 m-2 hidden h-2 w-[90%] cursor-pointer appearance-none rounded-lg border border-black bg-gray-300 pl-0 accent-gray-500 group-hover:block dark:border-gray-400" />
+            <input #volumeInput type="range" [id]="'volume-' + device.deviceId" min="0" max="100" step="0.1" value="100" (contextmenu)="onAudioContextMenu($event, 'audio-' + device.deviceId)" class="bg-opacity-30 absolute z-20 m-2 hidden h-2 w-[90%] cursor-pointer appearance-none rounded-lg border border-black bg-gray-300 pl-0 accent-gray-500 group-hover:block dark:border-gray-400" />
           </div>
         }
       </div>
@@ -406,23 +406,54 @@
 </div>
 
 <!-- Menú de filtros -->
-<div id="filterMenu" part="filter-menu" class="fixed top-1 left-1 z-50 hidden h-fit w-1/5 flex-col rounded-lg bg-white p-4 text-black shadow-lg dark:bg-gray-900 dark:text-white">
-  <span>Filtros:</span>
-  @if (this.selectedVideoForFilter && this.selectedVideoForFilter.filters) {
-    <span>Brillo:</span>
-    <div class="flex flex-row">
-      <input (change)="updateStyleElement()" type="range" min="0" max="200" [(ngModel)]="selectedVideoForFilter.filters.brightness" class="grow" />
-      <input (change)="updateStyleElement()" type="number" [(ngModel)]="selectedVideoForFilter.filters.brightness" class="ml-2 w-12" />
+<div #filterMenu id="filterMenu" part="filter-menu" class="fixed top-1 left-1 z-50 hidden h-fit w-40 flex-col rounded-lg bg-white p-4 text-black shadow-lg dark:bg-gray-900 dark:text-white">
+  <div class="flex justify-between items-center">
+    <span>Filtros:</span>
+    <button (click)="resetFilters(); $event.stopPropagation()" class="text-xs p-1 bg-gray-200 rounded hover:bg-gray-300 dark:bg-gray-700 dark:hover:bg-gray-600">Reset</button>
+  </div>
+  <div class="mt-2 flex flex-col gap-2">
+    <label for="brightness">Brillo:</label>
+    <div class="relative flex items-center justify-center h-6">
+      <input #filterSlider type="range" id="brightness" class="w-full" min="0" max="200" step="1" value="100" (input)="updateFilter('brightness', +$any($event.target).value)" (change)="snapToMiddle($event)" (click)="$event.stopPropagation()" />
+      <div class="absolute top-1/2 left-1/2 w-0.5 h-4 bg-gray-500 pointer-events-none transform -translate-x-1/2 -translate-y-1/2"></div>
     </div>
-    <span>Contraste:</span>
-    <div class="flex flex-row">
-      <input (change)="updateStyleElement()" type="range" min="0" max="200" [(ngModel)]="selectedVideoForFilter.filters.contrast" class="grow" />
-      <input (change)="updateStyleElement()" type="number" [(ngModel)]="selectedVideoForFilter.filters.contrast" class="ml-2 w-12" />
+    <label for="contrast">Contraste:</label>
+    <div class="relative flex items-center justify-center h-6">
+      <input #filterSlider type="range" id="contrast" class="w-full" min="0" max="200" step="1" value="100" (input)="updateFilter('contrast', +$any($event.target).value)" (change)="snapToMiddle($event)" (click)="$event.stopPropagation()" />
+      <div class="absolute top-1/2 left-1/2 w-0.5 h-4 bg-gray-500 pointer-events-none transform -translate-x-1/2 -translate-y-1/2"></div>
     </div>
-    <span>Saturación:</span>
-    <div class="flex flex-row">
-      <input (change)="updateStyleElement()" type="range" min="0" max="200" [(ngModel)]="selectedVideoForFilter.filters.saturation" class="grow" />
-      <input (change)="updateStyleElement()" type="number" [(ngModel)]="selectedVideoForFilter.filters.saturation" class="ml-2 w-12" />
+    <label for="saturation">Saturación:</label>
+    <div class="relative flex items-center justify-center h-6">
+      <input #filterSlider type="range" id="saturation" class="w-full" min="0" max="200" step="1" value="100" (input)="updateFilter('saturation', +$any($event.target).value)" (change)="snapToMiddle($event)" (click)="$event.stopPropagation()" />
+      <div class="absolute top-1/2 left-1/2 w-0.5 h-4 bg-gray-500 pointer-events-none transform -translate-x-1/2 -translate-y-1/2"></div>
     </div>
-  }
+  </div>
+</div>
+
+<!-- Menú de ecualizador -->
+<div #equalizerMenu id="equalizerMenu" part="equalizer-menu" class="fixed top-1 left-1 z-50 hidden h-fit w-40 flex-col rounded-lg bg-white p-4 text-black shadow-lg dark:bg-gray-900 dark:text-white">
+  <div class="flex justify-between items-center">
+    <span>Ecualizador (Peaking):</span>
+    <button (click)="resetEqualizer(); $event.stopPropagation()" class="text-xs p-1 bg-gray-200 rounded hover:bg-gray-300 dark:bg-gray-700 dark:hover:bg-gray-600">Reset</button>
+  </div>
+  <div class="flex flex-row justify-between h-36 mt-2 gap-1">
+    @for (
+      band of [
+        { f: 60, i: 0 },
+        { f: 250, i: 1 },
+        { f: "1k", i: 2 },
+        { f: "4k", i: 3 },
+        { f: "12k", i: 4 },
+      ];
+      track band.i
+    ) {
+      <div class="relative w-full flex flex-col items-center justify-center">
+        <span class="text-[10px] mb-1">{{ band.f }}</span>
+        <div class="relative w-full h-full flex items-center justify-center">
+          <input type="range" [ngModel]="equalizerValues[band.i]" (ngModelChange)="updateEqualizer(band.i, $event)" (change)="snapToMiddle($event)" min="-20" max="20" step="0.1" class="vertical-slider h-full w-full" (click)="$event.stopPropagation()" />
+          <div class="absolute left-1/2 top-1/2 w-4 h-0.5 bg-gray-500 pointer-events-none transform -translate-x-1/2 -translate-y-1/2"></div>
+        </div>
+      </div>
+    }
+  </div>
 </div>

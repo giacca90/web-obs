@@ -44,6 +44,8 @@ export class WebOBS implements OnInit, AfterViewInit, OnDestroy, OnChanges {
   tiempoGrabacion: string = '00:00:00'; // Tiempo de grabación
   statusMessage: string = ''; // Mensaje de estado para el usuario
   selectedVideoForFilter: VideoElement | null = null;
+  selectedAudioForEqualizer: string | null = null;
+  equalizerValues: number[] = [0, 0, 0, 0, 0]; // Variables para sincronizar con sliders
   private workletLoaded = false;
   private readonly drawInterval: any;
   private readonly fileUrlCache = new Map<File, string>(); // Cache de URLs de archivos
@@ -55,10 +57,14 @@ export class WebOBS implements OnInit, AfterViewInit, OnDestroy, OnChanges {
   private readonly imageBitmapCache = new Map<string, { bitmap: ImageBitmap; filter: string; width: number; height: number }>();
   private ticking = false;
 
-  constructor(private readonly cdr: ChangeDetectorRef) {}
+  constructor(
+    private readonly cdr: ChangeDetectorRef,
+    private readonly el: ElementRef,
+  ) {}
 
   // para múltiples streams
   private readonly mediaElementSources = new Map<HTMLMediaElement, MediaElementAudioSourceNode>();
+  private readonly equalizerFilters = new Map<string, BiquadFilterNode[]>();
   private readonly workletNodes = new Map<string, AudioWorkletNode>(); // key: id de stream o generated id
   private readonly audioSources = new Map<string, MediaStreamAudioSourceNode>();
   private readonly silentGains = new Map<string, GainNode>();
@@ -84,6 +90,10 @@ export class WebOBS implements OnInit, AfterViewInit, OnDestroy, OnChanges {
   @ViewChild('presetsDiv') presetsDiv!: ElementRef<HTMLDivElement>;
   @ViewChild('control') controlTemplate!: ElementRef<HTMLDivElement>;
   @ViewChild('selected') selected!: ElementRef<HTMLDivElement>;
+  @ViewChild('filterMenu') filterMenu!: ElementRef<HTMLDivElement>;
+  @ViewChildren('filterSlider') filterSliders!: QueryList<ElementRef<HTMLInputElement>>;
+  @ViewChild('equalizerMenu') equalizerMenu!: ElementRef<HTMLDivElement>;
+  @ViewChildren('equalizerSlider') equalizerSliders!: QueryList<ElementRef<HTMLInputElement>>;
   @Input() savedFiles?: File[] | null; // Files guardados del usuario (opcional)
   @Input() savedPresets?: Map<string, Preset> | null; //Presets guardados del usuario (opcional)
   @Input() isInLive?: boolean; // Avisa cuando está listo para emitir (opcional)
@@ -237,14 +247,31 @@ export class WebOBS implements OnInit, AfterViewInit, OnDestroy, OnChanges {
       // Crear un gainNode para controlar el volumen
       const gainNode = this.audioContext.createGain();
       this.audiosElements.push({ id: 'recorder', ele: gainNode });
+      this.createEqualizer('recorder');
 
       // Conectar el flujo de audio mixto al gainNode
       const source = this.audioContext.createMediaStreamSource(this.mixedAudioDestination.stream);
       source.connect(gainNode);
-      gainNode.connect(this.recordAudioDestination);
+
+      // Conectar el ecualizador
+      const filters = this.equalizerFilters.get('recorder');
+      if (filters) {
+        let prevNode: AudioNode = gainNode;
+        for (const filter of filters) {
+          prevNode.connect(filter);
+          prevNode = filter;
+        }
+        prevNode.connect(this.recordAudioDestination);
+      } else {
+        gainNode.connect(this.recordAudioDestination);
+      }
 
       const sample = this.audioContext.createMediaStreamDestination();
-      gainNode.connect(sample);
+      if (filters && filters.length > 0) {
+        filters[filters.length - 1].connect(sample);
+      } else {
+        gainNode.connect(sample);
+      }
 
       // Slider de volumen
       const volume = this.volumeAudioRecorder?.nativeElement;
@@ -742,7 +769,16 @@ export class WebOBS implements OnInit, AfterViewInit, OnDestroy, OnChanges {
       const volume = volumeRef.nativeElement;
       const gainNode = this.createGainNode(deviceId);
       const source = this.audioContext.createMediaStreamSource(stream);
-      source.connect(gainNode);
+
+      // Crear ecualizador
+      const filters = this.createEqualizer(deviceId);
+      let prevNode: AudioNode = source;
+      for (const filter of filters) {
+        prevNode.connect(filter);
+        prevNode = filter;
+      }
+      prevNode.connect(gainNode);
+
       gainNode.connect(this.mixedAudioDestination);
       const sample = this.audioContext.createMediaStreamDestination();
       gainNode.connect(sample);
@@ -791,6 +827,9 @@ export class WebOBS implements OnInit, AfterViewInit, OnDestroy, OnChanges {
       // Crear un nodo de ganancia para ajustar el volumen
       const gainNode = this.audioContext.createGain();
 
+      // Crear ecualizador
+      const filters = this.createEqualizer(device.deviceId);
+
       // IMPORTANTE: Ponemos la ganancia a 0 para que no salga nada por defecto
       gainNode.gain.value = 0;
 
@@ -813,7 +852,12 @@ export class WebOBS implements OnInit, AfterViewInit, OnDestroy, OnChanges {
       }, 500); // Aumentamos tiempo para asegurar que el DOM esté listo
 
       // Conectar el nodo de ganancia al destino
-      gainNode.connect(destinationNode);
+      let prevNode: AudioNode = gainNode;
+      for (const filter of filters) {
+        prevNode.connect(filter);
+        prevNode = filter;
+      }
+      prevNode.connect(destinationNode);
 
       // Crear un `<audio>` para reproducir el audio procesado
       audio.style.display = 'none';
@@ -1015,7 +1059,16 @@ export class WebOBS implements OnInit, AfterViewInit, OnDestroy, OnChanges {
           const gainNode = this.createGainNode(track.id);
           const audioStream = new MediaStream([track]);
           const source = this.audioContext.createMediaStreamSource(audioStream);
-          source.connect(gainNode);
+
+          // Crear ecualizador
+          const filters = this.createEqualizer(track.id);
+          let prevNode: AudioNode = source;
+          for (const filter of filters) {
+            prevNode.connect(filter);
+            prevNode = filter;
+          }
+          prevNode.connect(gainNode);
+
           gainNode.connect(this.mixedAudioDestination);
           const sample = this.audioContext.createMediaStreamDestination();
           gainNode.connect(sample);
@@ -1159,9 +1212,10 @@ export class WebOBS implements OnInit, AfterViewInit, OnDestroy, OnChanges {
       element: video,
       painted: false,
       scale: 1,
-      position: null,
+      position: { x: 0, y: 0 },
     };
     this.videosElements.push(ele);
+    this.audiosArchivos.push(file.name);
 
     // Enviar track al worker cuando el video esté listo
     const sendTrack = () => {
@@ -1175,8 +1229,13 @@ export class WebOBS implements OnInit, AfterViewInit, OnDestroy, OnChanges {
       }
     };
 
+    // Forzar el envío del track inicial para que se renderice aunque esté en pausa
+    sendTrack();
+
+    // Inicializar audio inmediatamente
+    this.setupMediaElementAudio(video, file.name);
+
     video.onplaying = () => {
-      this.setupMediaElementAudio(video, file.name);
       sendTrack();
     };
 
@@ -1212,10 +1271,21 @@ export class WebOBS implements OnInit, AfterViewInit, OnDestroy, OnChanges {
    * @param {string} id ID único del elemento.
    */
   private setupMediaElementAudio(element: HTMLVideoElement | HTMLAudioElement, id: string) {
-    const audioLevelRef = this.audioLevelDivs.find((el) => el.nativeElement.id === 'audio-level-' + id);
-    if (!audioLevelRef) return;
-    const audioDiv = audioLevelRef.nativeElement;
-    this.setupAudioElement(element, id, audioDiv);
+    // Intentar buscar el elemento en el DOM después de un pequeño retardo
+    // ya que el @for de Angular puede tardar un ciclo en renderizar el elemento.
+    setTimeout(() => {
+      const audioLevelRef = this.audioLevelDivs.find((el) => el.nativeElement.id === 'audio-level-' + id);
+      if (!audioLevelRef) {
+        console.warn('No se pudo encontrar audioLevelRef para:', id, 'después de retardo.');
+        return;
+      }
+      const audioDiv = audioLevelRef.nativeElement;
+
+      // Inicializar ecualizador para archivos de video
+      this.createEqualizer(id);
+
+      this.setupAudioElement(element, id, audioDiv);
+    }, 100);
   }
 
   /**
@@ -1232,7 +1302,16 @@ export class WebOBS implements OnInit, AfterViewInit, OnDestroy, OnChanges {
       element.muted = true; // Silenciar el elemento multimedia por defecto
       this.mediaElementSources.set(element, source);
     }
-    source.connect(gainNode);
+
+    // Crear ecualizador
+    const filters = this.createEqualizer(id);
+    let prevNode: AudioNode = source;
+    for (const filter of filters) {
+      prevNode.connect(filter);
+      prevNode = filter;
+    }
+    prevNode.connect(gainNode);
+
     gainNode.connect(this.mixedAudioDestination);
     const sample = this.audioContext.createMediaStreamDestination();
     gainNode.connect(sample);
@@ -1242,6 +1321,20 @@ export class WebOBS implements OnInit, AfterViewInit, OnDestroy, OnChanges {
       volumeRef.nativeElement.oninput = () => (gainNode.gain.value = Number.parseInt(volumeRef.nativeElement.value, 10) / 100);
     }
     this.visualizeAudio(sample.stream, audioDiv, id).catch((err) => console.error('Error visualizando audio:', err));
+  }
+
+  private createEqualizer(id: string): BiquadFilterNode[] {
+    const frequencies = [60, 250, 1000, 4000, 12000];
+    const filters = frequencies.map((freq) => {
+      const filter = this.audioContext.createBiquadFilter();
+      filter.type = 'peaking';
+      filter.frequency.value = freq;
+      filter.Q.value = 1;
+      filter.gain.value = 0;
+      return filter;
+    });
+    this.equalizerFilters.set(id, filters);
+    return filters;
   }
 
   /**
@@ -1691,7 +1784,10 @@ export class WebOBS implements OnInit, AfterViewInit, OnDestroy, OnChanges {
     }
 
     const wheel = (wheelEvent: WheelEvent) => {
-      if (!this.dragVideo) return;
+      if (!this.dragVideo) {
+        console.error('No hay video arrastrando');
+        return;
+      }
       const scaleFactor = wheelEvent.deltaY > 0 ? 0.9 : 1.1;
       this.dragVideo.scale *= scaleFactor;
       ghost.style.width = `${videoRect.width * this.dragVideo.scale}px`;
@@ -1715,6 +1811,22 @@ export class WebOBS implements OnInit, AfterViewInit, OnDestroy, OnChanges {
   }
 
   /**
+   * @summary Actualiza un filtro de video.
+   * @param {string} filter El nombre del filtro.
+   * @param {number} value El valor del filtro.
+   */
+  public updateFilter(filter: string, value: number) {
+    if (!this.selectedVideoForFilter) return;
+
+    this.selectedVideoForFilter.filters![filter as keyof { brightness: number; contrast: number; saturation: number }] = value;
+
+    const ele = this.selectedVideoForFilter;
+    if (ele.element) {
+      ele.element.style.filter = `brightness(${ele.filters!.brightness}%) contrast(${ele.filters!.contrast}%) saturate(${ele.filters!.saturation}%)`;
+    }
+  }
+
+  /**
    * @summary Muestra el menú de filtros para un elemento de video.
    * @param {MouseEvent} event Evento de ratón.
    * @param {VideoElement} ele Elemento de video seleccionado.
@@ -1729,10 +1841,18 @@ export class WebOBS implements OnInit, AfterViewInit, OnDestroy, OnChanges {
       saturation: 100,
     };
 
-    const filterMenu = document.querySelector('#filterMenu') as HTMLDivElement;
-    if (!filterMenu) {
-      console.error('No se encontró el elemento con id filterMenu');
-      return;
+    const filterMenu = this.filterMenu.nativeElement;
+
+    this.selectedVideoForFilter = ele;
+
+    // Actualizar sliders con los valores actuales del elemento
+    if (this.filterSliders) {
+      const sliders = this.filterSliders.toArray();
+      if (sliders[0]) sliders[0].nativeElement.value = ele.filters!.brightness.toString();
+      if (sliders[1]) sliders[1].nativeElement.value = ele.filters!.contrast.toString();
+      if (sliders[2]) sliders[2].nativeElement.value = ele.filters!.saturation.toString();
+    } else {
+      console.log('No se encontraron sliders');
     }
 
     // Mostrar el menú
@@ -1745,13 +1865,15 @@ export class WebOBS implements OnInit, AfterViewInit, OnDestroy, OnChanges {
     const screenHeight = window.innerHeight;
 
     let left = event.clientX;
-    let top = event.clientY - menuHeight * 2;
+    let top = event.clientY - menuHeight;
 
+    // Ajustar si se sale por la derecha
     if (left + menuWidth > screenWidth) {
-      left = screenWidth - menuWidth - 5; // margen de 5px
+      left = screenWidth - menuWidth - 5;
     }
-    if (top + menuHeight > screenHeight) {
-      top = screenHeight - menuHeight - 5;
+    // Ajustar si se sale por arriba
+    if (top < 0) {
+      top = event.clientY; // Si no cabe arriba, ponerlo debajo del cursor
     }
 
     filterMenu.style.left = `${left}px`;
@@ -1759,20 +1881,110 @@ export class WebOBS implements OnInit, AfterViewInit, OnDestroy, OnChanges {
 
     // Función para cerrar el menú
     const closeFilterMenu = (e: Event) => {
-      if (!filterMenu.contains(e.target as Node)) {
-        this.selectedVideoForFilter = null;
-        filterMenu.style.display = 'none';
-        document.removeEventListener('pointerdown', closeFilterMenu);
-        window.removeEventListener('scroll', closeFilterMenu);
-        window.removeEventListener('resize', closeFilterMenu);
+      const target = e.target as HTMLElement;
+      // No cerrar si el clic es dentro del menú o en un input (evita conflictos con sliders)
+      if (filterMenu.contains(target) || target.tagName === 'INPUT') {
+        return;
       }
+      this.selectedVideoForFilter = null;
+      filterMenu.style.display = 'none';
+      document.removeEventListener('click', closeFilterMenu);
+      window.removeEventListener('scroll', closeFilterMenu);
+      window.removeEventListener('resize', closeFilterMenu);
     };
 
     // Escuchar clics fuera, scroll y resize para cerrar
     setTimeout(() => {
-      document.addEventListener('pointerdown', closeFilterMenu);
+      document.addEventListener('click', closeFilterMenu);
       window.addEventListener('scroll', closeFilterMenu);
       window.addEventListener('resize', closeFilterMenu);
+    }, 0);
+  }
+
+  /**
+   * @summary Muestra el menú de ecualizador para un elemento de audio.
+   * @param {MouseEvent} event Evento de ratón.
+   * @param {string} audioId ID del audio seleccionado.
+   */
+  private showEqualizerMenu(event: MouseEvent, audioId: string) {
+    event.preventDefault();
+    event.stopPropagation();
+
+    // El ID que viene del HTML podría tener el prefijo 'audio-'
+    // Pero necesitamos asegurarnos de que el ID con el que buscamos en el mapa
+    // sea EXACTAMENTE el que se usó al llamar a createEqualizer.
+    // Analizando los logs, el ID en el mapa es 'cd1a31...' y el que intentas buscar es 'audio-cd1a31...'
+
+    // Intentemos quitar 'audio-' solo si está presente.
+    const actualId = audioId.startsWith('audio-') ? audioId.replace('audio-', '') : audioId;
+    this.selectedAudioForEqualizer = actualId;
+
+    console.log('Buscando ecualizador para:', this.selectedAudioForEqualizer);
+    console.log('Map de filtros actual:', Array.from(this.equalizerFilters.keys()));
+
+    const filters = this.equalizerFilters.get(this.selectedAudioForEqualizer);
+    if (filters) {
+      this.equalizerValues = filters.map((f) => f.gain.value);
+      this.cdr.detectChanges();
+    } else {
+      console.warn('No se encontró ecualizador para:', this.selectedAudioForEqualizer);
+    }
+
+    const equalizerMenu = this.equalizerMenu.nativeElement;
+    equalizerMenu.style.display = 'flex';
+    this.cdr.detectChanges();
+
+    // Sincronizar sliders con los valores reales del nodo de audio
+    const domFilters = this.equalizerFilters.get(actualId);
+    if (domFilters) {
+      const sliders = equalizerMenu.querySelectorAll('input[type="range"]');
+      domFilters.forEach((filter, index) => {
+        if (sliders[index]) {
+          (sliders[index] as HTMLInputElement).value = filter.gain.value.toString();
+        }
+      });
+    }
+
+    // Calcular posición evitando que se salga de la pantalla
+    const menuWidth = equalizerMenu.offsetWidth;
+    const menuHeight = equalizerMenu.offsetHeight;
+    const screenWidth = window.innerWidth;
+    const screenHeight = window.innerHeight;
+
+    let left = event.clientX;
+    let top = event.clientY - menuHeight;
+
+    // Ajustar si se sale por la derecha
+    if (left + menuWidth > screenWidth) {
+      left = screenWidth - menuWidth - 5;
+    }
+    // Ajustar si se sale por arriba
+    if (top < 0) {
+      top = event.clientY; // Si no cabe arriba, ponerlo debajo del cursor
+    }
+
+    equalizerMenu.style.left = `${left}px`;
+    equalizerMenu.style.top = `${top}px`;
+
+    // Función para cerrar el menú
+    const closeEqualizerMenu = (e: Event) => {
+      const target = e.target as HTMLElement;
+      // No cerrar si el clic es dentro del menú o en un input (evita conflictos con sliders)
+      if (equalizerMenu.contains(target) || target.tagName === 'INPUT') {
+        return;
+      }
+      this.selectedAudioForEqualizer = null;
+      equalizerMenu.style.display = 'none';
+      document.removeEventListener('click', closeEqualizerMenu);
+      window.removeEventListener('scroll', closeEqualizerMenu);
+      window.removeEventListener('resize', closeEqualizerMenu);
+    };
+
+    // Escuchar clics fuera, scroll y resize para cerrar
+    setTimeout(() => {
+      document.addEventListener('click', closeEqualizerMenu);
+      window.addEventListener('scroll', closeEqualizerMenu);
+      window.addEventListener('resize', closeEqualizerMenu);
     }, 0);
   }
 
@@ -2584,7 +2796,7 @@ export class WebOBS implements OnInit, AfterViewInit, OnDestroy, OnChanges {
       return;
     }
     const rect = this.canvas.getBoundingClientRect();
-    const orizontal = this.cross.nativeElement.querySelector('#orizontal') as HTMLDivElement;
+    const orizontal = this.cross.nativeElement.querySelector('#vertical') as HTMLDivElement;
     if (!orizontal) {
       console.error('Missing orizontal');
       return;
@@ -3200,6 +3412,16 @@ export class WebOBS implements OnInit, AfterViewInit, OnDestroy, OnChanges {
   }
 
   /**
+   * @summary Muestra el menú contextual de ecualizador para un elemento de audio.
+   * @param {MouseEvent} event Evento de clic derecho.
+   * @param {string} audioId ID del elemento seleccionado.
+   */
+  onAudioContextMenu($event: MouseEvent, audioId: string) {
+    $event.preventDefault();
+    this.showEqualizerMenu($event, audioId);
+  }
+
+  /**
    * @summary Actualiza el estilo (filtros) del elemento seleccionado.
    * @description Aplica los filtros de brillo, contraste y saturación al elemento de video.
    */
@@ -3219,6 +3441,63 @@ export class WebOBS implements OnInit, AfterViewInit, OnDestroy, OnChanges {
       videoElement.style.filter = '';
     }
     this.updateWorkerLayers();
+  }
+
+  updateEqualizer(bandIndex: number, gainValue: number) {
+    if (!this.selectedAudioForEqualizer) return;
+    this.equalizerValues[bandIndex] = gainValue;
+    const idToSearch = this.selectedAudioForEqualizer;
+    const filters = this.equalizerFilters.get(idToSearch);
+    if (filters?.[bandIndex]) {
+      filters[bandIndex].gain.value = gainValue;
+    } else {
+      const freq = [60, 250, 1000, 4000, 12000][bandIndex];
+      console.warn(`No se encontró ecualizador para: ${idToSearch} (banda: ${freq}Hz)`);
+    }
+  }
+
+  resetFilters() {
+    if (!this.selectedVideoForFilter) return;
+    this.selectedVideoForFilter.filters = { brightness: 100, contrast: 100, saturation: 100 };
+    this.updateStyleElement();
+
+    // Resetear inputs en el DOM
+    const inputs = this.filterMenu.nativeElement.querySelectorAll('input');
+    inputs.forEach((input) => {
+      input.value = '100';
+    });
+  }
+
+  resetEqualizer() {
+    console.log('resetEqualizer called');
+
+    if (!this.selectedAudioForEqualizer) return;
+    const filters = this.equalizerFilters.get(this.selectedAudioForEqualizer);
+    if (filters) {
+      filters.forEach((filter) => {
+        filter.gain.value = 0;
+      });
+
+      // Actualizar visualmente todos los sliders del menú usando el DOM nativo
+      this.equalizerValues = [0, 0, 0, 0, 0];
+      this.cdr.detectChanges();
+    } else {
+      console.log('No se encontró el nodo de audio');
+    }
+  }
+
+  snapToMiddle(event: Event) {
+    const input = event.target as HTMLInputElement;
+    const min = parseFloat(input.min);
+    const max = parseFloat(input.max);
+    const middle = min + (max - min) / 2;
+    const val = parseFloat(input.value);
+
+    // Si está cerca del 50%, aplicar "snap"
+    if (Math.abs(val - middle) < (max - min) * 0.05) {
+      input.value = middle.toString();
+      input.dispatchEvent(new Event('input'));
+    }
   }
 
   /**
