@@ -696,6 +696,7 @@ export class WebOBS implements OnInit, AfterViewInit, OnDestroy, OnChanges {
       const videoElement = this.videoElements.find((el) => el.nativeElement.id === deviceId);
       if (videoElement) {
         videoElement.nativeElement.srcObject = stream; // Asignar el stream al video
+        videoElement.nativeElement.muted = true; // Silenciar el video por defecto para evitar salida por altavoces
         const ele: VideoElement = {
           id: deviceId,
           element: videoElement.nativeElement,
@@ -773,16 +774,16 @@ export class WebOBS implements OnInit, AfterViewInit, OnDestroy, OnChanges {
         setSinkId?: (sinkId: string) => Promise<void>;
       };
 
-      // Verificar si el navegador soporta setSinkId y si estamos en HTTPS
-      if (typeof audio.setSinkId !== 'function' || location.protocol !== 'https:') {
-        console.warn('setSinkId no es soportado o HTTPS no está activo.');
+      // Verificar si el navegador soporta setSinkId
+      if (typeof audio.setSinkId !== 'function') {
+        console.warn('setSinkId no es soportado.');
         return;
       }
 
       // Guardar el dispositivo en la lista
       this.audioOutputDevices.push(device);
 
-      await this.ensureAudioContext(); // importante!!
+      await this.ensureAudioContext();
 
       // Crear un nodo de destino para capturar el audio procesado
       const destinationNode = this.audioContext.createMediaStreamDestination();
@@ -790,18 +791,26 @@ export class WebOBS implements OnInit, AfterViewInit, OnDestroy, OnChanges {
       // Crear un nodo de ganancia para ajustar el volumen
       const gainNode = this.audioContext.createGain();
 
+      // IMPORTANTE: Ponemos la ganancia a 0 para que no salga nada por defecto
+      gainNode.gain.value = 0;
+
       // Conectar el volumen a un slider si existe
       setTimeout(() => {
-        const volumeRef = this.volumeInputs.find((el) => el.nativeElement.id === 'volume-' + device.deviceId);
-        if (volumeRef) {
-          const volume = volumeRef.nativeElement;
-          volume.oninput = () => {
-            gainNode.gain.value = Number.parseInt(volume.value) / 100;
-          };
-        } else {
-          console.error('No se encontró el control de volumen para ' + device.deviceId);
+        try {
+          const volumeRef = this.volumeInputs.find((el) => el.nativeElement.id === 'volume-' + device.deviceId);
+          if (volumeRef) {
+            const volume = volumeRef.nativeElement;
+            gainNode.gain.value = Number.parseInt(volume.value, 10) / 100;
+            volume.oninput = () => {
+              gainNode.gain.value = Number.parseInt(volume.value, 10) / 100;
+            };
+          } else {
+            console.error('No se encontró el control de volumen para ' + device.deviceId);
+          }
+        } catch (e) {
+          console.error('Error configurando slider de volumen:', e);
         }
-      }, 100);
+      }, 500); // Aumentamos tiempo para asegurar que el DOM esté listo
 
       // Conectar el nodo de ganancia al destino
       gainNode.connect(destinationNode);
@@ -809,14 +818,17 @@ export class WebOBS implements OnInit, AfterViewInit, OnDestroy, OnChanges {
       // Crear un `<audio>` para reproducir el audio procesado
       audio.style.display = 'none';
       audio.srcObject = destinationNode.stream;
+      audio.muted = true; // Silenciar el audio por defecto para evitar salida por altavoces
 
-      await audio.setSinkId(device.deviceId);
+      // Intentar setSinkId
+      try {
+        await (audio as any).setSinkId(device.deviceId);
+      } catch (err) {
+        console.error('Error crítico al establecer setSinkId para ' + device.label + ':', err);
+      }
 
-      // Agregar el audio al DOM para evitar bloqueos de reproducción automática
+      // Agregar el audio al DOM
       document.body.appendChild(audio);
-
-      // Reproducir el audio
-      audio.play().catch((err) => console.error('Error al reproducir el audio:', err));
 
       // Visualizar los niveles de audio
       const audioLevelRef = this.audioLevelDivs.find((el) => el.nativeElement.id === 'audio-level-' + device.deviceId);
@@ -829,7 +841,7 @@ export class WebOBS implements OnInit, AfterViewInit, OnDestroy, OnChanges {
       // Retornar nodos para poder conectar fuentes de audio después
       this.audiosElements.push({ id: device.deviceId, ele: gainNode });
     } catch (error) {
-      console.error('Error al obtener el stream de salida de audio:', error);
+      console.error('Error fatal al obtener el stream de salida de audio para ' + device.label + ':', error);
     }
   }
 
@@ -977,6 +989,7 @@ export class WebOBS implements OnInit, AfterViewInit, OnDestroy, OnChanges {
         const videoElement = this.videoElements.find((el) => el.nativeElement.id === stream.id);
         if (videoElement) {
           videoElement.nativeElement.srcObject = stream;
+          videoElement.nativeElement.muted = true; // Silenciar el video por defecto para evitar salida por altavoces
           const ele: VideoElement = {
             id: stream.id,
             element: videoElement.nativeElement,
@@ -1216,6 +1229,7 @@ export class WebOBS implements OnInit, AfterViewInit, OnDestroy, OnChanges {
     let source = this.mediaElementSources.get(element);
     if (!source) {
       source = this.audioContext.createMediaElementSource(element);
+      element.muted = true; // Silenciar el elemento multimedia por defecto
       this.mediaElementSources.set(element, source);
     }
     source.connect(gainNode);
@@ -2790,7 +2804,9 @@ export class WebOBS implements OnInit, AfterViewInit, OnDestroy, OnChanges {
    */
   private _drawSingleAudioConnection(index: number, audiosRect: DOMRect, connectionWidth: number) {
     const connection = this.audiosConnections[index];
-    const entradaRef = this.audioLevelDivs.find((el) => el.nativeElement.id === `audio-level-${connection.idEntrada}`);
+
+    const isRecorderEntrada = connection.idEntrada === 'recorder';
+    const entradaRef = isRecorderEntrada ? this.audioLevelRecorder : this.audioLevelDivs.find((el) => el.nativeElement.id === `audio-level-${connection.idEntrada}`);
     const salidaRef = connection.idSalida === 'recorder' ? this.audioLevelRecorder : this.audioLevelDivs.find((el) => el.nativeElement.id === `audio-level-${connection.idSalida}`);
 
     if (!entradaRef || !salidaRef) return;
@@ -2918,7 +2934,7 @@ export class WebOBS implements OnInit, AfterViewInit, OnDestroy, OnChanges {
     if (!audios || !conexionesIzquierda) return;
 
     const audiosRect = audios.getBoundingClientRect();
-    const elementoStart = document.elementFromPoint($event.clientX, $event.clientY);
+    const elementoStart = ($event.currentTarget as HTMLElement).closest('.audio-bar') || ($event.currentTarget as HTMLElement);
     const startPos = {
       x: $event.clientX - audiosRect.left,
       y: $event.clientY - audiosRect.top + audios.scrollTop,
@@ -2926,6 +2942,28 @@ export class WebOBS implements OnInit, AfterViewInit, OnDestroy, OnChanges {
 
     const conexionTemp = this._createTempConnectionElement(startPos);
     conexionesIzquierda.appendChild(conexionTemp);
+
+    document.body.style.userSelect = 'none';
+    document.body.style.pointerEvents = 'none';
+    audios.style.pointerEvents = 'auto';
+
+    const hoverOverlayStart = document.createElement('div');
+    hoverOverlayStart.style.cssText = 'position:absolute;pointer-events:none;background:rgba(0,0,0,0.2);z-index:9999;';
+    conexionesIzquierda.appendChild(hoverOverlayStart);
+
+    const hoverOverlayEnd = document.createElement('div');
+    hoverOverlayEnd.style.cssText = 'position:absolute;pointer-events:none;background:rgba(0,0,0,0.2);display:none;z-index:9999;';
+    conexionesIzquierda.appendChild(hoverOverlayEnd);
+
+    if (elementoStart instanceof HTMLElement) {
+      const rect = elementoStart.getBoundingClientRect();
+      hoverOverlayStart.style.left = `${rect.left - audiosRect.left}px`;
+      hoverOverlayStart.style.top = `${rect.top - audiosRect.top + audios.scrollTop}px`;
+      hoverOverlayStart.style.width = `${rect.width}px`;
+      hoverOverlayStart.style.height = `${rect.height}px`;
+    }
+
+    let lastHoveredElement: Element | null = null;
 
     const audioMove = (e: MouseEvent) => {
       const actualX = e.clientX - audiosRect.left;
@@ -2946,11 +2984,46 @@ export class WebOBS implements OnInit, AfterViewInit, OnDestroy, OnChanges {
         conexionTemp.style.top = `${startPos.y}px`;
         conexionTemp.style.height = `${actualY - startPos.y}px`;
       }
+
+      const root = document.elementFromPoint(e.clientX, e.clientY);
+      const hoveredElement = root?.shadowRoot?.elementFromPoint(e.clientX, e.clientY) || root;
+
+      // Buscar el audio-bar más cercano en la misma fila (altura del ratón)
+      const allAudioBars = Array.from(audios.querySelectorAll('.audio-bar'));
+      const target =
+        allAudioBars.find((bar) => {
+          const rect = bar.getBoundingClientRect();
+          return e.clientY >= rect.top && e.clientY <= rect.bottom;
+        }) || (hoveredElement instanceof Element ? hoveredElement.closest('.audio-bar') : null);
+
+      const idStart = this._getAudioElementId(elementoStart);
+      const idTarget = this._getAudioElementId(target);
+
+      const isStartOutput = this.audioOutputDevices.some((d) => d.deviceId === idStart);
+      const isTargetOutput = this.audioOutputDevices.some((d) => d.deviceId === idTarget);
+
+      const isLogicValid = idStart && idTarget && idStart !== idTarget && (isTargetOutput !== isStartOutput || idTarget === 'audio-recorder');
+
+      if (target instanceof HTMLElement && isLogicValid) {
+        const rect = target.getBoundingClientRect();
+        hoverOverlayEnd.style.left = `${rect.left - audiosRect.left}px`;
+        hoverOverlayEnd.style.top = `${rect.top - audiosRect.top + audios.scrollTop}px`;
+        hoverOverlayEnd.style.width = `${rect.width}px`;
+        hoverOverlayEnd.style.height = `${rect.height}px`;
+        hoverOverlayEnd.style.display = 'block';
+      } else {
+        hoverOverlayEnd.style.display = 'none';
+      }
     };
 
     const audioUp = (e: MouseEvent) => {
       audios.removeEventListener('pointermove', audioMove);
       audios.removeEventListener('pointerup', audioUp);
+      document.body.style.userSelect = '';
+      document.body.style.pointerEvents = '';
+      audios.style.pointerEvents = '';
+      hoverOverlayStart.remove();
+      hoverOverlayEnd.remove();
       this._finalizeAudioConnection(e, elementoStart, conexionTemp);
     };
 
@@ -2976,26 +3049,60 @@ export class WebOBS implements OnInit, AfterViewInit, OnDestroy, OnChanges {
    * @param {HTMLDivElement} conexionTemp Elemento visual temporal.
    */
   private _finalizeAudioConnection(event: MouseEvent, elementoStart: Element | null, conexionTemp: HTMLDivElement) {
-    const offsetX = Number.parseInt(conexionTemp.style.width) + 2;
     conexionTemp.remove();
 
-    const elementoFinal = document.elementFromPoint(event.clientX + offsetX, event.clientY);
-    const idStart = this._getAudioElementId(elementoStart);
-    const idFinal = this._getAudioElementId(elementoFinal);
+    const root = document.elementFromPoint(event.clientX, event.clientY);
+    const elementAtDrop = root?.shadowRoot?.elementFromPoint(event.clientX, event.clientY) || root;
 
-    if (!idStart || !idFinal || idStart === idFinal) return;
+    // Buscar el audio-bar más cercano en la misma fila (altura del ratón)
+    const allAudioBars = Array.from(this.audios.nativeElement.querySelectorAll('.audio-bar'));
+    const target =
+      allAudioBars.find((bar) => {
+        const rect = bar.getBoundingClientRect();
+        return event.clientY >= rect.top && event.clientY <= rect.bottom;
+      }) || (elementAtDrop instanceof Element ? elementAtDrop.closest('.audio-bar') : null);
+
+    const idStart = this._getAudioElementId(elementoStart);
+    const idFinal = this._getAudioElementId(target);
+
+    const isStartOutput = this.audioOutputDevices.some((d) => d.deviceId === idStart);
+    const isFinalOutput = this.audioOutputDevices.some((d) => d.deviceId === idFinal);
+    const isLogicValid = idStart && idFinal && idStart !== idFinal && (isFinalOutput !== isStartOutput || idFinal === 'audio-recorder');
+
+    if (!isLogicValid) return;
 
     const startNode = this.audiosElements.find((el) => el.id === idStart);
     const endNode = this.audiosElements.find((el) => el.id === idFinal);
 
     if (startNode && endNode) {
-      const targetNode = endNode.id === 'audio-recorder' ? this.mixedAudioDestination : endNode.ele;
-      startNode.ele.connect(targetNode);
+      // Determinar quién es entrada (fuente) y quién es salida (destino)
+      // Solo permitimos conectar de una fuente de audio (dispositivo/archivo) a un destino (salida/grabador)
+      const isStartOutput = this.audioOutputDevices.some((d) => d.deviceId === idStart) || idStart === 'audio-recorder';
+      const isEndOutput = this.audioOutputDevices.some((d) => d.deviceId === idFinal) || idFinal === 'audio-recorder';
+
+      let sourceNode, destinationNode;
+      let entradaId, salidaId;
+
+      if (!isStartOutput && isEndOutput) {
+        sourceNode = startNode.ele;
+        destinationNode = endNode.id === 'audio-recorder' ? this.mixedAudioDestination : endNode.ele;
+        entradaId = idStart;
+        salidaId = idFinal;
+      } else if (isStartOutput && !isEndOutput) {
+        sourceNode = endNode.ele;
+        destinationNode = startNode.id === 'audio-recorder' ? this.mixedAudioDestination : startNode.ele;
+        entradaId = idFinal;
+        salidaId = idStart;
+      } else {
+        return; // Ambas son entradas o ambas son salidas
+      }
+
+      sourceNode.connect(destinationNode);
       this.audiosConnections.push({
-        idEntrada: idStart,
-        entrada: startNode.ele as GainNode,
-        idSalida: idFinal,
-        salida: targetNode as MediaStreamAudioDestinationNode,
+        idEntrada: entradaId,
+        entrada: sourceNode as GainNode,
+        idSalida: salidaId,
+        salida: destinationNode as MediaStreamAudioDestinationNode,
       });
       this.drawAudioConnections();
     }
