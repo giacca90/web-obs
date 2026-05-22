@@ -1,3 +1,53 @@
+:host {
+  --web-obs-bg-color: white;
+  --web-obs-border-color: black;
+  --web-obs-text-color: black;
+  --web-obs-accent-color: #b91c1c; /* Rojo de las líneas de guía */
+  --web-obs-preset-bg: #9ca3af; /* gray-400 */
+  --web-obs-canvas-bg: white;
+  --web-obs-control-bg: #9ca3af;
+  --web-obs-shadow-color: rgba(0, 0, 0, 0.1);
+}
+
+[part="container"] {
+  background-color: var(--web-obs-bg-color);
+  color: var(--web-obs-text-color);
+  border: 1px solid var(--web-obs-border-color);
+  border-radius: 0.5rem;
+}
+
+[part="canvas"] {
+  display: block;
+  background-color: var(--web-obs-canvas-bg);
+  border: 1px solid var(--web-obs-border-color);
+  box-sizing: border-box;
+  width: 100%;
+  height: 100%;
+}
+
+[part="canvas-container"] {
+  position: relative;
+  aspect-ratio: 16 / 9;
+  height: 100%;
+  border-color: var(--web-obs-border-color);
+}
+
+[part="audio-item"],
+[part="video-device"],
+[part="screen-capture"],
+[part="static-file"] {
+  border-color: var(--web-obs-border-color);
+}
+
+[part="save-preset-button"],
+[part="side-controls"] div,
+[part="action-button"] {
+  background-color: var(--web-obs-control-bg);
+  border: 1px solid var(--web-obs-border-color);
+  color: var(--web-obs-text-color);
+  border-radius: 0.5rem;
+}
+
 .audio-bar {
   background: linear-gradient(to right, green, yellow, red);
   position: relative;
@@ -30,8 +80,8 @@
   display: flex;
   cursor: pointer;
   border-radius: 0.5rem; /* rounded-lg */
-  border: 1px solid black; /* border-black */
-  background-color: white;
+  border: 1px solid var(--web-obs-border-color); /* border-black */
+  background-color: var(--web-obs-bg-color);
   width: 100%;
   height: auto; /* deja que se ajuste según el ancho */
   aspect-ratio: 16/9 !important;
@@ -62,7 +112,7 @@ items-center justify-between overflow-hidden rounded-lg border border-black bg-g
   width: 2px;
   transform: translateX(-50%);
   display: none;
-  background-color: #b91c1c;
+  background-color: var(--web-obs-accent-color);
 }
 
 .cross-horizontal {
@@ -73,7 +123,7 @@ items-center justify-between overflow-hidden rounded-lg border border-black bg-g
   width: 100%;
   transform: translateY(-50%);
   display: none;
-  background-color: #b91c1c;
+  background-color: var(--web-obs-accent-color);
 }
 
 .tirador-central {

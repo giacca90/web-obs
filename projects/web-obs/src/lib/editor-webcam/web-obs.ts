@@ -1,7 +1,8 @@
 import { CommonModule } from '@angular/common';
-import { AfterViewInit, ChangeDetectorRef, Component, ElementRef, EventEmitter, HostListener, Input, OnChanges, OnDestroy, OnInit, Output, QueryList, SimpleChanges, ViewChild, ViewChildren } from '@angular/core';
+import { AfterViewInit, ChangeDetectorRef, Component, ElementRef, EventEmitter, HostListener, Input, OnChanges, OnDestroy, OnInit, Output, QueryList, SimpleChanges, ViewChild, ViewChildren, ViewEncapsulation } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { AUDIO_PROCESSOR } from './audio-processor';
+import { CANVAS_RENDERER } from './canvas-renderer';
 import { AudioConnection } from './types/audio-connection.interface';
 import { AudioElement } from './types/audio-element.interface';
 import { Preset } from './types/preset.interface';
@@ -13,6 +14,7 @@ import { VideoElement } from './types/video-element.interface';
   imports: [FormsModule, CommonModule],
   templateUrl: './web-obs.html',
   styleUrls: ['./web-obs.css', './assets/tailwind.generated.css'],
+  encapsulation: ViewEncapsulation.ShadowDom, // Mejorar aislamiento
 })
 export class WebOBS implements OnInit, AfterViewInit, OnDestroy, OnChanges {
   canvasWidth = 1280; // Resolución por defecto de la emisión
@@ -32,7 +34,7 @@ export class WebOBS implements OnInit, AfterViewInit, OnDestroy, OnChanges {
   audiosConnections: AudioConnection[] = []; // Lista de conexiones de audio
   dragVideo: VideoElement | null = null; // Video que se está arrastrando
   canvas!: HTMLCanvasElement; // El elemento canvas
-  context!: CanvasRenderingContext2D; // El contexto de canvas
+  private canvasWorker!: Worker; // Worker para el canvas
   editandoDimensiones = false; // Indica si se está editando las dimensiones de un video
   presets = new Map<string, Preset>(); // Presets
   audioContext!: AudioContext;
@@ -43,12 +45,15 @@ export class WebOBS implements OnInit, AfterViewInit, OnDestroy, OnChanges {
   statusMessage: string = ''; // Mensaje de estado para el usuario
   selectedVideoForFilter: VideoElement | null = null;
   private workletLoaded = false;
-  private drawInterval: any;
+  private readonly drawInterval: any;
   private readonly fileUrlCache = new Map<File, string>(); // Cache de URLs de archivos
   private readonly boundCanvasMouseMove = this.canvasMouseMove.bind(this);
   private readonly handleKeydownRef = this.handleKeydown.bind(this);
 
   private workletLoadingPromise: Promise<void> | null = null;
+  private isDrawing = false;
+  private readonly imageBitmapCache = new Map<string, { bitmap: ImageBitmap; filter: string; width: number; height: number }>();
+  private ticking = false;
 
   constructor(private readonly cdr: ChangeDetectorRef) {}
 
@@ -195,16 +200,25 @@ export class WebOBS implements OnInit, AfterViewInit, OnDestroy, OnChanges {
    */
   ngAfterViewInit() {
     this.canvas = this.salida.nativeElement;
-    this.context = this.canvas.getContext('2d')!;
+
+    // Inicializar el worker del canvas
+    const blob = new Blob([CANVAS_RENDERER], { type: 'application/javascript' });
+    const blobUrl = URL.createObjectURL(blob);
+    this.canvasWorker = new Worker(blobUrl);
+
+    const offscreen = this.canvas.transferControlToOffscreen();
+    this.canvasWorker.postMessage({ type: 'init', payload: { canvas: offscreen } }, [offscreen]);
 
     // Refresca el canvas a la tasa de fotogramas requerida
-    this.drawInterval = setInterval(this.drawFrame, 1000 / this.canvasFPS);
+    // this.drawInterval = setInterval(this.drawFrame, 1000 / this.canvasFPS);
+    this.updateWorkerLayers();
 
     // Inicialización del audio diferida hasta la interacción del usuario
     this.initAudioRecorder();
 
     this.initEventListeners();
     this.loadStaticContent();
+    this.cdr.detectChanges();
   }
 
   /**
@@ -294,6 +308,9 @@ export class WebOBS implements OnInit, AfterViewInit, OnDestroy, OnChanges {
    * @description Detiene todos los flujos de medios, elimina listeners y cierra el AudioContext.
    */
   ngOnDestroy() {
+    if (this.canvasWorker) {
+      this.canvasWorker.terminate();
+    }
     this.stopAllStreams();
     this.removeListeners();
     this.cleanupAudioResources();
@@ -407,8 +424,11 @@ export class WebOBS implements OnInit, AfterViewInit, OnDestroy, OnChanges {
     this._resetVideoElements();
     this._applyPresetElements(preset);
     this._reorderVideoElements(preset);
+    this.cdr.detectChanges();
     this._addPresetLayer(name);
     this._addLayersToPaintedElements();
+    this.updateWorkerLayers();
+    this.cdr.detectChanges();
   }
 
   private _removeExistingLayers() {
@@ -419,8 +439,16 @@ export class WebOBS implements OnInit, AfterViewInit, OnDestroy, OnChanges {
       elementosDiv.querySelector('#capa-' + CSS.escape(elemento.id))?.remove();
     }
 
+    this._removePresetLayers();
+  }
+
+  private _removePresetLayers() {
+    if (!this.presetsDiv) return;
+    const presetsDiv = this.presetsDiv.nativeElement;
+    if (!presetsDiv) return;
+
     for (const key of Array.from(this.presets.keys())) {
-      elementosDiv.querySelector(`#capa-${CSS.escape(key)}`)?.remove();
+      presetsDiv.querySelector(`#capa-${CSS.escape(key)}`)?.remove();
     }
   }
 
@@ -506,6 +534,8 @@ export class WebOBS implements OnInit, AfterViewInit, OnDestroy, OnChanges {
       this.dragVideo.painted = result.painted;
 
       this.addCapa(this.dragVideo);
+      this._removePresetLayers();
+      this.updateWorkerLayers();
       if (this.cross) {
         this.cross.nativeElement.style.display = 'none';
       }
@@ -671,10 +701,15 @@ export class WebOBS implements OnInit, AfterViewInit, OnDestroy, OnChanges {
           element: videoElement.nativeElement,
           painted: false,
           scale: 1,
-          position: null,
+          position: { x: 0, y: 0 },
         };
         this.videosElements.push(ele);
         div.nativeElement.style.filter = ele.filters ? `brightness(${ele.filters.brightness}%) contrast(${ele.filters.contrast}%) saturate(${ele.filters.saturation}%)` : '';
+
+        // Enviar stream al worker
+        const track = stream.getVideoTracks()[0];
+        this.sendVideoTrackToWorker(deviceId, track);
+        this.updateWorkerLayers();
       }
     } catch (error) {
       console.error('Error al obtener el stream de video:', error);
@@ -863,11 +898,13 @@ export class WebOBS implements OnInit, AfterViewInit, OnDestroy, OnChanges {
     const silentGain = this.audioContext.createGain();
     silentGain.gain.value = 0;
 
-    // 5) Conexiones: source -> node -> silentGain -> destination (o mixedAudioDestination si quieres)
+    // 5) Conexiones: source -> node -> silentGain -> Destination Fantasma
     source.connect(node);
     node.connect(silentGain);
-    // conectamos al destination para que el procesador funcione; usar mixed destination si prefieres
-    silentGain.connect(this.audioContext.destination);
+
+    // Usamos un destino fantasma en lugar de audioContext.destination para evitar salida por altavoces
+    const ghostDestination = this.audioContext.createMediaStreamDestination();
+    silentGain.connect(ghostDestination);
 
     // 6) Escuchar mensajes
     node.port.onmessage = (event: MessageEvent) => {
@@ -945,9 +982,14 @@ export class WebOBS implements OnInit, AfterViewInit, OnDestroy, OnChanges {
             element: videoElement.nativeElement,
             painted: false,
             scale: 1,
-            position: null,
+            position: { x: 0, y: 0 },
           };
           this.videosElements.push(ele);
+
+          // Enviar stream al worker
+          const track = stream.getVideoTracks()[0];
+          this.sendVideoTrackToWorker(stream.id, track);
+          this.updateWorkerLayers();
         }
         // Añade el contról de audio
         for (const track of stream.getAudioTracks()) {
@@ -958,21 +1000,22 @@ export class WebOBS implements OnInit, AfterViewInit, OnDestroy, OnChanges {
           }
           const audioLevelElement = audioLevelRef.nativeElement;
           const gainNode = this.createGainNode(track.id);
-          const source = this.audioContext.createMediaStreamSource(stream);
+          const audioStream = new MediaStream([track]);
+          const source = this.audioContext.createMediaStreamSource(audioStream);
           source.connect(gainNode);
           gainNode.connect(this.mixedAudioDestination);
           const sample = this.audioContext.createMediaStreamDestination();
           gainNode.connect(sample);
 
-          const volume = div.nativeElement.querySelector('#volume-' + stream.id) as HTMLInputElement;
+          const volume = this.volumeInputs.find((el) => el.nativeElement.id === 'volume-' + track.id)?.nativeElement;
           if (!volume) {
-            console.error('No se pudo encontrar el elemento de volumen para el stream:', stream.id);
+            console.error('No se pudo encontrar el elemento de volumen para el track:', track.id);
             return;
           }
           volume.oninput = () => {
             gainNode.gain.value = Number.parseInt(volume.value) / 100;
           };
-          this.visualizeAudio(sample.stream, audioLevelElement); // Iniciar visualización de audio
+          this.visualizeAudio(sample.stream, audioLevelElement, track.id); // Iniciar visualización de audio con id único
         }
       }, 100);
 
@@ -1068,13 +1111,20 @@ export class WebOBS implements OnInit, AfterViewInit, OnDestroy, OnChanges {
   private processImageFile(file: File) {
     const img = this.staticDivs.find((el) => el.nativeElement.id === 'div-' + file.name)?.nativeElement.querySelector('img');
     if (img) {
-      this.videosElements.push({
+      const ele: VideoElement = {
         id: file.name,
         element: img,
         painted: false,
         scale: 1,
         position: null,
-      });
+      };
+      this.videosElements.push(ele);
+
+      if (img.complete) {
+        this.sendImageToWorker(ele);
+      } else {
+        img.onload = () => this.sendImageToWorker(ele);
+      }
     } else {
       console.warn('Imagen no encontrada en DOM:', file.name);
     }
@@ -1091,16 +1141,35 @@ export class WebOBS implements OnInit, AfterViewInit, OnDestroy, OnChanges {
       return;
     }
 
-    this.videosElements.push({
+    const ele: VideoElement = {
       id: file.name,
       element: video,
       painted: false,
       scale: 1,
       position: null,
-    });
+    };
+    this.videosElements.push(ele);
 
-    this.audiosArchivos.push(file.name);
-    video.onplaying = () => this.setupMediaElementAudio(video, file.name);
+    // Enviar track al worker cuando el video esté listo
+    const sendTrack = () => {
+      const stream = (video as any).captureStream ? (video as any).captureStream() : (video as any).mozCaptureStream ? (video as any).mozCaptureStream() : null;
+      if (stream) {
+        const track = stream.getVideoTracks()[0];
+        if (track) {
+          this.sendVideoTrackToWorker(ele.id, track);
+          this.updateWorkerLayers();
+        }
+      }
+    };
+
+    video.onplaying = () => {
+      this.setupMediaElementAudio(video, file.name);
+      sendTrack();
+    };
+
+    if (!video.paused) {
+      sendTrack();
+    }
   }
 
   /**
@@ -1133,7 +1202,7 @@ export class WebOBS implements OnInit, AfterViewInit, OnDestroy, OnChanges {
     const audioLevelRef = this.audioLevelDivs.find((el) => el.nativeElement.id === 'audio-level-' + id);
     if (!audioLevelRef) return;
     const audioDiv = audioLevelRef.nativeElement;
-    this.setupAudioElement(element as HTMLMediaElement, id, audioDiv);
+    this.setupAudioElement(element, id, audioDiv);
   }
 
   /**
@@ -1240,6 +1309,11 @@ export class WebOBS implements OnInit, AfterViewInit, OnDestroy, OnChanges {
     const [width, height] = res.split('x');
     this.canvasWidth = Number.parseInt(width);
     this.canvasHeight = Number.parseInt(height);
+
+    if (this.canvasWorker) {
+      this.canvasWorker.postMessage({ type: 'resize', payload: { width: this.canvasWidth, height: this.canvasHeight } });
+    }
+
     value.innerHTML = string;
     this.isResolutionSelectorVisible = false;
   }
@@ -1254,7 +1328,7 @@ export class WebOBS implements OnInit, AfterViewInit, OnDestroy, OnChanges {
     if (this.drawInterval) {
       clearInterval(this.drawInterval);
     }
-    this.drawInterval = setInterval(this.drawFrame, 1000 / this.canvasFPS);
+    // this.drawInterval = setInterval(this.drawFrame, 1000 / this.canvasFPS);
   }
 
   /**
@@ -1388,6 +1462,103 @@ export class WebOBS implements OnInit, AfterViewInit, OnDestroy, OnChanges {
   }
 
   /**
+   * @summary Obtiene el rectángulo en pantalla de un elemento de video.
+   * @param {VideoElement} video El elemento de video.
+   * @returns {Object | null} El rectángulo con coordenadas de pantalla.
+   */
+  private _getElementScreenRect(video: VideoElement): { left: number; top: number; right: number; bottom: number } | null {
+    if (!video.position || !this.canvas) return null;
+    const rect = this.canvas.getBoundingClientRect();
+    const scaleX = rect.width / this.canvas.width;
+    const scaleY = rect.height / this.canvas.height;
+
+    const { videoWidth, videoHeight } = this._getVideoDimensions(video);
+
+    const left = video.position.x * scaleX + rect.left;
+    const top = video.position.y * scaleY + rect.top;
+    const width = videoWidth * scaleX;
+    const height = videoHeight * scaleY;
+
+    return {
+      left,
+      top,
+      right: left + width,
+      bottom: top + height,
+    };
+  }
+
+  /**
+   * @summary Calcula las intersecciones de forma matemática sin leer el DOM repetidamente.
+   * @param {Object} principalRect Rectángulo del elemento que se mueve.
+   * @param {string} excludeId ID a excluir del cálculo.
+   * @returns {string[]} Lista de IDs de elementos que colisionan.
+   */
+  private colisionesMatematicas(principalRect: { left: number; top: number; right: number; bottom: number }, excludeId?: string): string[] {
+    const idsIntersecados: string[] = [];
+    if (!this.canvas) return idsIntersecados;
+
+    const canvasRect = this.canvas.getBoundingClientRect();
+
+    // Colisión con bordes del canvas
+    const tocaBorde = principalRect.left <= canvasRect.left || principalRect.right >= canvasRect.right || principalRect.top <= canvasRect.top || principalRect.bottom >= canvasRect.bottom;
+
+    if (tocaBorde) {
+      idsIntersecados.push('canvas-container');
+    }
+
+    // Colisión con otros elementos
+    for (const video of this.videosElements) {
+      if (!video.painted || video.id === excludeId) continue;
+
+      const rect2 = this._getElementScreenRect(video);
+      if (!rect2) continue;
+
+      const intersecta = principalRect.left < rect2.right && principalRect.right > rect2.left && principalRect.top < rect2.bottom && principalRect.bottom > rect2.top;
+
+      if (intersecta) {
+        idsIntersecados.push(`marco-${video.id}`);
+      }
+    }
+
+    return idsIntersecados;
+  }
+
+  /**
+   * @summary Actualiza los estilos del canvas y elementos en colisión durante el arrastre.
+   * @param {string[]} interseccionesIds Lista de IDs de elementos con los que colisiona.
+   * @param {HTMLElement} ghost Elemento ghost.
+   */
+  private updateCanvasAndCollisionStylesByIds(interseccionesIds: string[], ghost: HTMLElement) {
+    if (interseccionesIds.length > 0) {
+      ghost.style.border = '2px solid #b91c1c';
+    } else {
+      ghost.style.border = '2px solid #1d4ed8';
+    }
+
+    // Resetear bordes de todos los marcos visibles
+    const rendered = this.videosElements.filter((v) => v.painted);
+    for (const v of rendered) {
+      const marco = this.canvasContainer.nativeElement.querySelector(`#marco-${CSS.escape(v.id)}`) as HTMLElement;
+      if (marco) {
+        marco.style.border = '1px solid black';
+      }
+    }
+    if (this.canvas) this.canvas.style.border = '1px solid black';
+
+    for (const id of interseccionesIds) {
+      if (id === 'canvas-container') {
+        if (this.canvas) this.canvas.style.border = '2px solid #b91c1c';
+      } else {
+        const elemento = this.canvasContainer.nativeElement.querySelector(`#${CSS.escape(id)}`) as HTMLElement;
+        if (elemento) {
+          elemento.style.border = '2px solid #b91c1c';
+          elemento.style.visibility = 'visible';
+        }
+      }
+    }
+  }
+
+  /**
    * @summary Maneja el movimiento del elemento "ghost" durante el arrastre.
    * @param {MouseEvent} moveEvent Evento de movimiento del ratón.
    * @param {HTMLElement} ghost Elemento visual que representa el objeto arrastrado.
@@ -1395,28 +1566,35 @@ export class WebOBS implements OnInit, AfterViewInit, OnDestroy, OnChanges {
    * @param {HTMLElement} horizontal Línea guía horizontal.
    */
   private handleDragMove(moveEvent: MouseEvent, ghost: HTMLElement, vertical: HTMLElement, horizontal: HTMLElement) {
-    try {
-      if (!this.dragVideo || !this.canvas) return;
+    if (this.ticking) return;
+    this.ticking = true;
 
-      this.updateGhostPosition(moveEvent.clientX, moveEvent.clientY, ghost);
-      const rect = this.canvas.getBoundingClientRect();
-      const ghostRect = ghost.getBoundingClientRect();
-      const intersection = this.getIntersection(rect, ghostRect);
-      const isIntersecting = intersection.left < intersection.right && intersection.top < intersection.bottom;
+    requestAnimationFrame(() => {
+      try {
+        if (!this.dragVideo || !this.canvas) return;
 
-      this.updateGhostStyles(ghost, intersection, ghostRect, isIntersecting);
+        this.updateGhostPosition(moveEvent.clientX, moveEvent.clientY, ghost);
+        const rect = this.canvas.getBoundingClientRect();
+        const ghostRect = ghost.getBoundingClientRect();
+        const intersection = this.getIntersection(rect, ghostRect);
+        const isIntersecting = intersection.left < intersection.right && intersection.top < intersection.bottom;
 
-      if (isIntersecting) {
-        const intersecciones = this.colisiones(ghost);
-        this.moverCruzPosicionamiento(moveEvent.clientX, moveEvent.clientY, intersecciones);
-        this.updateCanvasAndCollisionStyles(intersecciones, ghost);
-      } else {
-        vertical.style.display = 'none';
-        horizontal.style.display = 'none';
+        this.updateGhostStyles(ghost, intersection, ghostRect, isIntersecting);
+
+        if (isIntersecting) {
+          const interseccionesIds = this.colisionesMatematicas(ghostRect, this.dragVideo.id);
+          this.moverCruzPosicionamiento(moveEvent.clientX, moveEvent.clientY, interseccionesIds);
+          this.updateCanvasAndCollisionStylesByIds(interseccionesIds, ghost);
+        } else {
+          vertical.style.display = 'none';
+          horizontal.style.display = 'none';
+        }
+      } catch (error) {
+        console.error('Error al mover el video: ', error);
+      } finally {
+        this.ticking = false;
       }
-    } catch (error) {
-      console.error('Error al mover el video: ', error);
-    }
+    });
   }
 
   /**
@@ -1455,27 +1633,6 @@ export class WebOBS implements OnInit, AfterViewInit, OnDestroy, OnChanges {
       ghost.style.clipPath = 'none';
       ghost.style.border = '1px solid black';
       this.canvas.style.border = '1px solid black';
-    }
-  }
-
-  /**
-   * @summary Actualiza los estilos del canvas y elementos en colisión durante el arrastre.
-   * @param {HTMLElement[]} intersecciones Lista de elementos con los que colisiona el ghost.
-   * @param {HTMLElement} ghost Elemento ghost.
-   */
-  private updateCanvasAndCollisionStyles(intersecciones: HTMLElement[], ghost: HTMLElement) {
-    if (intersecciones.length > 0) {
-      ghost.style.border = '2px solid #b91c1c';
-    } else {
-      ghost.style.border = '2px solid #1d4ed8';
-    }
-    for (const elemento of intersecciones) {
-      if (elemento.id === 'canvas-container') {
-        if (this.canvas) this.canvas.style.border = '2px solid #b91c1c';
-      } else {
-        elemento.style.border = '2px solid #b91c1c';
-        elemento.style.visibility = 'visible';
-      }
     }
   }
 
@@ -1737,8 +1894,10 @@ export class WebOBS implements OnInit, AfterViewInit, OnDestroy, OnChanges {
       ghostDiv.remove();
       const capaElement = this.elementosDiv.nativeElement.querySelector(`#capa-${CSS.escape(video.id)}`);
       if (capaElement) capaElement.remove();
-      const marcoElement = this.elementosDiv.nativeElement.querySelector(`#marco-${CSS.escape(video.id)}`) as HTMLElement;
+      const marcoElement = this.canvasContainer.nativeElement.querySelector(`#marco-${CSS.escape(video.id)}`) as HTMLElement;
       if (marcoElement) marcoElement.remove();
+      this._removePresetLayers();
+      this.updateWorkerLayers();
     };
     ghostDiv.addEventListener('pointermove', this.boundCanvasMouseMove);
   }
@@ -1767,9 +1926,10 @@ export class WebOBS implements OnInit, AfterViewInit, OnDestroy, OnChanges {
     const rendered = this.videosElements.filter((video) => video.painted);
     if (rendered.length > 0) {
       for (const video of rendered) {
-        const marco = this.elementosDiv.nativeElement.querySelector(`#marco-${CSS.escape(video.id)}`) as HTMLElement;
+        const marco = this.canvasContainer.nativeElement.querySelector(`#marco-${CSS.escape(video.id)}`) as HTMLElement;
         if (marco) {
           marco.style.visibility = 'hidden';
+          marco.removeEventListener('pointermove', this.boundCanvasMouseMove);
         }
       }
     }
@@ -1794,7 +1954,8 @@ export class WebOBS implements OnInit, AfterViewInit, OnDestroy, OnChanges {
     const ghostDiv = canvasContainer.querySelector(`#${CSS.escape(ghostId)}`) as HTMLElement;
     if (!ghostDiv) return;
 
-    this._startResizing(ghostDiv);
+    const deviceId = ghostId.substring(6);
+    this._startResizing(ghostDiv, deviceId);
 
     const mouseMove = ($event2: MouseEvent) => {
       const difX = $event2.clientX - posicionInicial.x;
@@ -1805,7 +1966,7 @@ export class WebOBS implements OnInit, AfterViewInit, OnDestroy, OnChanges {
       posicionInicial.x = $event2.clientX;
       posicionInicial.y = $event2.clientY;
 
-      this._updateResizingUI(ghostDiv);
+      this._updateResizingUI(ghostDiv, deviceId);
     };
 
     const mouseup = () => {
@@ -1819,13 +1980,14 @@ export class WebOBS implements OnInit, AfterViewInit, OnDestroy, OnChanges {
   /**
    * @summary Inicia el estado de redimensionamiento.
    * @param {HTMLElement} ghostDiv El marco que se va a redimensionar.
+   * @param {string} deviceId ID del dispositivo.
    */
-  private _startResizing(ghostDiv: HTMLElement) {
+  private _startResizing(ghostDiv: HTMLElement, deviceId: string) {
     this.editandoDimensiones = true;
     if (this.cross) {
       this.cross.nativeElement.style.display = 'block';
     }
-    this._updateResizingUI(ghostDiv);
+    this._updateResizingUI(ghostDiv, deviceId);
   }
 
   /**
@@ -1875,26 +2037,28 @@ export class WebOBS implements OnInit, AfterViewInit, OnDestroy, OnChanges {
   /**
    * @summary Actualiza la interfaz de usuario (colisiones, cruces) durante el redimensionamiento.
    * @param {HTMLElement} ghostDiv El marco.
+   * @param {string} deviceId ID del dispositivo.
    */
-  private _updateResizingUI(ghostDiv: HTMLElement) {
-    if (!this.canvas) return;
-    const intersecciones = this.colisiones(ghostDiv);
-    const rect = this.canvas.getBoundingClientRect();
-    const centroX = ghostDiv.offsetLeft + ghostDiv.offsetWidth / 2 + rect.x;
-    const centroY = ghostDiv.offsetTop + ghostDiv.offsetHeight / 2 + rect.y;
+  private _updateResizingUI(ghostDiv: HTMLElement, deviceId: string) {
+    if (this.ticking) return;
+    this.ticking = true;
 
-    this.moverCruzPosicionamiento(centroX, centroY, intersecciones);
+    requestAnimationFrame(() => {
+      try {
+        if (!this.canvas) return;
 
-    ghostDiv.style.border = intersecciones.length > 0 ? '2px solid #b91c1c' : '2px solid #1d4ed8';
+        const ghostRect = ghostDiv.getBoundingClientRect();
+        const interseccionesIds = this.colisionesMatematicas(ghostRect, deviceId);
+        const rect = this.canvas.getBoundingClientRect();
+        const centroX = ghostDiv.offsetLeft + ghostDiv.offsetWidth / 2 + rect.x;
+        const centroY = ghostDiv.offsetTop + ghostDiv.offsetHeight / 2 + rect.y;
 
-    for (const elemento of intersecciones) {
-      if (elemento.id === 'canvas-container') {
-        this.canvas.style.border = '2px solid #b91c1c';
-      } else {
-        elemento.style.border = '2px solid #b91c1c';
-        elemento.style.visibility = 'visible';
+        this.moverCruzPosicionamiento(centroX, centroY, interseccionesIds);
+        this.updateCanvasAndCollisionStylesByIds(interseccionesIds, ghostDiv);
+      } finally {
+        this.ticking = false;
       }
-    }
+    });
   }
 
   /**
@@ -1938,6 +2102,8 @@ export class WebOBS implements OnInit, AfterViewInit, OnDestroy, OnChanges {
     this.canvas.style.border = '1px solid black';
     ghostDiv.style.visibility = 'hidden';
     this.editandoDimensiones = false;
+    this._removePresetLayers();
+    this.updateWorkerLayers();
   }
 
   /**
@@ -1982,35 +2148,6 @@ export class WebOBS implements OnInit, AfterViewInit, OnDestroy, OnChanges {
         console.error('Tirador desconocido');
         break;
     }
-  }
-
-  /**
-   * @summary Calcula las intersecciones de un elemento con otros elementos en el canvas.
-   * @param {HTMLElement} principal El elemento principal que se está arrastrando o redimensionando.
-   * @returns {HTMLElement[]} Lista de elementos que colisionan con el elemento principal.
-   */
-  private colisiones(principal: HTMLElement): HTMLElement[] {
-    const rect = principal.getBoundingClientRect();
-    const elementosIntersecados: HTMLElement[] = [];
-    const canvasContainer = this.canvasContainer.nativeElement;
-    if (!canvasContainer || !this.canvas) return elementosIntersecados;
-    const elementos: NodeListOf<HTMLElement> = canvasContainer.querySelectorAll('[id^="marco"]');
-    for (const elemento of elementos) {
-      if (elemento.id != principal.id) {
-        const rect2 = elemento.getBoundingClientRect();
-        // Comprobamos si rect se intersecta con rect2
-        const intersecta = rect.left < rect2.right && rect.right > rect2.left && rect.top < rect2.bottom && rect.bottom > rect2.top;
-        if (intersecta) {
-          elementosIntersecados.push(elemento);
-        }
-      }
-    }
-    const canvasRect = this.canvas.getBoundingClientRect();
-    const tocaBorde = rect.left <= canvasRect.left || rect.right >= canvasRect.right || rect.top <= canvasRect.top || rect.bottom >= canvasRect.bottom;
-    if (tocaBorde) {
-      elementosIntersecados.push(canvasContainer);
-    }
-    return elementosIntersecados;
   }
 
   /**
@@ -2105,6 +2242,7 @@ export class WebOBS implements OnInit, AfterViewInit, OnDestroy, OnChanges {
       shortcut: 'ctrl+' + (this.presets.size + 1),
     });
     setTimeout(() => this.calculatePreset(), 100);
+    this.aplicaPreset(name);
   }
 
   /**
@@ -2134,6 +2272,8 @@ export class WebOBS implements OnInit, AfterViewInit, OnDestroy, OnChanges {
       painted: el.painted,
       scale: el.scale,
       position: el.position ? { ...el.position } : null,
+      width: el.element instanceof HTMLVideoElement ? (el.element as HTMLVideoElement).videoWidth : el.element instanceof HTMLImageElement ? (el.element as HTMLImageElement).naturalWidth : 0,
+      height: el.element instanceof HTMLVideoElement ? (el.element as HTMLVideoElement).videoHeight : el.element instanceof HTMLImageElement ? (el.element as HTMLImageElement).naturalHeight : 0,
       filters: el.filters ? { ...el.filters } : undefined,
       srcOrSrcObject,
     };
@@ -2220,6 +2360,7 @@ export class WebOBS implements OnInit, AfterViewInit, OnDestroy, OnChanges {
       elemento.scale = result.scale;
       elemento.painted = true;
       this.addCapa(elemento);
+      this._removePresetLayers();
     }
   }
 
@@ -2248,10 +2389,12 @@ export class WebOBS implements OnInit, AfterViewInit, OnDestroy, OnChanges {
         elemento.position = null;
         elemento.scale = 1;
         capa.remove();
-        const marco = this.elementosDiv.nativeElement.querySelector(`#marco-${CSS.escape(elemento.id)}`) as HTMLElement;
+        const marco = this.canvasContainer.nativeElement.querySelector(`#marco-${CSS.escape(elemento.id)}`) as HTMLElement;
         if (marco) {
           marco.remove();
         }
+        this._removePresetLayers();
+        this.updateWorkerLayers();
       };
 
       // Botón para cambiar de posición el elemento
@@ -2390,6 +2533,7 @@ export class WebOBS implements OnInit, AfterViewInit, OnDestroy, OnChanges {
       });
 
       div.appendChild(capa);
+      this.updateWorkerLayers();
     }
   }
 
@@ -2414,9 +2558,9 @@ export class WebOBS implements OnInit, AfterViewInit, OnDestroy, OnChanges {
    * @description Actualiza la posición visual de las líneas guía (cruz) durante el arrastre o redimensionamiento.
    * @param {number} eventX Posición horizontal del ratón.
    * @param {number} eventY Posición vertical del ratón.
-   * @param {HTMLElement[]} intersecciones Lista de elementos colisionados.
+   * @param {string[]} intersecciones Lista de IDs de elementos colisionados.
    */
-  moverCruzPosicionamiento(eventX: number, eventY: number, intersecciones: HTMLElement[]) {
+  moverCruzPosicionamiento(eventX: number, eventY: number, intersecciones: string[]) {
     if (!this.cross) {
       console.error('Missing cross');
       return;
@@ -2501,8 +2645,11 @@ export class WebOBS implements OnInit, AfterViewInit, OnDestroy, OnChanges {
     const divRect = presetDiv.getBoundingClientRect();
     if (!this.canvas) return;
 
-    const scaleX = (this.canvas.width || 1920) / (divRect.width || 100);
-    const scaleY = (this.canvas.height || 1080) / (divRect.height || 100);
+    const canvasWidth = this.canvas.width || 1920;
+    const canvasHeight = this.canvas.height || 1080;
+
+    const scaleX = canvasWidth / (divRect.width || 1);
+    const scaleY = canvasHeight / (divRect.height || 1);
 
     for (const element of elements) {
       const ele = this.createPresetElement(element);
@@ -2516,7 +2663,7 @@ export class WebOBS implements OnInit, AfterViewInit, OnDestroy, OnChanges {
         top: `${element.position.y / scaleY}px`,
         width: `${(width * element.scale) / scaleX}px`,
         height: `${(height * element.scale) / scaleY}px`,
-        objectFit: 'cover',
+        objectFit: 'contain',
       });
 
       presetDiv.appendChild(ele);
@@ -2529,6 +2676,10 @@ export class WebOBS implements OnInit, AfterViewInit, OnDestroy, OnChanges {
    * @returns {{width: number, height: number}} Dimensiones calculadas.
    */
   private _getPresetElementDimensions(element: VideoElement): { width: number; height: number } {
+    if (element.width && element.height) {
+      return { width: element.width, height: element.height };
+    }
+
     let width = 1280;
     let height = 720;
 
@@ -2580,6 +2731,8 @@ export class WebOBS implements OnInit, AfterViewInit, OnDestroy, OnChanges {
     const index = this.videosElements.findIndex((el) => el.id === elemento.id);
     if (index > 0) {
       [this.videosElements[index - 1], this.videosElements[index]] = [this.videosElements[index], this.videosElements[index - 1]];
+      this._removePresetLayers();
+      this.updateWorkerLayers();
     }
   }
 
@@ -2591,6 +2744,8 @@ export class WebOBS implements OnInit, AfterViewInit, OnDestroy, OnChanges {
     const index = this.videosElements.findIndex((el) => el.id === elemento.id);
     if (index < this.videosElements.length - 1) {
       [this.videosElements[index], this.videosElements[index + 1]] = [this.videosElements[index + 1], this.videosElements[index]];
+      this._removePresetLayers();
+      this.updateWorkerLayers();
     }
   }
 
@@ -2956,54 +3111,140 @@ export class WebOBS implements OnInit, AfterViewInit, OnDestroy, OnChanges {
     } else {
       videoElement.style.filter = '';
     }
+    this.updateWorkerLayers();
   }
 
   /**
    * @summary Dibuja un fotograma en el canvas.
-   * @description Limpia el canvas y dibuja todos los elementos de video e imagen activos con sus filtros aplicados.
+   * @description Envía los elementos de video e imagen al worker para ser renderizados en el OffscreenCanvas.
    */
-  drawFrame = () => {
-    // 1️⃣ Cacheamos contexto y canvas para evitar lookups repetidos
-    const ctx = this.context;
-    const canvas = this.canvas;
-    if (!ctx) {
-      console.error('Contexto no encontrado');
-      return;
-    }
-    if (!canvas) {
-      console.error('Canvas no encontrado');
-      return;
-    }
+  private updateWorkerLayers() {
+    if (!this.canvasWorker) return;
 
-    // 2️⃣ Limpiamos el canvas antes de dibujar
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-    // 3️⃣ Iteramos todos los elementos (videos e imágenes) en un solo loop
-    for (const elemento of this.videosElements) {
-      const { element, position, painted, scale, filters } = elemento;
-
-      // 4️⃣ Saltamos elementos que no deben dibujarse
-      if (!painted || !element || !position) continue;
-
-      // 5️⃣ Calculamos dimensiones escaladas solo una vez
+    const layers = this.videosElements.map((el) => {
+      const element = el.element;
       let width = 0,
         height = 0;
       if (element instanceof HTMLVideoElement) {
-        width = element.videoWidth * scale;
-        height = element.videoHeight * scale;
+        width = (element.videoWidth || 1280) * el.scale;
+        height = (element.videoHeight || 720) * el.scale;
       } else if (element instanceof HTMLImageElement) {
-        width = element.naturalWidth * scale;
-        height = element.naturalHeight * scale;
-      } else {
-        continue; // No es video ni imagen
+        width = (element.naturalWidth || element.width || 100) * el.scale;
+        height = (element.naturalHeight || element.height || 100) * el.scale;
       }
 
-      // 6️⃣ Actualizamos filtros solo si cambian (reduce coste GPU)
-      const newFilter = filters ? `brightness(${filters.brightness}%) contrast(${filters.contrast}%) saturate(${filters.saturation}%)` : '';
-      if (ctx.filter !== newFilter) ctx.filter = newFilter;
+      const filter = el.filters ? `brightness(${el.filters.brightness}%) contrast(${el.filters.contrast}%) saturate(${el.filters.saturation}%)` : 'none';
 
-      // 7️⃣ Dibujamos el elemento en la posición indicada
-      ctx.drawImage(element, position.x, position.y, width, height);
+      return {
+        id: el.id,
+        x: el.position?.x || 0,
+        y: el.position?.y || 0,
+        width,
+        height,
+        filter,
+        visible: el.painted,
+      };
+    });
+
+    this.canvasWorker.postMessage({ type: 'updateLayers', payload: { layers } });
+  }
+
+  private async sendImageToWorker(el: VideoElement) {
+    if (!this.canvasWorker || !(el.element instanceof HTMLImageElement)) return;
+    try {
+      const bitmap = await createImageBitmap(el.element);
+      this.canvasWorker.postMessage({ type: 'addBitmap', payload: { id: el.id, bitmap } }, [bitmap]);
+      this.updateWorkerLayers();
+    } catch (e) {
+      console.error('Error sending image to worker:', e);
+    }
+  }
+
+  private sendVideoTrackToWorker(id: string, track: MediaStreamTrack) {
+    if (!this.canvasWorker) return;
+    try {
+      // @ts-ignore
+      const processor = new MediaStreamTrackProcessor({ track });
+      const readable = processor.readable;
+      this.canvasWorker.postMessage({ type: 'addTrack', payload: { id, readable } }, [readable]);
+    } catch (e) {
+      console.error('Error al enviar stream al worker:', e);
+    }
+  }
+
+  drawFrame = async () => {
+    if (!this.canvasWorker || this.isDrawing) return;
+    this.isDrawing = true;
+
+    const layers = [];
+    const transferables: (ImageBitmap | VideoFrame)[] = [];
+
+    try {
+      // Iteramos todos los elementos (videos e imágenes)
+      for (const elemento of this.videosElements) {
+        const { element, position, painted, scale, filters } = elemento;
+
+        // Saltamos elementos que no deben dibujarse
+        if (!painted || !element || !position) continue;
+
+        // Calculamos dimensiones escaladas
+        let width = 0,
+          height = 0;
+        let isVideo = false;
+        if (element instanceof HTMLVideoElement) {
+          width = element.videoWidth * scale;
+          height = element.videoHeight * scale;
+          isVideo = true;
+        } else if (element instanceof HTMLImageElement) {
+          width = element.naturalWidth * scale;
+          height = element.naturalHeight * scale;
+        } else {
+          continue; // No es video ni imagen
+        }
+
+        const filter = filters ? `brightness(${filters.brightness}%) contrast(${filters.contrast}%) saturate(${filters.saturation}%)` : 'none';
+
+        try {
+          let source: ImageBitmap | VideoFrame;
+
+          if (isVideo) {
+            // VideoFrame es mucho más ligero para videos (WebCodecs API)
+            source = new VideoFrame(element as HTMLVideoElement);
+          } else {
+            // Optimización: Caché para imágenes estáticas
+            const cached = this.imageBitmapCache.get(elemento.id);
+            if (cached?.filter === filter && cached.width === width && cached.height === height) {
+              // Clonamos el bitmap de la caché para poder transferirlo sin invalidar la caché
+              source = await createImageBitmap(cached.bitmap);
+            } else {
+              const bitmap = await createImageBitmap(element as HTMLImageElement);
+              // Actualizar caché
+              if (cached) cached.bitmap.close();
+              this.imageBitmapCache.set(elemento.id, { bitmap, filter, width, height });
+              source = await createImageBitmap(bitmap);
+            }
+          }
+
+          layers.push({
+            id: elemento.id,
+            bitmap: source,
+            x: position.x,
+            y: position.y,
+            width,
+            height,
+            filter,
+          });
+          transferables.push(source);
+        } catch (e) {
+          console.error('Error creando source para el elemento:', elemento.id, e);
+        }
+      }
+
+      // Enviamos todas las capas al worker en un solo mensaje
+      // Siempre enviamos el mensaje para que el worker pueda limpiar el canvas si no hay capas
+      this.canvasWorker.postMessage({ type: 'render', payload: { layers } }, transferables);
+    } finally {
+      this.isDrawing = false;
     }
   };
 

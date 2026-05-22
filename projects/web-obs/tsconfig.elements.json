@@ -8,7 +8,6 @@
   },
   "files": ["src/lib/elements.ts"],
   "angularCompilerOptions": {
-    "enableIvy": true,
     "compilationMode": "full"
   }
 }

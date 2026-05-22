@@ -5,6 +5,8 @@ export interface VideoElement {
   painted: boolean;
   scale: number;
   position: { x: number; y: number } | null;
+  width?: number;
+  height?: number;
   filters?: {
     brightness: number;
     contrast: number;

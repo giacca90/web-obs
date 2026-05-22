@@ -1,14 +1,14 @@
-<div class="relative m-2 flex h-screen flex-col rounded-lg border border-black p-2 pb-4 dark:border-gray-400">
+<div part="container" class="relative m-2 flex h-screen flex-col rounded-lg border border-black p-2 pb-4 dark:border-gray-400">
   <!-- Canvas con cruz -->
   <div class="relative flex h-3/4 pr-4">
-    <div #canvasContainer id="canvas-container" (pointerleave)="canvasMouseLeave()" class="relative aspect-video h-full">
-      <canvas #salida (pointermove)="canvasMouseMove($event)" tabindex="0" id="salida" [width]="canvasWidth" [height]="canvasHeight" autoplay playsinline class="h-full w-full border border-black bg-white dark:border-gray-400"></canvas>
+    <div #canvasContainer part="canvas-container" id="canvas-container" (pointerleave)="canvasMouseLeave()" class="relative aspect-video h-full">
+      <canvas #salida part="canvas" (pointermove)="canvasMouseMove($event)" tabindex="0" id="salida" [width]="canvasWidth" [height]="canvasHeight" autoplay playsinline class="h-full w-full border border-black bg-white dark:border-gray-400"></canvas>
       <!-- Cruz del arrastre -->
       <div #cross id="cross" class="cross-container">
         <!-- Línea vertical -->
-        <div id="vertical" class="cross-vertical" style="display: none; background-color: #b91c1c"></div>
+        <div id="vertical" class="cross-vertical" style="display: none"></div>
         <!-- Línea horizontal -->
-        <div id="orizontal" class="cross-horizontal" style="display: none; background-color: #b91c1c"></div>
+        <div id="orizontal" class="cross-horizontal" style="display: none"></div>
       </div>
     </div>
     <div class="relative ml-4 flex w-full h-full flex-col bg-transparent overflow-hidden">
@@ -72,13 +72,13 @@
       <div class="flex items-center">
         <p class="mt-2 mb-2">Presets:</p>
         @if (this.savedPresets !== undefined) {
-          <button (click)="this.savePresetsFunction()" class="m-2 rounded-lg border border-black bg-gray-400 p-2 text-black hover:border-2">Guardar presets</button>
+          <button (click)="this.savePresetsFunction()" part="action-button" class="m-2 rounded-lg border border-black bg-gray-400 p-2 text-black hover:border-2">Guardar presets</button>
         }
       </div>
-      <div #presetsDiv id="presets" class="mi-grid h-full max-w-full max-h-full scrollbar-thin scrollbar-thumb-gray-400 scrollbar-thumb-rounded overflow-auto">
+      <div #presetsDiv part="presets-container" id="presets" class="mi-grid h-full max-w-full max-h-full scrollbar-thin scrollbar-thumb-gray-400 scrollbar-thumb-rounded overflow-auto">
         <!-- Preset Items -->
         @for (presetName of this.presets.keys(); track presetName) {
-          <div class="mi-group">
+          <div part="preset-item" class="mi-group">
             <div id="preset-{{ presetName }}" (click)="this.aplicaPreset(presetName)" (keydown.enter)="this.aplicaPreset(presetName)" class="relative h-full w-full justify-center group-hover:border-black dark:border-gray-400"></div>
             <p (click)="this.aplicaPreset(presetName)" (keydown.enter)="this.aplicaPreset(presetName)" class="absolute top-2 w-full text-center text-sm text-white">
               {{ presetName }}
@@ -89,7 +89,7 @@
           </div>
         }
         <!-- Save Preset Button -->
-        <div (click)="guardaPreset()" (keydown.enter)="guardaPreset()" class="group cursor-pointer relative flex aspect-video! max-h-[33vh] h-auto items-center justify-between overflow-hidden rounded-lg border border-black bg-gray-400 px-2 text-black hover:border-2">
+        <div part="save-preset-button" (click)="guardaPreset()" (keydown.enter)="guardaPreset()" class="group cursor-pointer relative flex aspect-video! max-h-[33vh] h-auto items-center justify-between overflow-hidden rounded-lg border border-black bg-gray-400 px-2 text-black hover:border-2">
           <p class="truncate">Guardar preset actual</p>
           <svg class="h-8 w-8 shrink-0 text-gray-700 group-hover:text-black" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
             <path d="M6 12H18M12 6V18" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
@@ -100,20 +100,20 @@
   </div>
   <div class="flex items-center">
     @if (this.estadoEmision) {
-      <button (click)="this.detenerEmision()" class="w-fix m-2 h-6 cursor-pointer rounded-lg border border-black bg-gray-400 px-2 text-center text-black hover:border-2">Detener emisión</button>
+      <button (click)="this.detenerEmision()" part="action-button" class="w-fix m-2 h-6 cursor-pointer rounded-lg border border-black bg-gray-400 px-2 text-center text-black hover:border-2">Detener emisión</button>
       <p class="ml-4">Tiempo de grabación: {{ tiempoGrabacion }}</p>
     } @else {
-      <button (click)="this.emitir()" class="w-fix m-2 h-6 cursor-pointer rounded-lg border border-black bg-gray-400 px-2 text-center text-black hover:border-2">Empezar a emitir</button>
+      <button (click)="this.emitir()" part="action-button" class="w-fix m-2 h-6 cursor-pointer rounded-lg border border-black bg-gray-400 px-2 text-center text-black hover:border-2">Empezar a emitir</button>
     }
     <p id="statusMessage" class="ml-4" [innerHTML]="statusMessage || status"></p>
   </div>
-  <div #elementosDiv id="elementosDiv" class="relative flex h-1/4 pb-4">
-    <div #audios id="audios" class="scrollbar-thin scrollbar-thumb-gray-400 scrollbar-thumb-rounded flex w-1/5 overflow-x-hidden overflow-y-auto">
+  <div #elementosDiv id="elementosDiv" part="bottom-panel" class="relative flex h-1/4 pb-4">
+    <div #audios id="audios" part="audio-mixer" class="scrollbar-thin scrollbar-thumb-gray-400 scrollbar-thumb-rounded flex w-1/5 overflow-x-hidden overflow-y-auto">
       <div #conexionesIzquierda id="conexiones-izquierda" class="relative"></div>
       <!-- Lista de entradas de audio de archivos -->
       <div #audiosList id="audios-list" class="flex flex-col text-black">
         @for (fileName of this.audiosArchivos; track fileName) {
-          <div [id]="'audio-' + fileName" (pointerdown)="audioDown($event)" class="audio-bar group m-2 flex h-10 min-h-6 items-center justify-center rounded-lg border border-black bg-transparent text-center hover:border-2 active:cursor-grabbing dark:border-gray-400">
+          <div [id]="'audio-' + fileName" part="audio-item" (pointerdown)="audioDown($event)" class="audio-bar group m-2 flex h-10 min-h-6 items-center justify-center rounded-lg border border-black bg-transparent text-center hover:border-2 active:cursor-grabbing dark:border-gray-400">
             <p class="m-2 w-full truncate overflow-hidden text-ellipsis whitespace-nowrap">
               {{ fileName }}
             </p>
@@ -191,7 +191,7 @@
     </div>
 
     @for (device of this.videoDevices; track device.deviceId) {
-      <div #deviceDiv [id]="'div-' + device.deviceId" class="group relative m-2 flex max-w-[16.6667%] justify-center bg-transparent object-contain text-center">
+      <div #deviceDiv [id]="'div-' + device.deviceId" part="video-device" class="group relative m-2 flex max-w-[16.6667%] justify-center bg-transparent object-contain text-center">
         <video #videoElement disablePictureInPicture (pointerdown)="mousedown($event, device.deviceId)" (contextmenu)="onContextMenu($event, device.deviceId)" [id]="device.deviceId" autoplay playsinline class="cursor-grab rounded-lg border border-black object-contain hover:border-2 active:cursor-grabbing dark:border-gray-400"></video>
         <!-- Botón full-screan -->
         <svg (click)="fullscreen(device)" (keydown.enter)="fullscreen(device)" class="absolute top-2 left-2 z-10 hidden h-4 w-4 cursor-pointer text-black group-hover:block" width="800px" height="800px" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -209,7 +209,7 @@
       </div>
     }
     @for (captura of this.capturas; track captura.id) {
-      <div #captureDiv [id]="'div-' + captura.id" class="group relative m-2 flex max-w-[16.6667%] justify-center bg-transparent object-contain text-center">
+      <div #captureDiv [id]="'div-' + captura.id" part="screen-capture" class="group relative m-2 flex max-w-[16.6667%] justify-center bg-transparent object-contain text-center">
         <video #videoElement disablePictureInPicture (pointerdown)="mousedown($event, captura.id)" (contextmenu)="onContextMenu($event, captura.id)" [id]="captura.id" autoplay playsinline muted class="cursor-grab rounded-lg border border-black object-contain hover-2 active:cursor-grabbing dark:border-gray-400" [srcObject]="captura"></video>
         <!-- Botón full-screan -->
         <svg (click)="fullscreen(captura)" (keydown.enter)="fullscreen(captura)" class="absolute top-2 left-2 z-10 hidden h-4 w-4 cursor-pointer text-black group-hover:block" width="800px" height="800px" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -227,7 +227,7 @@
       </div>
     }
     @for (estatico of this.staticContent; track estatico.name) {
-      <div #staticDiv [id]="'div-' + estatico.name" class="group relative m-2 flex max-w-[16.6667%] rounded-lg border border-black bg-transparent hover:border-2 dark:border-gray-400">
+      <div #staticDiv [id]="'div-' + estatico.name" part="static-file" class="group relative m-2 flex max-w-[16.6667%] rounded-lg border border-black bg-transparent hover:border-2 dark:border-gray-400">
         @if (estatico.type.startsWith("image/")) {
           <!-- Renderiza una imagen -->
           <img [id]="estatico.name" (pointerdown)="mousedown($event, estatico.name)" (contextmenu)="onContextMenu($event, estatico.name)" [src]="getFileUrl(estatico)" [alt]="estatico.name" class="h-full w-full cursor-grab rounded-lg object-contain active:cursor-grabbing" />
@@ -298,7 +298,7 @@
       </div>
     }
 
-    <div class="relative flex w-1/6 flex-col justify-between">
+    <div class="relative flex w-1/6 flex-col justify-between" part="side-controls">
       <div class="group relative m-2 flex h-10 cursor-pointer items-center justify-center overflow-hidden rounded-lg border border-black bg-gray-400 text-center text-black hover:border-2" (click)="addScrean()" (keydown.enter)="addScrean()">
         <p class="p-2 text-center">Añadir pantalla</p>
         <svg class="h-10 w-10 text-gray-700 group-hover:text-black" width="800px" height="800px" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -406,7 +406,7 @@
 </div>
 
 <!-- Menú de filtros -->
-<div id="filterMenu" class="fixed top-1 left-1 z-50 hidden h-fit w-1/5 flex-col rounded-lg bg-white p-4 text-black shadow-lg dark:bg-gray-900 dark:text-white">
+<div id="filterMenu" part="filter-menu" class="fixed top-1 left-1 z-50 hidden h-fit w-1/5 flex-col rounded-lg bg-white p-4 text-black shadow-lg dark:bg-gray-900 dark:text-white">
   <span>Filtros:</span>
   @if (this.selectedVideoForFilter && this.selectedVideoForFilter.filters) {
     <span>Brillo:</span>

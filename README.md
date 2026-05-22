@@ -93,6 +93,47 @@ Ejemplo completo:
 
 ```
 
+````
+
+### Personalización de Estilos
+
+Web-OBS permite personalizar su apariencia utilizando **Variables CSS** y **Shadow Parts**, lo que facilita su integración con el diseño de tu aplicación.
+
+#### Variables CSS (Custom Properties)
+
+Puedes sobrescribir los siguientes valores en el contenedor de `web-obs`:
+
+```css
+web-obs {
+  --web-obs-bg-color: #1a1a1a;       /* Fondo principal */
+  --web-obs-text-color: #ffffff;     /* Color de texto */
+  --web-obs-border-color: #333333;   /* Color de bordes */
+  --web-obs-accent-color: #ff4444;   /* Color de guías y énfasis */
+  --web-obs-canvas-bg: #000000;      /* Fondo del área de dibujo */
+  --web-obs-control-bg: #2d2d2d;     /* Fondo de botones y controles */
+}
+````
+
+#### Shadow Parts
+
+Para un control más preciso, puedes utilizar el selector `::part()` para estilizar elementos específicos desde tu CSS global:
+
+```css
+/* Estilizar el canvas directamente */
+web-obs::part(canvas) {
+  border-radius: 8px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+}
+
+/* Personalizar los botones de acción */
+web-obs::part(action-button) {
+  text-transform: uppercase;
+  font-weight: bold;
+}
+```
+
+Partes disponibles: `container`, `canvas`, `canvas-container`, `audio-mixer`, `audio-item`, `video-device`, `screen-capture`, `static-file`, `presets-container`, `action-button`.
+
 ### Notas adicionales
 
 - Las funciones avanzadas de audio necesitan una conexion segura (HTTPS) para funcionar.

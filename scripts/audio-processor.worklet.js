@@ -3,6 +3,7 @@ class AudioProcessor extends AudioWorkletProcessor {
     constructor() {
         super(...arguments);
         this.initialized = false;
+        this.lastUpdate = 0;
     }
     // parámetros accesibles desde el main thread (opcional)
     static get parameterDescriptors() {
@@ -25,8 +26,12 @@ class AudioProcessor extends AudioWorkletProcessor {
             sum += sample ** 2;
         }
         const rms = Math.sqrt(sum / channelData.length);
-        // enviar RMS al hilo principal
-        this.port.postMessage({ rms });
+        const now = Date.now();
+        if (now - this.lastUpdate > 30) {
+            // Solo 30 veces por segundo
+            this.port.postMessage({ rms });
+            this.lastUpdate = now;
+        }
         // seguimos procesando mientras haya datos
         return channelData.length > 0;
     }
