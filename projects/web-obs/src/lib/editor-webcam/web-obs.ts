@@ -2796,7 +2796,7 @@ export class WebOBS implements OnInit, AfterViewInit, OnDestroy, OnChanges {
       return;
     }
     const rect = this.canvas.getBoundingClientRect();
-    const orizontal = this.cross.nativeElement.querySelector('#vertical') as HTMLDivElement;
+    const orizontal = this.cross.nativeElement.querySelector('#orizontal') as HTMLDivElement;
     if (!orizontal) {
       console.error('Missing orizontal');
       return;
