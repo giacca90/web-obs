@@ -217,7 +217,7 @@ export class WebOBS implements OnInit, AfterViewInit, OnDestroy, OnChanges {
     this.canvasWorker = new Worker(blobUrl);
 
     const offscreen = this.canvas.transferControlToOffscreen();
-    this.canvasWorker.postMessage({ type: 'init', payload: { canvas: offscreen } }, [offscreen]);
+    this.canvasWorker.postMessage({ type: 'init', payload: { canvas: offscreen, fps: this.canvasFPS } }, [offscreen]);
 
     // Refresca el canvas a la tasa de fotogramas requerida
     // this.drawInterval = setInterval(this.drawFrame, 1000 / this.canvasFPS);
@@ -1435,7 +1435,6 @@ export class WebOBS implements OnInit, AfterViewInit, OnDestroy, OnChanges {
     if (this.drawInterval) {
       clearInterval(this.drawInterval);
     }
-    // this.drawInterval = setInterval(this.drawFrame, 1000 / this.canvasFPS);
   }
 
   /**
@@ -1741,73 +1740,6 @@ export class WebOBS implements OnInit, AfterViewInit, OnDestroy, OnChanges {
       ghost.style.border = '1px solid black';
       this.canvas.style.border = '1px solid black';
     }
-  }
-
-  /**
-   * @summary Inicia el proceso de arrastre de un elemento de video.
-   * @description Crea un elemento "fantasma" que sigue al ratón y gestiona la interacción con el canvas.
-   * @param {MouseEvent} event El evento de ratón que inició el arrastre.
-   * @param {VideoElement} video El elemento de video que se está arrastrando.
-   */
-  private iniciarArrastre(event: MouseEvent, video: VideoElement) {
-    if (!this.canvas) return;
-
-    this.dragVideo = video;
-    const videoRect = (video.element as HTMLElement).getBoundingClientRect();
-
-    const ghost = document.createElement('div');
-    ghost.id = 'video-ghost';
-    ghost.style.position = 'fixed';
-    ghost.style.width = `${videoRect.width}px`;
-    ghost.style.height = `${videoRect.height}px`;
-    ghost.style.top = `${event.clientY - videoRect.height / 2}px`;
-    ghost.style.left = `${event.clientX - videoRect.width / 2}px`;
-    ghost.style.zIndex = '1000';
-    ghost.style.pointerEvents = 'none';
-    ghost.style.border = '1px solid black';
-    ghost.style.boxSizing = 'border-box';
-    ghost.style.overflow = 'hidden';
-    ghost.style.backgroundColor = 'rgba(0,0,0,0.5)';
-    const src = video.element instanceof HTMLImageElement ? video.element.src : (video.element as HTMLVideoElement).currentSrc;
-    ghost.innerHTML = `<img src="${src}" style="width: 100%; height: 100%; object-fit: cover; opacity: 0.7;">`;
-    document.body.appendChild(ghost);
-
-    this.canvas.style.border = '1px solid black';
-    document.body.classList.add('cursor-grabbing');
-
-    if (this.cross) {
-      this.cross.nativeElement.style.display = 'block';
-      const vertical = this.cross.nativeElement.querySelector('#vertical') as HTMLDivElement;
-      const horizontal = this.cross.nativeElement.querySelector('#orizontal') as HTMLDivElement;
-      if (vertical) vertical.style.display = 'none';
-      if (horizontal) horizontal.style.display = 'none';
-    }
-
-    const wheel = (wheelEvent: WheelEvent) => {
-      if (!this.dragVideo) {
-        console.error('No hay video arrastrando');
-        return;
-      }
-      const scaleFactor = wheelEvent.deltaY > 0 ? 0.9 : 1.1;
-      this.dragVideo.scale *= scaleFactor;
-      ghost.style.width = `${videoRect.width * this.dragVideo.scale}px`;
-      ghost.style.height = `${videoRect.height * this.dragVideo.scale}px`;
-      ghost.style.top = `${event.clientY - (videoRect.height * this.dragVideo.scale) / 2}px`;
-      ghost.style.left = `${event.clientX - (videoRect.width * this.dragVideo.scale) / 2}px`;
-    };
-    document.addEventListener('wheel', wheel);
-
-    const mousemove = (moveEvent: MouseEvent) => {
-      const vertical = this.cross?.nativeElement.querySelector('#vertical') as HTMLDivElement;
-      const horizontal = this.cross?.nativeElement.querySelector('#orizontal') as HTMLDivElement;
-      this.handleDragMove(moveEvent, ghost, vertical, horizontal);
-    };
-    document.addEventListener('pointermove', mousemove);
-
-    const mouseup = (upEvent: MouseEvent) => {
-      this._handleDragEnd(upEvent, ghost, mousemove, mouseup, wheel);
-    };
-    document.addEventListener('pointerup', mouseup);
   }
 
   /**
@@ -3488,10 +3420,10 @@ export class WebOBS implements OnInit, AfterViewInit, OnDestroy, OnChanges {
 
   snapToMiddle(event: Event) {
     const input = event.target as HTMLInputElement;
-    const min = parseFloat(input.min);
-    const max = parseFloat(input.max);
+    const min = Number.parseFloat(input.min);
+    const max = Number.parseFloat(input.max);
     const middle = min + (max - min) / 2;
-    const val = parseFloat(input.value);
+    const val = Number.parseFloat(input.value);
 
     // Si está cerca del 50%, aplicar "snap"
     if (Math.abs(val - middle) < (max - min) * 0.05) {
@@ -3595,7 +3527,7 @@ export class WebOBS implements OnInit, AfterViewInit, OnDestroy, OnChanges {
 
           if (isVideo) {
             // VideoFrame es mucho más ligero para videos (WebCodecs API)
-            source = new VideoFrame(element as HTMLVideoElement);
+            source = new VideoFrame(element);
           } else {
             // Optimización: Caché para imágenes estáticas
             const cached = this.imageBitmapCache.get(elemento.id);
@@ -3603,7 +3535,7 @@ export class WebOBS implements OnInit, AfterViewInit, OnDestroy, OnChanges {
               // Clonamos el bitmap de la caché para poder transferirlo sin invalidar la caché
               source = await createImageBitmap(cached.bitmap);
             } else {
-              const bitmap = await createImageBitmap(element as HTMLImageElement);
+              const bitmap = await createImageBitmap(element);
               // Actualizar caché
               if (cached) cached.bitmap.close();
               this.imageBitmapCache.set(elemento.id, { bitmap, filter, width, height });

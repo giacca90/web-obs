@@ -5,6 +5,7 @@ const sources = new Map();
 let layersOrder = [];
 let layersMetadata = new Map();
 let isLooping = false;
+let targetFPS = 30;
 function renderLoop() {
     if (!ctx || !canvas) {
         isLooping = false;
@@ -35,7 +36,9 @@ function renderLoop() {
             ctx.drawImage(frame, meta.x, meta.y, meta.width, meta.height);
         }
     }
-    requestAnimationFrame(renderLoop);
+    setTimeout(() => {
+        requestAnimationFrame(renderLoop);
+    }, 1000 / targetFPS);
 }
 async function processStream(id, readable) {
     try {
@@ -67,6 +70,8 @@ globalThis.self.onmessage = (event) => {
     switch (type) {
         case 'init':
             canvas = payload.canvas;
+            if (payload.fps)
+                targetFPS = payload.fps;
             ctx = canvas.getContext('2d', { alpha: false, desynchronized: true });
             if (!isLooping) {
                 isLooping = true;
