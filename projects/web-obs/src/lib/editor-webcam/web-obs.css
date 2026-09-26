@@ -7,6 +7,7 @@
   --web-obs-canvas-bg: white;
   --web-obs-control-bg: #9ca3af;
   --web-obs-shadow-color: rgba(0, 0, 0, 0.1);
+  --web-obs-clock-color: green;
 }
 
 [part="container"] {
@@ -168,4 +169,8 @@ items-center justify-between overflow-hidden rounded-lg border border-black bg-g
   transform: none; /* igual que arriba */
   background-color: white;
   border: none; /* equivale a style="border: null" */
+}
+
+.clock {
+  color: var(--web-obs-clock-color);
 }

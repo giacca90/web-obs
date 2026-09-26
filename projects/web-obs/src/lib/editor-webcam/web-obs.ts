@@ -145,7 +145,10 @@ export class WebOBS implements OnInit, AfterViewInit, OnDestroy, OnChanges {
    */
   ngOnChanges(changes: SimpleChanges) {
     if (changes['isInLive'] && this.isInLive !== undefined) {
+      this.cdr.detectChanges();
       if (this.isInLive) {
+        console.log('inLive');
+        this.cdr.detectChanges();
         this.calculaTiempoGrabacion();
       }
     }
@@ -3406,8 +3409,11 @@ export class WebOBS implements OnInit, AfterViewInit, OnDestroy, OnChanges {
     this.emision.emit(new MediaStream([videoStream, audioStream]));
 
     if (this.isInLive === undefined) {
+      console.log('Local');
       this.emitiendo = true;
       this.calculaTiempoGrabacion();
+    } else {
+      console.log('Heredado');
     }
   }
 
@@ -3435,6 +3441,7 @@ export class WebOBS implements OnInit, AfterViewInit, OnDestroy, OnChanges {
       if (this.estadoEmision) {
         tiempo += 1;
         this.tiempoGrabacion = this.formatTime(tiempo);
+        this.cdr.detectChanges();
         setTimeout(updateTimer, 1000);
       }
     };
