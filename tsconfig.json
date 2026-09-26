@@ -13,11 +13,10 @@
     "experimentalDecorators": true,
     "importHelpers": true,
     "target": "ES2022",
-    "module": "preserve",
+    "module": "esnext",
+    "moduleResolution": "bundler",
     "paths": {
-      "web-obs": [
-        "./dist/web-obs"
-      ]
+      "web-obs": ["./dist/web-obs"]
     }
   },
   "angularCompilerOptions": {

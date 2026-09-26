@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { AfterViewInit, ChangeDetectorRef, Component, ElementRef, EventEmitter, HostListener, Input, OnChanges, OnDestroy, OnInit, Output, QueryList, SimpleChanges, ViewChild, ViewChildren, ViewEncapsulation } from '@angular/core';
+import { AfterViewInit, ChangeDetectorRef, Component, ElementRef, EventEmitter, HostListener, Input, OnChanges, OnDestroy, OnInit, Output, QueryList, SimpleChanges, ViewChild, ViewChildren, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { AUDIO_PROCESSOR } from './audio-processor';
 import { CANVAS_RENDERER } from './canvas-renderer';
@@ -14,7 +14,6 @@ import { VideoElement } from './types/video-element.interface';
   imports: [FormsModule, CommonModule],
   templateUrl: './web-obs.html',
   styleUrls: ['./web-obs.css', './assets/tailwind.generated.css'],
-  encapsulation: ViewEncapsulation.ShadowDom, // Mejorar aislamiento
 })
 export class WebOBS implements OnInit, AfterViewInit, OnDestroy, OnChanges {
   canvasWidth = 1280; // Resolución por defecto de la emisión
@@ -57,10 +56,9 @@ export class WebOBS implements OnInit, AfterViewInit, OnDestroy, OnChanges {
   private readonly imageBitmapCache = new Map<string, { bitmap: ImageBitmap; filter: string; width: number; height: number }>();
   private ticking = false;
 
-  constructor(
-    private readonly cdr: ChangeDetectorRef,
-    private readonly el: ElementRef,
-  ) {}
+  private readonly cdr = inject(ChangeDetectorRef);
+
+  constructor() {}
 
   // para múltiples streams
   private readonly mediaElementSources = new Map<HTMLMediaElement, MediaElementAudioSourceNode>();
@@ -181,7 +179,6 @@ export class WebOBS implements OnInit, AfterViewInit, OnDestroy, OnChanges {
         alert('¡¡¡ATENCIÓN!! Esta aplicación no está pensada para dispositivos móviles.');
         this.statusMessage = '<span style="color: red; font-weight: bold;">¡¡¡ATENCIÓN!! Esta aplicación no está pensada para dispositivos móviles.</span>';
       }
-
       const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
       const devices = await navigator.mediaDevices.enumerateDevices();
       this.stopStream(stream);
@@ -193,7 +190,8 @@ export class WebOBS implements OnInit, AfterViewInit, OnDestroy, OnChanges {
 
       if (this.savedFiles) {
         this.staticContent = this.savedFiles;
-        setTimeout(() => this.loadFiles(this.staticContent), 100);
+        this.cdr.detectChanges();
+        this.loadFiles(this.staticContent);
       }
 
       if (this.savedPresets) {
@@ -201,6 +199,7 @@ export class WebOBS implements OnInit, AfterViewInit, OnDestroy, OnChanges {
       }
     } catch (error) {
       console.error('Error al acceder a los dispositivos:', error);
+      throw new Error('Error al acceder a los dispositivos: ' + error);
     }
   }
 
@@ -335,7 +334,7 @@ export class WebOBS implements OnInit, AfterViewInit, OnDestroy, OnChanges {
    * @description Detiene todos los flujos de medios, elimina listeners y cierra el AudioContext.
    */
   ngOnDestroy() {
-    if (this.canvasWorker) {
+    if (this.canvasWorker && typeof (this.canvasWorker as any).terminate === 'function') {
       this.canvasWorker.terminate();
     }
     this.stopAllStreams();
@@ -357,9 +356,9 @@ export class WebOBS implements OnInit, AfterViewInit, OnDestroy, OnChanges {
     try {
       for (const [id, node] of this.workletNodes) {
         try {
-          node.port.onmessage = null;
-          node.disconnect();
-          node.port.close();
+          if (node.port) node.port.onmessage = null;
+          if (typeof node.disconnect === 'function') node.disconnect();
+          if (node.port && typeof node.port.close === 'function') node.port.close();
         } catch (e) {
           console.warn('⚠️ error disconnect node', id, e);
         }
@@ -368,7 +367,7 @@ export class WebOBS implements OnInit, AfterViewInit, OnDestroy, OnChanges {
 
       for (const [id, src] of this.audioSources) {
         try {
-          src.disconnect();
+          if (typeof src.disconnect === 'function') src.disconnect();
         } catch (e) {
           console.warn('⚠️ error disconnect node', id, e);
         }
@@ -377,15 +376,15 @@ export class WebOBS implements OnInit, AfterViewInit, OnDestroy, OnChanges {
 
       for (const [id, g] of this.silentGains) {
         try {
-          g.disconnect();
+          if (typeof g.disconnect === 'function') g.disconnect();
         } catch (e) {
           console.warn('⚠️ error disconnect node', id, e);
         }
       }
       this.silentGains.clear();
 
-      if (this.audioContext && this.audioContext.state !== 'closed') {
-        this.audioContext.close().catch((err) => console.warn('⚠️ Error cerrando AudioContext:', err));
+      if (this.audioContext && typeof (this.audioContext as any).close === 'function' && (this.audioContext as any).state !== 'closed') {
+        (this.audioContext as any).close().catch((err: any) => console.warn('⚠️ Error cerrando AudioContext:', err));
       }
     } finally {
       this.workletLoaded = false;
@@ -435,6 +434,8 @@ export class WebOBS implements OnInit, AfterViewInit, OnDestroy, OnChanges {
       const preset = Array.from(this.presets.entries()).find(([_, value]) => value.shortcut === shortcut);
       if (preset) {
         this.aplicaPreset(preset[0]);
+      } else {
+        console.error('Preset no encontrado');
       }
     }
   }
@@ -494,6 +495,8 @@ export class WebOBS implements OnInit, AfterViewInit, OnDestroy, OnChanges {
         ele.scale = element.scale;
         ele.position = element.position;
         ele.painted = true;
+      } else {
+        console.error(`Element ${element.id} not found`);
       }
     }
   }
@@ -527,10 +530,6 @@ export class WebOBS implements OnInit, AfterViewInit, OnDestroy, OnChanges {
     }
   }
 
-  /**
-   * @summary Finaliza la interacción de arrastre.
-   * @description Lógica compartida para soltar el elemento arrastrado, restaurar estados y limpiar listeners.
-   */
   /**
    * @summary Finaliza el proceso de arrastre de un elemento.
    * @description Calcula la posición final en el canvas, actualiza el estado del elemento y limpia los eventos y elementos temporales.
@@ -581,6 +580,22 @@ export class WebOBS implements OnInit, AfterViewInit, OnDestroy, OnChanges {
   }
 
   /**
+   * @summary Espera a que un elemento del DOM esté disponible.
+   * @param getter Función que retorna el elemento o undefined.
+   * @param maxAttempts Número máximo de intentos.
+   * @param interval Intervalo de espera en ms.
+   */
+  private async waitForElement<T>(getter: () => T | undefined, maxAttempts = 20, interval = 50): Promise<T | undefined> {
+    for (let attempt = 0; attempt < maxAttempts; attempt++) {
+      const el = getter();
+      if (el) return el;
+      this.cdr.detectChanges();
+      await new Promise((resolve) => setTimeout(resolve, interval));
+    }
+    return getter();
+  }
+
+  /**
    * @summary Inicia los flujos de medios (video y audio).
    * @description Obtiene los streams de los dispositivos de video y audio disponibles y los configura.
    * @param {MediaDeviceInfo[]} devices Lista de dispositivos de audio y video.
@@ -604,6 +619,8 @@ export class WebOBS implements OnInit, AfterViewInit, OnDestroy, OnChanges {
         audioOutputPromises.push(this.getAudioOutputStream(device));
       }
     }
+
+    this.cdr.detectChanges();
 
     // Espera a que todas las promesas hayan terminado
     await Promise.all([...videoPromises, ...audioInputPromises, ...audioOutputPromises]);
@@ -638,6 +655,7 @@ export class WebOBS implements OnInit, AfterViewInit, OnDestroy, OnChanges {
         this.getAudioStream(device.deviceId);
       }
     }
+    this.cdr.detectChanges();
   }
 
   /**
@@ -708,19 +726,19 @@ export class WebOBS implements OnInit, AfterViewInit, OnDestroy, OnChanges {
       const settings = videoTrack.getSettings();
 
       // Encontrar el elemento <video> con el mismo ID que el dispositivo
-      const div = this.deviceDivs.find((el) => el.nativeElement.id === 'div-' + deviceId);
+      const div = await this.waitForElement(() => this.deviceDivs.find((el) => el.nativeElement.id === 'div-' + deviceId));
       if (!div) {
         console.error('No se encontró el elemento div-' + deviceId);
         return;
       }
-      const resolution = div.nativeElement.querySelector('#resolution');
+      const resolution = await this.waitForElement(() => div.nativeElement.querySelector('#resolution') as HTMLElement);
       if (!resolution) {
         console.error('No se encontró el elemento #resolution');
         return;
       }
       resolution.innerHTML = `${settings.width}x${settings.height} ${settings.frameRate}fps`;
 
-      const videoElement = this.videoElements.find((el) => el.nativeElement.id === deviceId);
+      const videoElement = await this.waitForElement(() => this.videoElements.find((el) => el.nativeElement.id === deviceId));
       if (videoElement) {
         videoElement.nativeElement.srcObject = stream; // Asignar el stream al video
         videoElement.nativeElement.muted = true; // Silenciar el video por defecto para evitar salida por altavoces
@@ -738,6 +756,8 @@ export class WebOBS implements OnInit, AfterViewInit, OnDestroy, OnChanges {
         const track = stream.getVideoTracks()[0];
         this.sendVideoTrackToWorker(deviceId, track);
         this.updateWorkerLayers();
+      } else {
+        console.error('No se encontró el elemento div-' + deviceId);
       }
     } catch (error) {
       console.error('Error al obtener el stream de video:', error);
@@ -761,7 +781,7 @@ export class WebOBS implements OnInit, AfterViewInit, OnDestroy, OnChanges {
       await this.ensureAudioContext(); // importante!!
 
       // Añade un controlador de volumen al dispositivo
-      const volumeRef = this.volumeInputs.find((el) => el.nativeElement.id === 'volume-' + deviceId);
+      const volumeRef = await this.waitForElement(() => this.volumeInputs.find((el) => el.nativeElement.id === 'volume-' + deviceId));
       if (!volumeRef) {
         console.error('No se pudo obtener la referencia volume-' + deviceId);
         return;
@@ -787,7 +807,7 @@ export class WebOBS implements OnInit, AfterViewInit, OnDestroy, OnChanges {
         gainNode.gain.value = Number.parseInt(volume.value) / 100;
       };
 
-      const audioLevelRef = this.audioLevelDivs.find((el) => el.nativeElement.id === 'audio-level-' + deviceId);
+      const audioLevelRef = await this.waitForElement(() => this.audioLevelDivs.find((el) => el.nativeElement.id === 'audio-level-' + deviceId));
       if (!audioLevelRef) {
         console.error('No se pudo obtener la referencia audio-level-' + deviceId);
         return;
@@ -834,22 +854,16 @@ export class WebOBS implements OnInit, AfterViewInit, OnDestroy, OnChanges {
       gainNode.gain.value = 0;
 
       // Conectar el volumen a un slider si existe
-      setTimeout(() => {
-        try {
-          const volumeRef = this.volumeInputs.find((el) => el.nativeElement.id === 'volume-' + device.deviceId);
-          if (volumeRef) {
-            const volume = volumeRef.nativeElement;
-            gainNode.gain.value = Number.parseInt(volume.value, 10) / 100;
-            volume.oninput = () => {
-              gainNode.gain.value = Number.parseInt(volume.value, 10) / 100;
-            };
-          } else {
-            console.error('No se encontró el control de volumen para ' + device.deviceId);
-          }
-        } catch (e) {
-          console.error('Error configurando slider de volumen:', e);
-        }
-      }, 500); // Aumentamos tiempo para asegurar que el DOM esté listo
+      const volumeRef = await this.waitForElement(() => this.volumeInputs.find((el) => el.nativeElement.id === 'volume-' + device.deviceId));
+      if (volumeRef) {
+        const volume = volumeRef.nativeElement;
+        gainNode.gain.value = Number.parseInt(volume.value, 10) / 100;
+        volume.oninput = () => {
+          gainNode.gain.value = Number.parseInt(volume.value, 10) / 100;
+        };
+      } else {
+        console.error('No se encontró el control de volumen para ' + device.deviceId);
+      }
 
       // Conectar el nodo de ganancia al destino
       let prevNode: AudioNode = gainNode;
@@ -875,7 +889,7 @@ export class WebOBS implements OnInit, AfterViewInit, OnDestroy, OnChanges {
       document.body.appendChild(audio);
 
       // Visualizar los niveles de audio
-      const audioLevelRef = this.audioLevelDivs.find((el) => el.nativeElement.id === 'audio-level-' + device.deviceId);
+      const audioLevelRef = await this.waitForElement(() => this.audioLevelDivs.find((el) => el.nativeElement.id === 'audio-level-' + device.deviceId));
       if (audioLevelRef) {
         this.visualizeAudio(destinationNode.stream, audioLevelRef.nativeElement);
       } else {
@@ -913,7 +927,12 @@ export class WebOBS implements OnInit, AfterViewInit, OnDestroy, OnChanges {
     const nodeId = id ?? stream.id ?? `stream-${Math.random().toString(36).slice(2, 9)}`;
 
     // 1) Asegúrate del contexto y del worklet cargado (serializado)
-    await this.loadAudioWorklet(); // ya hace ensureAudioContext internamente
+    try {
+      await this.loadAudioWorklet(); // ya hace ensureAudioContext internamente
+    } catch (err) {
+      console.error('❌ Error cargando AudioWorklet:', err);
+      throw err;
+    }
 
     // 2) Si ya existe un nodo para este id, limpiarlo
     if (this.workletNodes.has(nodeId)) {
@@ -944,6 +963,11 @@ export class WebOBS implements OnInit, AfterViewInit, OnDestroy, OnChanges {
         }
         this.silentGains.delete(nodeId);
       }
+    }
+
+    if (!this.audioContext) {
+      console.error('AudioContext no inicializado para visualización');
+      return;
     }
 
     // 3) Crear fuente y nodo (usa nombre fijo 'audio-processor')
@@ -1016,74 +1040,43 @@ export class WebOBS implements OnInit, AfterViewInit, OnDestroy, OnChanges {
         this.audiosCapturas.push(track);
       }
 
-      setTimeout(() => {
-        const div = this.captureDivs.find((el) => el.nativeElement.id === 'div-' + stream.id);
-        if (!div) {
-          console.error('No se pudo encontrar el elemento con id div-' + stream.id);
-          return;
-        }
-        const resolution = div.nativeElement.querySelector('#resolution');
-        if (!resolution) {
-          console.error('No se pudo encontrar el elemento con id resolution');
-          return;
-        }
-        const settings = stream.getVideoTracks()[0].getSettings();
-        resolution.innerHTML = `${settings.width}x${settings.height} ${settings.frameRate}fps`;
+      this.cdr.detectChanges();
 
-        const videoElement = this.videoElements.find((el) => el.nativeElement.id === stream.id);
-        if (videoElement) {
-          videoElement.nativeElement.srcObject = stream;
-          videoElement.nativeElement.muted = true; // Silenciar el video por defecto para evitar salida por altavoces
-          const ele: VideoElement = {
-            id: stream.id,
-            element: videoElement.nativeElement,
-            painted: false,
-            scale: 1,
-            position: { x: 0, y: 0 },
-          };
-          this.videosElements.push(ele);
+      const div = this.captureDivs.find((el) => el.nativeElement.id === 'div-' + stream.id);
+      if (!div) {
+        console.error('No se pudo encontrar el elemento con id div-' + stream.id);
+        return;
+      }
+      const resolution = div.nativeElement.querySelector('#resolution');
+      if (!resolution) {
+        console.error('No se pudo encontrar el elemento con id resolution');
+        return;
+      }
+      const settings = stream.getVideoTracks()[0].getSettings();
+      resolution.innerHTML = `${settings.width}x${settings.height} ${settings.frameRate}fps`;
 
-          // Enviar stream al worker
-          const track = stream.getVideoTracks()[0];
-          this.sendVideoTrackToWorker(stream.id, track);
-          this.updateWorkerLayers();
-        }
-        // Añade el contról de audio
-        for (const track of stream.getAudioTracks()) {
-          const audioLevelRef = this.audioLevelDivs.find((el) => el.nativeElement.id === 'audio-level-' + track.id);
-          if (!audioLevelRef) {
-            console.error('No se pudo encontrar la referencia audio-level-' + track.id);
-            return;
-          }
-          const audioLevelElement = audioLevelRef.nativeElement;
-          const gainNode = this.createGainNode(track.id);
-          const audioStream = new MediaStream([track]);
-          const source = this.audioContext.createMediaStreamSource(audioStream);
+      const videoElement = this.videoElements.find((el) => el.nativeElement.id === stream.id);
+      if (videoElement) {
+        videoElement.nativeElement.srcObject = stream;
+        videoElement.nativeElement.muted = true; // Silenciar el video por defecto para evitar salida por altavoces
+        const ele: VideoElement = {
+          id: stream.id,
+          element: videoElement.nativeElement,
+          painted: false,
+          scale: 1,
+          position: { x: 0, y: 0 },
+        };
+        this.videosElements.push(ele);
 
-          // Crear ecualizador
-          const filters = this.createEqualizer(track.id);
-          let prevNode: AudioNode = source;
-          for (const filter of filters) {
-            prevNode.connect(filter);
-            prevNode = filter;
-          }
-          prevNode.connect(gainNode);
-
-          gainNode.connect(this.mixedAudioDestination);
-          const sample = this.audioContext.createMediaStreamDestination();
-          gainNode.connect(sample);
-
-          const volume = this.volumeInputs.find((el) => el.nativeElement.id === 'volume-' + track.id)?.nativeElement;
-          if (!volume) {
-            console.error('No se pudo encontrar el elemento de volumen para el track:', track.id);
-            return;
-          }
-          volume.oninput = () => {
-            gainNode.gain.value = Number.parseInt(volume.value) / 100;
-          };
-          this.visualizeAudio(sample.stream, audioLevelElement, track.id); // Iniciar visualización de audio con id único
-        }
-      }, 100);
+        // Enviar stream al worker
+        const track = stream.getVideoTracks()[0];
+        this.sendVideoTrackToWorker(stream.id, track);
+        this.updateWorkerLayers();
+      }
+      // Añade el contról de audio
+      for (const track of stream.getAudioTracks()) {
+        this.setupMediaElementAudio(track);
+      }
 
       // Manejar el fin de la captura
       stream.getVideoTracks()[0].onended = () => {
@@ -1097,6 +1090,67 @@ export class WebOBS implements OnInit, AfterViewInit, OnDestroy, OnChanges {
       };
     } catch (error) {
       console.error('Error al capturar ventana o pantalla:', error);
+    }
+  }
+
+  private setupMediaElementAudio(track: MediaStreamTrack, name?: string) {
+    let audioLevelRef;
+    if (name) {
+      audioLevelRef = this.audioLevelDivs.find((el) => el.nativeElement.id === 'audio-level-' + name);
+    } else {
+      audioLevelRef = this.audioLevelDivs.find((el) => el.nativeElement.id === 'audio-level-' + track.id);
+    }
+    if (!audioLevelRef) {
+      console.error('No se pudo encontrar la referencia audio-level-' + track.id);
+      return;
+    }
+    const audioLevelElement = audioLevelRef.nativeElement;
+    let gainNode;
+    let audioStream;
+    if (name) {
+      gainNode = this.createGainNode(name);
+      audioStream = new MediaStream([track]);
+    } else {
+      gainNode = this.createGainNode(track.id);
+      audioStream = new MediaStream([track]);
+    }
+    const source = this.audioContext.createMediaStreamSource(audioStream);
+
+    // Crear ecualizador
+    let filters;
+    if (name) {
+      filters = this.createEqualizer(name);
+    } else {
+      filters = this.createEqualizer(track.id);
+    }
+    let prevNode: AudioNode = source;
+    for (const filter of filters) {
+      prevNode.connect(filter);
+      prevNode = filter;
+    }
+    prevNode.connect(gainNode);
+
+    gainNode.connect(this.mixedAudioDestination);
+    const sample = this.audioContext.createMediaStreamDestination();
+    gainNode.connect(sample);
+
+    let volume;
+    if (name) {
+      volume = this.volumeInputs.find((el) => el.nativeElement.id === 'volume-' + name)?.nativeElement;
+    } else {
+      volume = this.volumeInputs.find((el) => el.nativeElement.id === 'volume-' + track.id)?.nativeElement;
+    }
+    if (!volume) {
+      console.error('No se pudo encontrar el elemento de volumen para el track:', track.id);
+      return;
+    }
+    volume.oninput = () => {
+      gainNode.gain.value = Number.parseInt(volume.value) / 100;
+    };
+    if (name) {
+      this.visualizeAudio(sample.stream, audioLevelElement, name).catch((err) => console.error('Error visualizando audio:', err)); // Iniciar visualización de audio con id único
+    } else {
+      this.visualizeAudio(sample.stream, audioLevelElement, track.id).catch((err) => console.error('Error visualizando audio:', err)); // Iniciar visualización de audio con id único
     }
   }
 
@@ -1119,10 +1173,8 @@ export class WebOBS implements OnInit, AfterViewInit, OnDestroy, OnChanges {
       // Convertir FileList a un array para trabajar con los archivos
       const list = Array.from(target.files);
       this.staticContent = this.staticContent.concat(list);
-      // espera una decima de segundo que se renderizen en el front
-      setTimeout(() => {
-        this.loadFiles(list);
-      }, 100);
+      this.cdr.detectChanges();
+      this.loadFiles(list);
     };
     input.click();
   }
@@ -1137,7 +1189,7 @@ export class WebOBS implements OnInit, AfterViewInit, OnDestroy, OnChanges {
     await this.ensureAudioContextSafe();
 
     for (const file of files) {
-      const div = this.staticDivs.find((el) => el.nativeElement.id === 'div-' + file.name);
+      const div = this.staticDivs.some((el) => el.nativeElement.id === 'div-' + file.name);
       if (!div) {
         console.error('No se pudo encontrar el elemento con id div-' + file.name);
         continue;
@@ -1201,11 +1253,12 @@ export class WebOBS implements OnInit, AfterViewInit, OnDestroy, OnChanges {
    * @param {File} file El archivo de video.
    */
   private processVideoFile(file: File) {
-    const video = this.staticDivs.find((el) => el.nativeElement.id === 'div-' + file.name)?.nativeElement.querySelector('video');
+    const video: HTMLVideoElement | null | undefined = this.staticDivs.find((el) => el.nativeElement.id === 'div-' + file.name)?.nativeElement.querySelector('video');
     if (!video) {
       console.warn('Video element no encontrado en DOM:', file.name);
       return;
     }
+    video.muted = true;
 
     const ele: VideoElement = {
       id: file.name,
@@ -1216,24 +1269,49 @@ export class WebOBS implements OnInit, AfterViewInit, OnDestroy, OnChanges {
     };
     this.videosElements.push(ele);
     this.audiosArchivos.push(file.name);
+    this.cdr.detectChanges();
 
+    const stream: MediaStream = (video as any).captureStream ? (video as any).captureStream() : (video as any).mozCaptureStream ? (video as any).mozCaptureStream() : (video as any).captureStream ? (video as any).captureStream() : null;
+    if (!stream) {
+      console.error('No se pudo capturar el stream');
+      return;
+    }
     // Enviar track al worker cuando el video esté listo
     const sendTrack = () => {
-      const stream = (video as any).captureStream ? (video as any).captureStream() : (video as any).mozCaptureStream ? (video as any).mozCaptureStream() : null;
-      if (stream) {
-        const track = stream.getVideoTracks()[0];
-        if (track) {
-          this.sendVideoTrackToWorker(ele.id, track);
-          this.updateWorkerLayers();
-        }
+      const track = stream.getVideoTracks()[0];
+      if (!track) {
+        console.error('No se pudo obtener el track de video: ' + track);
+        return;
       }
+
+      const audioTrack = stream.getAudioTracks()[0];
+      if (!audioTrack) {
+        console.error('No se pudo obtener el track de video: ' + track);
+        return;
+      }
+      this.sendVideoTrackToWorker(ele.id, track);
+      this.updateWorkerLayers();
     };
 
     // Forzar el envío del track inicial para que se renderice aunque esté en pausa
-    sendTrack();
+    if (video.readyState < 2) {
+      // HAVE_CURRENT_DATA
+      video.addEventListener(
+        'loadeddata',
+        () => {
+          sendTrack();
+          // Inicializar audio inmediatamente
+          for (const track of stream.getAudioTracks()) {
+            this.setupMediaElementAudio(track, file.name);
+          }
+        },
+        { once: true },
+      );
 
-    // Inicializar audio inmediatamente
-    this.setupMediaElementAudio(video, file.name);
+      return;
+    } else {
+      console.log('estado: ' + video.readyState);
+    }
 
     video.onplaying = () => {
       sendTrack();
@@ -1250,77 +1328,56 @@ export class WebOBS implements OnInit, AfterViewInit, OnDestroy, OnChanges {
    */
   private processAudioFile(file: File) {
     this.audiosArchivos.push(file.name);
+    this.cdr.detectChanges();
     const audioLevelRef = this.audioLevelDivs.find((el) => el.nativeElement.id === 'audio-level-' + file.name);
     if (!audioLevelRef) {
       console.error('No se pudo encontrar la referencia audio-level-' + file.name);
       return;
     }
-    const audioDiv = audioLevelRef.nativeElement;
 
     const audio: HTMLAudioElement = document.createElement('audio');
     audio.src = this.getFileUrl(file);
     audio.load();
+    audio.muted = true;
+    audio.style.display = 'none';
 
-    audio.onplaying = () => this.setupAudioElement(audio, file.name, audioDiv);
-    this.setupAudioControls(audio, audioDiv, file);
-  }
-
-  /**
-   * @summary Configura el audio para un elemento multimedia (video o audio).
-   * @param {HTMLVideoElement | HTMLAudioElement} element El elemento multimedia.
-   * @param {string} id ID único del elemento.
-   */
-  private setupMediaElementAudio(element: HTMLVideoElement | HTMLAudioElement, id: string) {
-    // Intentar buscar el elemento en el DOM después de un pequeño retardo
-    // ya que el @for de Angular puede tardar un ciclo en renderizar el elemento.
-    setTimeout(() => {
-      const audioLevelRef = this.audioLevelDivs.find((el) => el.nativeElement.id === 'audio-level-' + id);
-      if (!audioLevelRef) {
-        console.warn('No se pudo encontrar audioLevelRef para:', id, 'después de retardo.');
-        return;
-      }
-      const audioDiv = audioLevelRef.nativeElement;
-
-      // Inicializar ecualizador para archivos de video
-      this.createEqualizer(id);
-
-      this.setupAudioElement(element, id, audioDiv);
-    }, 100);
-  }
-
-  /**
-   * @summary Inicializa los nodos de audio y la visualización para un elemento.
-   * @param {HTMLMediaElement} element El elemento multimedia.
-   * @param {string} id ID único.
-   * @param {HTMLDivElement} audioDiv Contenedor para la visualización del nivel de audio.
-   */
-  private setupAudioElement(element: HTMLMediaElement, id: string, audioDiv: HTMLDivElement) {
-    const gainNode = this.createGainNode(id);
-    let source = this.mediaElementSources.get(element);
-    if (!source) {
-      source = this.audioContext.createMediaElementSource(element);
-      element.muted = true; // Silenciar el elemento multimedia por defecto
-      this.mediaElementSources.set(element, source);
+    const audioDiv = document.getElementById(file.name) as HTMLDivElement;
+    if (!audioDiv) {
+      console.error('No se encontró el elemento div-' + file.name);
+      return;
     }
+    audioDiv.appendChild(audio);
 
-    // Crear ecualizador
-    const filters = this.createEqualizer(id);
-    let prevNode: AudioNode = source;
-    for (const filter of filters) {
-      prevNode.connect(filter);
-      prevNode = filter;
+    // Poner los controles de audio
+    this.setupAudioControls(audio, file);
+
+    let stream: MediaStream | null = null;
+
+    if (typeof (audio as any).captureStream === 'function') {
+      stream = (audio as any).captureStream();
+    } else if (typeof (audio as any).mozCaptureStream === 'function') {
+      stream = (audio as any).mozCaptureStream();
     }
-    prevNode.connect(gainNode);
-
-    gainNode.connect(this.mixedAudioDestination);
-    const sample = this.audioContext.createMediaStreamDestination();
-    gainNode.connect(sample);
-
-    const volumeRef = this.volumeInputs.find((el) => el.nativeElement.id === 'volume-' + id);
-    if (volumeRef) {
-      volumeRef.nativeElement.oninput = () => (gainNode.gain.value = Number.parseInt(volumeRef.nativeElement.value, 10) / 100);
+    if (!stream) {
+      console.error('No se encontró el stream del audio');
+      return;
     }
-    this.visualizeAudio(sample.stream, audioDiv, id).catch((err) => console.error('Error visualizando audio:', err));
+    if (audio.readyState < 2) {
+      // HAVE_CURRENT_DATA
+      audio.addEventListener(
+        'loadeddata',
+        () => {
+          // Inicializar audio inmediatamente
+          for (const track of stream.getAudioTracks()) {
+            this.setupMediaElementAudio(track, file.name);
+          }
+          this.pintaAudio(file);
+        },
+        { once: true },
+      );
+    } else {
+      console.log('estado: ' + audio.readyState);
+    }
   }
 
   private createEqualizer(id: string): BiquadFilterNode[] {
@@ -1343,7 +1400,14 @@ export class WebOBS implements OnInit, AfterViewInit, OnDestroy, OnChanges {
    * @param {HTMLDivElement} audioDiv El contenedor de controles.
    * @param {File} file El archivo original.
    */
-  private setupAudioControls(audio: HTMLAudioElement, audioDiv: HTMLDivElement, file: File) {
+  private setupAudioControls(audio: HTMLAudioElement, file: File) {
+    this.cdr.detectChanges();
+    //const audioDiv = document.querySelector('#' + file.name) as HTMLDivElement;
+    const audioDiv = document.getElementById(file.name) as HTMLDivElement;
+    if (!audioDiv) {
+      console.error('No se encontró el elemento ' + file.name);
+      return;
+    }
     const controls = {
       playPause: audioDiv.querySelector('#play-pause') as HTMLButtonElement,
       play: audioDiv.querySelector('#play') as SVGElement,
@@ -1355,7 +1419,26 @@ export class WebOBS implements OnInit, AfterViewInit, OnDestroy, OnChanges {
       time: audioDiv.querySelector('#time') as HTMLSpanElement,
       progress: audioDiv.querySelector('#progress') as HTMLInputElement,
     };
-    if (!controls.playPause || !controls.restart || !controls.loop || !controls.time || !controls.progress) return;
+    if (!controls.playPause) {
+      console.log('no play pause');
+      return;
+    }
+    if (!controls.restart) {
+      console.log('no restart');
+      return;
+    }
+    if (!controls.loop) {
+      console.log('no loop');
+      return;
+    }
+    if (!controls.time) {
+      console.log('no time');
+      return;
+    }
+    if (!controls.progress) {
+      console.log('no progress');
+      return;
+    }
 
     controls.playPause.onclick = () => {
       if (audio.paused) {
@@ -1381,6 +1464,35 @@ export class WebOBS implements OnInit, AfterViewInit, OnDestroy, OnChanges {
         const percentage = (audio.currentTime / audio.duration) * 100;
         controls.progress.value = percentage.toString();
         controls.time.innerText = `${this.formatTime(audio.currentTime)} / ${duration}`;
+
+        controls.progress.oninput = () => {
+          if (!audioDiv) {
+            console.error('Missing audioDiv');
+            return;
+          }
+          const newTime = (Number.parseInt(controls.progress.value) / 100) * audio.duration;
+          audio.currentTime = newTime;
+
+          // Actualizar el tiempo en el texto inmediatamente
+          const currentTime = this.formatTime(audio.currentTime);
+          controls.time.innerText = `${currentTime} / ${duration}`;
+        };
+
+        // Cambia el color de las barras de audio
+        const audioStream: HTMLDivElement | null | undefined = document.getElementById('div-' + file.name)?.querySelector('#audio-stream');
+        if (!audioStream) {
+          console.error('No se encontró el elemento con id ' + 'audio-stream');
+          return;
+        }
+        const audioBars = audioStream.querySelectorAll('div');
+        const currentSample = Math.floor((audio.currentTime / audio.duration) * audioStream.offsetWidth);
+        audioBars.forEach((bar, index) => {
+          if (audioBars.length < audioStream.offsetWidth * 2) {
+            bar.style.backgroundColor = index <= currentSample ? '#16a34a' : '#1d4ed8'; // Rojo si está en reproducción
+          } else {
+            bar.style.backgroundColor = index / 2 <= currentSample ? '#16a34a' : '#1d4ed8'; // Rojo si está en reproducción
+          }
+        });
       };
     };
   }
@@ -1417,9 +1529,11 @@ export class WebOBS implements OnInit, AfterViewInit, OnDestroy, OnChanges {
     this.canvasWidth = Number.parseInt(width);
     this.canvasHeight = Number.parseInt(height);
 
-    if (this.canvasWorker) {
-      this.canvasWorker.postMessage({ type: 'resize', payload: { width: this.canvasWidth, height: this.canvasHeight } });
+    if (!this.canvasWorker) {
+      console.error('No canvasWorker');
+      return;
     }
+    this.canvasWorker.postMessage({ type: 'resize', payload: { width: this.canvasWidth, height: this.canvasHeight } });
 
     value.innerHTML = string;
     this.isResolutionSelectorVisible = false;
@@ -1815,7 +1929,7 @@ export class WebOBS implements OnInit, AfterViewInit, OnDestroy, OnChanges {
     const closeFilterMenu = (e: Event) => {
       const target = e.target as HTMLElement;
       // No cerrar si el clic es dentro del menú o en un input (evita conflictos con sliders)
-      if (filterMenu.contains(target) || target.tagName === 'INPUT') {
+      if ((target instanceof Node && filterMenu.contains(target)) || target?.tagName === 'INPUT') {
         return;
       }
       this.selectedVideoForFilter = null;
@@ -1859,7 +1973,7 @@ export class WebOBS implements OnInit, AfterViewInit, OnDestroy, OnChanges {
       this.equalizerValues = filters.map((f) => f.gain.value);
       this.cdr.detectChanges();
     } else {
-      console.warn('No se encontró ecualizador para:', this.selectedAudioForEqualizer);
+      console.error('No se encontró ecualizador para:', this.selectedAudioForEqualizer);
     }
 
     const equalizerMenu = this.equalizerMenu.nativeElement;
@@ -1902,7 +2016,7 @@ export class WebOBS implements OnInit, AfterViewInit, OnDestroy, OnChanges {
     const closeEqualizerMenu = (e: Event) => {
       const target = e.target as HTMLElement;
       // No cerrar si el clic es dentro del menú o en un input (evita conflictos con sliders)
-      if (equalizerMenu.contains(target) || target.tagName === 'INPUT') {
+      if ((equalizerMenu instanceof Node && target instanceof Node && equalizerMenu.contains(target)) || target.tagName === 'INPUT') {
         return;
       }
       this.selectedAudioForEqualizer = null;
@@ -2466,11 +2580,18 @@ export class WebOBS implements OnInit, AfterViewInit, OnDestroy, OnChanges {
       this.audiosCapturas = this.audiosCapturas.filter((track) => track.id !== ele.id);
       this.audiosElements = this.audiosElements.filter((element: AudioElement) => element.id !== ele.id);
       this.audiosConnections = this.audiosConnections.filter((element: AudioConnection) => element.idEntrada !== ele.id || element.idSalida !== ele.id);
-    } else if (ele instanceof File) {
-      this.staticContent = this.staticContent.filter((file) => file !== ele);
-      this.audiosArchivos = this.audiosArchivos.filter((file) => file !== ele.name);
-      this.audiosElements = this.audiosElements.filter((element: AudioElement) => element.id !== ele.name);
-      this.audiosConnections = this.audiosConnections.filter((element: AudioConnection) => element.idEntrada !== ele.name || element.idSalida !== ele.name);
+    } else if (ele && typeof ele === 'object' && 'name' in ele) {
+      this.staticContent = this.staticContent.filter((file) => file.name !== (ele as File).name);
+      this.audiosArchivos = this.audiosArchivos.filter((file) => file !== (ele as File).name);
+      const audioDiv = document.getElementById((ele as File).name) as HTMLDivElement;
+      const audio = audioDiv?.querySelector('audio') as HTMLAudioElement;
+      if (audio) {
+        audio.pause();
+        audio.remove();
+      }
+
+      this.audiosElements = this.audiosElements.filter((element: AudioElement) => element.id !== (ele as File).name);
+      this.audiosConnections = this.audiosConnections.filter((element: AudioConnection) => element.idEntrada !== (ele as File).name || element.idSalida !== (ele as File).name);
     }
     this.drawAudioConnections();
   }
@@ -2780,7 +2901,6 @@ export class WebOBS implements OnInit, AfterViewInit, OnDestroy, OnChanges {
    * @returns {Promise<void>} Una promesa que se resuelve cuando todos los presets han sido calculados.
    */
   async calculatePreset() {
-    console.log('calculatePreset called');
     this.cdr.detectChanges();
     setTimeout(() => {
       for (const [key, preset] of this.presets.entries()) {
@@ -2913,10 +3033,16 @@ export class WebOBS implements OnInit, AfterViewInit, OnDestroy, OnChanges {
    */
   drawAudioConnections() {
     setTimeout(() => {
-      if (!this.audiosElements.length) return;
+      if (!this.audiosElements.length) {
+        console.error('No hay elementos de audio');
+        return;
+      }
 
       const audios = this.audios.nativeElement;
-      if (!audios) return;
+      if (!audios) {
+        console.error('No hay elemento nativo de audios');
+        return;
+      }
 
       const audiosRect = audios.getBoundingClientRect();
       const audiosList = this.audiosList.nativeElement;
@@ -2950,8 +3076,8 @@ export class WebOBS implements OnInit, AfterViewInit, OnDestroy, OnChanges {
     const connection = this.audiosConnections[index];
 
     const isRecorderEntrada = connection.idEntrada === 'recorder';
-    const entradaRef = isRecorderEntrada ? this.audioLevelRecorder : this.audioLevelDivs.find((el) => el.nativeElement.id === `audio-level-${connection.idEntrada}`);
-    const salidaRef = connection.idSalida === 'recorder' ? this.audioLevelRecorder : this.audioLevelDivs.find((el) => el.nativeElement.id === `audio-level-${connection.idSalida}`);
+    const entradaRef = isRecorderEntrada ? this.audioLevelRecorder : this.audioLevelDivs.find((el: ElementRef<HTMLDivElement>) => el.nativeElement.id === `audio-level-${connection.idEntrada}`);
+    const salidaRef = connection.idSalida === 'recorder' ? this.audioLevelRecorder : this.audioLevelDivs.find((el: ElementRef<HTMLDivElement>) => el.nativeElement.id === `audio-level-${connection.idSalida}`);
 
     if (!entradaRef || !salidaRef) return;
 
@@ -3012,7 +3138,7 @@ export class WebOBS implements OnInit, AfterViewInit, OnDestroy, OnChanges {
    */
   private _createConnectionDeleteButton(index: number, connection: AudioConnection, square: HTMLElement): HTMLButtonElement {
     const btn = document.createElement('button');
-    btn.innerText = 'X';
+    btn.innerHTML = '&times;';
     btn.style.cssText = 'position:absolute;width:1rem;height:1rem;border-radius:9999px;display:none;align-items:center;justify-content:center;top:0;right:0;';
 
     btn.onclick = () => {
@@ -3259,6 +3385,7 @@ export class WebOBS implements OnInit, AfterViewInit, OnDestroy, OnChanges {
    */
   private _getAudioElementId(element: Element | null): string | null {
     if (!element?.id) return null;
+    if (element.id === 'audio-recorder') return 'audio-recorder';
     if (element.id.startsWith('audio-level-')) return element.id.substring(12);
     if (element.id.startsWith('audio-')) return element.id.substring(6);
     if (element.id.startsWith('volume-')) return element.id.substring(7);
@@ -3584,5 +3711,79 @@ export class WebOBS implements OnInit, AfterViewInit, OnDestroy, OnChanges {
     });
     this.drawAudioConnections();
     return gainNode;
+  }
+
+  /**
+   * Función para pintar el audio
+   * @param file Archivo de audio (File)
+   */
+  private async pintaAudio(file: File) {
+    console.log('pintaAudio called');
+    if (this.audioContext.state === 'suspended') {
+      console.log('AudioContext state is suspended, calling resume');
+      await this.audioContext.resume();
+      console.log('AudioContext state is resumed');
+    }
+    const arrayBuffer = await file.arrayBuffer();
+    console.log('ArrayBuffer received: ', arrayBuffer.byteLength);
+    const audioBuffer = await this.audioContext.decodeAudioData(arrayBuffer);
+    console.log('AudioBuffer received: ', audioBuffer.length);
+    const div = document.getElementById('div-' + file.name);
+
+    if (!div) {
+      console.error('No se encontró el elemento div-' + file.name);
+      return;
+    }
+    const container: HTMLDivElement | null | undefined = div.querySelector('#audio-stream');
+    if (!container) {
+      console.error('No se encontró el elemento con id div-' + file.name);
+      return;
+    }
+    const canvasWidth = container.offsetWidth;
+    const canvasHeight = container.offsetHeight;
+    const sampleDataLeft = audioBuffer.getChannelData(0); // Canal izquierdo
+    const sampleStepLeft = Math.floor(sampleDataLeft.length / canvasWidth);
+    let sampleDataRight = null;
+    let sampleStepRight = null;
+    if (audioBuffer.numberOfChannels > 1) {
+      sampleDataRight = audioBuffer.getChannelData(1); // Canal derecho
+      sampleStepRight = Math.floor(sampleDataRight.length / canvasWidth);
+    }
+
+    for (let i = 0; i < canvasWidth; i++) {
+      const sampleIndexLeft = i * sampleStepLeft;
+      const amplitudeLeft = Math.abs(sampleDataLeft[sampleIndexLeft]);
+      const barHeightLeft = amplitudeLeft * canvasHeight;
+
+      const barLeft = document.createElement('div');
+      barLeft.style.position = 'absolute';
+      barLeft.style.left = `${i}px`;
+      barLeft.style.width = '1px';
+      barLeft.id = 'barLeft-' + file.name;
+      if (audioBuffer.numberOfChannels === 1) {
+        barLeft.style.height = `${barHeightLeft}px`;
+        barLeft.style.bottom = '0px';
+      } else {
+        barLeft.style.height = `${barHeightLeft / 2}px`;
+        barLeft.style.bottom = '50%';
+      }
+      barLeft.style.backgroundColor = '#1d4ed8';
+      container.appendChild(barLeft);
+
+      if (sampleDataRight && sampleStepRight) {
+        const sampleIndexRight = i * sampleStepRight;
+        const amplitudeRight = Math.abs(sampleDataRight[sampleIndexRight]);
+        const barHeightRight = amplitudeRight * canvasHeight;
+        const barRight = document.createElement('div');
+        barRight.id = 'barRight-' + file.name;
+        barRight.style.position = 'absolute';
+        barRight.style.left = `${i}px`;
+        barRight.style.width = '1px';
+        barRight.style.height = `${barHeightRight / 2}px`;
+        barRight.style.top = '50%';
+        barRight.style.backgroundColor = '#1d4ed8';
+        container.appendChild(barRight);
+      }
+    }
   }
 }

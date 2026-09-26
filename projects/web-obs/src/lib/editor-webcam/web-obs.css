@@ -1,7 +1,7 @@
 :host {
-  --web-obs-bg-color: white;
+  --web-obs-bg-color: inherit;
   --web-obs-border-color: black;
-  --web-obs-text-color: black;
+  --web-obs-text-color: inherit;
   --web-obs-accent-color: #b91c1c; /* Rojo de las líneas de guía */
   --web-obs-preset-bg: #9ca3af; /* gray-400 */
   --web-obs-canvas-bg: white;

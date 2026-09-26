@@ -107,7 +107,15 @@ globalThis.self.onmessage = (event: MessageEvent) => {
       // payload: { id, readable }
       if (sources.has(payload.id)) {
         const old = sources.get(payload.id);
-        if (old?.reader) old.reader.cancel();
+        if (old?.type === 'bitmap' && old.data?.close) {
+          old.data.close();
+        }
+        if (old?.latestFrame?.close) {
+          old.latestFrame.close();
+        }
+        if (old?.reader) {
+          old.reader.cancel();
+        }
       }
       sources.set(payload.id, { type: 'track', data: payload.readable });
       processStream(payload.id, payload.readable);

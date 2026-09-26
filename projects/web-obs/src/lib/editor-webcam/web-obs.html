@@ -25,7 +25,7 @@
             </div>
             <div class="relative w-full">
               @if (isResolutionSelectorVisible) {
-                <div class="absolute flex z-10 rounded-lg border border-black bg-[inherit] backdrop-blur-lg overflow-hidden p-2">
+                <div class="absolute flex z-10 rounded-lg border border-black bg-inherit backdrop-blur-lg overflow-hidden p-2">
                   <div class="z-10 flex flex-col bg-transparent">
                     <div class="cursor-pointer" (click)="cambiarResolucion($event, '640x360')" (keydown.enter)="cambiarResolucion($event, '640x360')">
                       <p class="rounded-lg border-black pr-2 pl-2 text-nowrap hover:border dark:border-gray-400">360p (640x360)</p>
@@ -190,9 +190,10 @@
       <div #conexionesDerecha id="conexiones-derecha" class="relative h-full w-fit"></div>
     </div>
 
+    <!-- Lista de dispositivos de video -->
     @for (device of this.videoDevices; track device.deviceId) {
-      <div #deviceDiv [id]="'div-' + device.deviceId" part="video-device" class="group relative m-2 flex max-w-[16.6667%] justify-center bg-transparent object-contain text-center">
-        <video #videoElement disablePictureInPicture (pointerdown)="mousedown($event, device.deviceId)" (contextmenu)="onContextMenu($event, device.deviceId)" [id]="device.deviceId" autoplay playsinline class="cursor-grab rounded-lg border border-black object-contain hover:border-2 active:cursor-grabbing dark:border-gray-400"></video>
+      <div (pointerdown)="mousedown($event, device.deviceId)" (contextmenu)="onContextMenu($event, device.deviceId)" #deviceDiv [id]="'div-' + device.deviceId" part="video-device" class="group relative m-2 flex max-w-[16.6667%] justify-center bg-transparent object-contain text-center cursor-grab active:cursor-grabbing">
+        <video #videoElement disablePictureInPicture [id]="device.deviceId" autoplay playsinline class="rounded-lg border border-black object-contain hover:border-2 dark:border-gray-400"></video>
         <!-- Botón full-screan -->
         <svg (click)="fullscreen(device)" (keydown.enter)="fullscreen(device)" class="absolute top-2 left-2 z-10 hidden h-4 w-4 cursor-pointer text-black group-hover:block" width="800px" height="800px" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
           <path fill-rule="evenodd" clip-rule="evenodd" d="M5 1.25C5.41421 1.25 5.75 1.58579 5.75 2V11C5.75 12.9068 5.75159 14.2615 5.88976 15.2892C6.02502 16.2952 6.27869 16.8749 6.7019 17.2981C7.12511 17.7213 7.70476 17.975 8.71085 18.1102C9.73851 18.2484 11.0932 18.25 13 18.25H22C22.4142 18.25 22.75 18.5858 22.75 19C22.75 19.4142 22.4142 19.75 22 19.75H19.75V22C19.75 22.4142 19.4142 22.75 19 22.75C18.5858 22.75 18.25 22.4142 18.25 22V19.75H12.9436C11.1058 19.75 9.65019 19.75 8.51098 19.5969C7.33855 19.4392 6.38961 19.1071 5.64124 18.3588C4.89288 17.6104 4.56076 16.6614 4.40313 15.489C4.24997 14.3498 4.24998 12.8942 4.25 11.0564L4.25 5.75H2C1.58579 5.75 1.25 5.41421 1.25 5C1.25 4.58579 1.58579 4.25 2 4.25H4.25V2C4.25 1.58579 4.58579 1.25 5 1.25ZM15.2892 5.88976C14.2615 5.75159 12.9068 5.75 11 5.75H8C7.58579 5.75 7.25 5.41421 7.25 5C7.25 4.58579 7.58579 4.25 8 4.25L11.0564 4.25C12.8942 4.24998 14.3498 4.24997 15.489 4.40313C16.6614 4.56076 17.6104 4.89288 18.3588 5.64124C19.1071 6.38961 19.4392 7.33855 19.5969 8.51098C19.75 9.65019 19.75 11.1058 19.75 12.9436V16C19.75 16.4142 19.4142 16.75 19 16.75C18.5858 16.75 18.25 16.4142 18.25 16V13C18.25 11.0932 18.2484 9.73851 18.1102 8.71085C17.975 7.70476 17.7213 7.12511 17.2981 6.7019C16.8749 6.27869 16.2952 6.02502 15.2892 5.88976Z" fill="currentColor" />
@@ -209,8 +210,8 @@
       </div>
     }
     @for (captura of this.capturas; track captura.id) {
-      <div #captureDiv [id]="'div-' + captura.id" part="screen-capture" class="group relative m-2 flex max-w-[16.6667%] justify-center bg-transparent object-contain text-center">
-        <video #videoElement disablePictureInPicture (pointerdown)="mousedown($event, captura.id)" (contextmenu)="onContextMenu($event, captura.id)" [id]="captura.id" autoplay playsinline muted class="cursor-grab rounded-lg border border-black object-contain hover-2 active:cursor-grabbing dark:border-gray-400" [srcObject]="captura"></video>
+      <div (pointerdown)="mousedown($event, captura.id)" (contextmenu)="onContextMenu($event, captura.id)" #captureDiv [id]="'div-' + captura.id" part="screen-capture" class="cursor-grab active:cursor-grabbing group relative m-2 flex max-w-[16.6667%] justify-center bg-transparent object-contain text-center">
+        <video #videoElement disablePictureInPicture [id]="captura.id" autoplay playsinline muted class="rounded-lg border border-black object-contain hover-2 dark:border-gray-400" [srcObject]="captura"></video>
         <!-- Botón full-screan -->
         <svg (click)="fullscreen(captura)" (keydown.enter)="fullscreen(captura)" class="absolute top-2 left-2 z-10 hidden h-4 w-4 cursor-pointer text-black group-hover:block" width="800px" height="800px" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
           <path fill-rule="evenodd" clip-rule="evenodd" d="M5 1.25C5.41421 1.25 5.75 1.58579 5.75 2V11C5.75 12.9068 5.75159 14.2615 5.88976 15.2892C6.02502 16.2952 6.27869 16.8749 6.7019 17.2981C7.12511 17.7213 7.70476 17.975 8.71085 18.1102C9.73851 18.2484 11.0932 18.25 13 18.25H22C22.4142 18.25 22.75 18.5858 22.75 19C22.75 19.4142 22.4142 19.75 22 19.75H19.75V22C19.75 22.4142 19.4142 22.75 19 22.75C18.5858 22.75 18.25 22.4142 18.25 22V19.75H12.9436C11.1058 19.75 9.65019 19.75 8.51098 19.5969C7.33855 19.4392 6.38961 19.1071 5.64124 18.3588C4.89288 17.6104 4.56076 16.6614 4.40313 15.489C4.24997 14.3498 4.24998 12.8942 4.25 11.0564L4.25 5.75H2C1.58579 5.75 1.25 5.41421 1.25 5C1.25 4.58579 1.58579 4.25 2 4.25H4.25V2C4.25 1.58579 4.58579 1.25 5 1.25ZM15.2892 5.88976C14.2615 5.75159 12.9068 5.75 11 5.75H8C7.58579 5.75 7.25 5.41421 7.25 5C7.25 4.58579 7.58579 4.25 8 4.25L11.0564 4.25C12.8942 4.24998 14.3498 4.24997 15.489 4.40313C16.6614 4.56076 17.6104 4.89288 18.3588 5.64124C19.1071 6.38961 19.4392 7.33855 19.5969 8.51098C19.75 9.65019 19.75 11.1058 19.75 12.9436V16C19.75 16.4142 19.4142 16.75 19 16.75C18.5858 16.75 18.25 16.4142 18.25 16V13C18.25 11.0932 18.2484 9.73851 18.1102 8.71085C17.975 7.70476 17.7213 7.12511 17.2981 6.7019C16.8749 6.27869 16.2952 6.02502 15.2892 5.88976Z" fill="currentColor" />
@@ -236,14 +237,14 @@
           <video [id]="estatico.name" disablePictureInPicture (pointerdown)="mousedown($event, estatico.name)" (contextmenu)="onContextMenu($event, estatico.name)" [src]="getFileUrl(estatico)" muted class="h-full w-full cursor-grab rounded-lg active:cursor-grabbing"></video>
         } @else if (estatico.type.startsWith("audio/")) {
           <!-- Renderiza un audio -->
-          <div [id]="estatico.name" class="relative h-full w-full cursor-grab rounded-lg active:cursor-grabbing">
+          <div [id]="estatico.name" class="relative h-full aspect-video rounded-lg active:cursor-grabbing">
             <p class="m-2 w-full truncate overflow-hidden text-ellipsis whitespace-nowrap">
               {{ estatico.name }}
             </p>
             <!-- Botón Play/Pause -->
-            <button id="play-pause" class="relative z-30 mr-2 ml-2 h-4 w-4 bg-transparent text-gray-900 hover:text-gray-500">
+            <button id="play-pause" class="cursor-pointer relative z-30 mr-2 ml-2 h-4 w-4 bg-transparent text-gray-900 hover:text-gray-500">
               <!-- Botón Play-->
-              <svg id="play" class="h-full w-full" style="display: block" width="800px" height="800px" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <svg id="play" class="cursor-pointer h-full w-full" style="display: block" width="800px" height="800px" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                 <path d="M21.4086 9.35258C23.5305 10.5065 23.5305 13.4935 21.4086 14.6474L8.59662 21.6145C6.53435 22.736 4 21.2763 4 18.9671L4 5.0329C4 2.72368 6.53435 1.26402 8.59661 2.38548L21.4086 9.35258Z" fill="currentColor" />
               </svg>
 
@@ -255,7 +256,7 @@
             </button>
 
             <!-- Botón Reiniciar -->
-            <button id="restart" class="relative z-30 mr-2 h-4 w-4 bg-transparent text-gray-900 hover:text-gray-500">
+            <button id="restart" class="cursor-pointer relative z-30 mr-2 h-4 w-4 bg-transparent text-gray-900 hover:text-gray-500">
               <svg width="800px" class="h-full w-full" height="800px" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                 <path d="M8.09015 14.6474C6.30328 13.4935 6.30328 10.5065 8.09015 9.35258L18.8792 2.38548C20.6158 1.26402 22.75 2.72368 22.75 5.0329V18.9671C22.75 21.2763 20.6158 22.736 18.8792 21.6145L8.09015 14.6474Z" fill="currentColor" />
                 <path d="M2 5C2 4.58579 2.33579 4.25 2.75 4.25C3.16421 4.25 3.5 4.58579 3.5 5V19C3.5 19.4142 3.16421 19.75 2.75 19.75C2.33579 19.75 2 19.4142 2 19V5Z" fill="currentColor" />
@@ -263,7 +264,7 @@
             </button>
 
             <!-- Botón loop -->
-            <button id="loop" class="relative z-30 h-4 w-4 bg-transparent text-gray-900 hover:text-gray-500">
+            <button id="loop" class="cursor-pointer relative z-30 h-4 w-4 bg-transparent text-gray-900 hover:text-gray-500">
               <!-- loop desactivado -->
               <svg id="loop-off" class="h-full w-full" width="800px" height="800px" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                 <path fill-rule="evenodd" clip-rule="evenodd" d="M8.46967 2.46967C8.76256 2.17678 9.23744 2.17678 9.53033 2.46967L11.5303 4.46967C11.7448 4.68417 11.809 5.00676 11.6929 5.28701C11.5768 5.56727 11.3033 5.75 11 5.75H9C5.54822 5.75 2.75 8.54822 2.75 12C2.75 15.4517 5.54846 18.25 9.00028 18.25H9.5C9.91421 18.25 10.25 18.5858 10.25 19C10.25 19.4142 9.91421 19.75 9.5 19.75H9.00028C4.72011 19.75 1.25 16.2802 1.25 12C1.25 7.71979 4.71979 4.25 9 4.25H9.18934L8.46967 3.53033C8.17678 3.23744 8.17678 2.76256 8.46967 2.46967ZM13.75 5C13.75 4.58579 14.0858 4.25 14.5 4.25H15C19.2802 4.25 22.75 7.71979 22.75 12C22.75 16.2802 19.2802 19.75 15 19.75H14.8107L15.5303 20.4697C15.8232 20.7626 15.8232 21.2374 15.5303 21.5303C15.2374 21.8232 14.7626 21.8232 14.4697 21.5303L12.4697 19.5303C12.2552 19.3158 12.191 18.9932 12.3071 18.713C12.4232 18.4327 12.6967 18.25 13 18.25H15C18.4518 18.25 21.25 15.4518 21.25 12C21.25 8.54822 18.4518 5.75 15 5.75H14.5C14.0858 5.75 13.75 5.41421 13.75 5Z" fill="currentColor" />
@@ -280,9 +281,9 @@
             <span id="time" class="ml-2">00:00 / 00:00</span>
 
             <!-- Barra de progreso -->
-            <input type="range" id="progress" min="0" max="100" step="0.1" value="0" class="m-2 w-[90%] pl-0" />
+            <input type="range" id="progress" min="0" max="100" step="0.1" value="0" class="m-2 w-[90%] z-10 cursor-pointer pl-0" />
           </div>
-          <div id="audio-stream" class="absolute top-0 left-0 -z-10 h-full w-full"></div>
+          <div id="audio-stream" class="absolute top-0 left-0 h-full w-full pointer-events-none"></div>
         }
         @if (estatico.type.startsWith("image/") || estatico.type.startsWith("video/")) {
           <!-- Botón full-screan -->
@@ -317,28 +318,28 @@
 
 <!-- Capa elementos emitidos -->
 <div #capa id="capa" class="group absolute top-0 left-0 z-10 hidden h-full w-full rounded-lg bg-black opacity-50 hover:opacity-80">
-  <button id="buttonxcapa" class="absolute top-0 right-0 m-2 hidden h-4 w-4 rounded-full text-gray-700 group-hover:block hover:text-gray-500">
+  <button id="buttonxcapa" class="absolute cursor-pointer top-0 right-0 z-10 m-2 hidden h-4 w-4 rounded-full text-gray-700 group-hover:block hover:text-gray-500">
     <!-- Botón X -->
     <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
       <path d="M20.7457 3.32851C20.3552 2.93798 19.722 2.93798 19.3315 3.32851L12.0371 10.6229L4.74275 3.32851C4.35223 2.93798 3.71906 2.93798 3.32854 3.32851C2.93801 3.71903 2.93801 4.3522 3.32854 4.74272L10.6229 12.0371L3.32856 19.3314C2.93803 19.722 2.93803 20.3551 3.32856 20.7457C3.71908 21.1362 4.35225 21.1362 4.74277 20.7457L12.0371 13.4513L19.3315 20.7457C19.722 21.1362 20.3552 21.1362 20.7457 20.7457C21.1362 20.3551 21.1362 19.722 20.7457 19.3315L13.4513 12.0371L20.7457 4.74272C21.1362 4.3522 21.1362 3.71903 20.7457 3.32851Z" fill="currentColor" />
     </svg>
   </button>
   <!-- Botones para mover elementos -->
-  <div id="moveElement" class="absolute top-0 left-0 hidden">
-    <button id="moveElementUp" class="m-2 hidden h-4 w-4 text-gray-700 group-hover:block hover:text-gray-500">
+  <div id="moveElement" class="absolute top-0 left-0 z-20 hidden">
+    <button id="moveElementUp" class="m-2 cursor-pointer hidden h-4 w-4 text-gray-700 group-hover:block hover:text-gray-500">
       <!-- Botón Up -->
-      <svg class="h-4 w-4" width="800px" height="800px" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <svg name="moveElementUp" class="h-4 w-4" width="800px" height="800px" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
         <path d="M12.3704 8.16485L18.8001 14.7953C19.2013 15.2091 18.9581 16 18.4297 16H5.5703C5.04189 16 4.79869 15.2091 5.1999 14.7953L11.6296 8.16485C11.8427 7.94505 12.1573 7.94505 12.3704 8.16485Z" fill="currentColor" />
       </svg>
     </button>
-    <button id="moveElementDown" class="m-2 hidden h-4 w-4 text-gray-700 group-hover:block hover:text-gray-500">
+    <button id="moveElementDown" class="m-2 cursor-pointer hidden h-4 w-4 text-gray-700 group-hover:block hover:text-gray-500">
       <!-- Botón Down -->
-      <svg class="h-4 w-4" width="800px" height="800px" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <svg name="moveElementDown" class="h-4 w-4" width="800px" height="800px" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
         <path d="M12.3704 15.8351L18.8001 9.20467C19.2013 8.79094 18.9581 8 18.4297 8H5.5703C5.04189 8 4.79869 8.79094 5.1999 9.20467L11.6296 15.8351C11.8427 16.055 12.1573 16.0549 12.3704 15.8351Z" fill="currentColor" />
       </svg>
     </button>
   </div>
-  <div id="controllers" class="hidden group-hover:block"></div>
+  <div id="controllers" class="absolute hidden group-hover:block h-full"></div>
 </div>
 
 <!-- Marco azul -->
@@ -355,16 +356,16 @@
   <div id="tirador-br" (pointerdown)="redimensionado($event)" class="absolute right-0 bottom-0 z-20 h-4 w-4 cursor-grab border-solid border border-white hover:border-2 active:cursor-grabbing"></div>
   <div id="tirador-center" (pointerdown)="redimensionado($event)" class="tirador-central"></div>
 
-  <div id="line1" class="absolute h-[1px] origin-top-left transform bg-white"></div>
-  <div id="line2" class="absolute h-[1px] origin-top-right transform bg-white" style="border: null"></div>
+  <div id="line1" class="absolute h-px origin-top-left transform bg-white"></div>
+  <div id="line2" class="absolute h-px origin-top-right transform bg-white" style="border: null"></div>
 </div>
 
 <!-- Controler de videos estaticos -->
-<div #control id="control" class="relative flex items-center justify-between p-2 text-white group-hover:block" style="display: none">
+<div #control id="control" class="relative flex items-center justify-between ml-4 mt- p-2 h-full text-white group-hover:block" style="display: none">
   <!-- Botón Play/Pause -->
-  <button id="play-pause" class="relative z-30 mr-2 h-4 w-4 bg-transparent text-gray-900 hover:text-gray-500">
+  <button id="play-pause" class="cursor-pointer relative z-30 mr-2 h-4 w-4 bg-transparent text-gray-900 hover:text-gray-500">
     <!-- Botón Play-->
-    <svg id="play" class="h-full w-full" style="display: block" width="800px" height="800px" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <svg #play id="play" class="h-full w-full" style="display: block" width="800px" height="800px" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
       <path d="M21.4086 9.35258C23.5305 10.5065 23.5305 13.4935 21.4086 14.6474L8.59662 21.6145C6.53435 22.736 4 21.2763 4 18.9671L4 5.0329C4 2.72368 6.53435 1.26402 8.59661 2.38548L21.4086 9.35258Z" fill="currentColor" />
     </svg>
 
@@ -376,7 +377,7 @@
   </button>
 
   <!-- Botón Reiniciar -->
-  <button id="restart" class="relative z-30 mr-2 h-4 w-4 bg-transparent text-gray-900 hover:text-gray-500">
+  <button id="restart" class="cursor-pointer relative z-30 mr-2 h-4 w-4 bg-transparent text-gray-900 hover:text-gray-500">
     <svg width="800px" class="h-full w-full" height="800px" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
       <path d="M8.09015 14.6474C6.30328 13.4935 6.30328 10.5065 8.09015 9.35258L18.8792 2.38548C20.6158 1.26402 22.75 2.72368 22.75 5.0329V18.9671C22.75 21.2763 20.6158 22.736 18.8792 21.6145L8.09015 14.6474Z" fill="currentColor" />
       <path d="M2 5C2 4.58579 2.33579 4.25 2.75 4.25C3.16421 4.25 3.5 4.58579 3.5 5V19C3.5 19.4142 3.16421 19.75 2.75 19.75C2.33579 19.75 2 19.4142 2 19V5Z" fill="currentColor" />
@@ -384,7 +385,7 @@
   </button>
 
   <!-- Botón loop -->
-  <button id="loop" class="relative z-30 h-4 w-4 bg-transparent text-gray-900 hover:text-gray-500">
+  <button id="loop" class="cursor-pointer relative z-30 h-4 w-4 bg-transparent text-gray-900 hover:text-gray-500">
     <!-- loop desactivado -->
     <svg id="loop-off" class="h-full w-full" width="800px" height="800px" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
       <path fill-rule="evenodd" clip-rule="evenodd" d="M8.46967 2.46967C8.76256 2.17678 9.23744 2.17678 9.53033 2.46967L11.5303 4.46967C11.7448 4.68417 11.809 5.00676 11.6929 5.28701C11.5768 5.56727 11.3033 5.75 11 5.75H9C5.54822 5.75 2.75 8.54822 2.75 12C2.75 15.4517 5.54846 18.25 9.00028 18.25H9.5C9.91421 18.25 10.25 18.5858 10.25 19C10.25 19.4142 9.91421 19.75 9.5 19.75H9.00028C4.72011 19.75 1.25 16.2802 1.25 12C1.25 7.71979 4.71979 4.25 9 4.25H9.18934L8.46967 3.53033C8.17678 3.23744 8.17678 2.76256 8.46967 2.46967ZM13.75 5C13.75 4.58579 14.0858 4.25 14.5 4.25H15C19.2802 4.25 22.75 7.71979 22.75 12C22.75 16.2802 19.2802 19.75 15 19.75H14.8107L15.5303 20.4697C15.8232 20.7626 15.8232 21.2374 15.5303 21.5303C15.2374 21.8232 14.7626 21.8232 14.4697 21.5303L12.4697 19.5303C12.2552 19.3158 12.191 18.9932 12.3071 18.713C12.4232 18.4327 12.6967 18.25 13 18.25H15C18.4518 18.25 21.25 15.4518 21.25 12C21.25 8.54822 18.4518 5.75 15 5.75H14.5C14.0858 5.75 13.75 5.41421 13.75 5Z" fill="currentColor" />
@@ -399,7 +400,7 @@
   </button>
 
   <!-- Barra de progreso -->
-  <input type="range" id="progress" min="0" max="100" step="0.1" value="0" class="m-2 w-[90%] pl-0" />
+  <input type="range" id="progress" min="0" max="100" step="0.1" value="0" class="m-2 w-[90%] grow cursor-pointer pl-0" />
 
   <!-- Tiempo actual / Duración -->
   <span id="time">00:00 / 00:00</span>
