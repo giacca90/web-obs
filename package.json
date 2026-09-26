@@ -106,8 +106,15 @@
     "postcss": "^8.5.26",
     "prettier-plugin-tailwindcss": "^0.8.1",
     "tailwind-scrollbar": "^4.0.2",
-    "typescript": "~7.0.2",
+    "typescript": "6.0.3",
     "undici-types": "^8.10.0",
     "zone.js": "^0.16.2"
+  },
+  "allowScripts": {
+    "@parcel/watcher@2.6.0": true,
+    "@parcel/watcher@2.5.1": true,
+    "esbuild@0.28.2": true,
+    "lmdb@3.5.6": true,
+    "msgpackr-extract@3.0.4": true
   }
 }
