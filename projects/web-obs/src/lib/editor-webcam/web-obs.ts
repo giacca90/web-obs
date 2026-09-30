@@ -407,6 +407,7 @@ export class WebOBS implements OnInit, AfterViewInit, OnDestroy, OnChanges {
       this.audiosCapturas = this.audiosCapturas.filter((t) => t.id !== track.id);
       this.audiosElements = this.audiosElements.filter((element: AudioElement) => element.id !== track.id);
       this.audiosConnections = this.audiosConnections.filter((element: AudioConnection) => element.idEntrada !== track.id || element.idSalida !== track.id);
+      this.cdr.detectChanges();
       this.drawAudioConnections();
     }
     for (const track of stream.getVideoTracks()) {
@@ -623,10 +624,9 @@ export class WebOBS implements OnInit, AfterViewInit, OnDestroy, OnChanges {
       }
     }
 
-    this.cdr.detectChanges();
-
     // Espera a que todas las promesas hayan terminado
     await Promise.all([...videoPromises, ...audioInputPromises, ...audioOutputPromises]);
+    this.cdr.detectChanges();
     this.drawAudioConnections();
   }
 
@@ -677,6 +677,7 @@ export class WebOBS implements OnInit, AfterViewInit, OnDestroy, OnChanges {
     }
     this.videoDevices = this.videoDevices.filter((d) => allDevices.some((ad) => ad.deviceId === d.deviceId));
     this.audioDevices = this.audioDevices.filter((d) => allDevices.some((ad) => ad.deviceId === d.deviceId));
+    this.cdr.detectChanges();
   }
 
   /**
@@ -841,6 +842,7 @@ export class WebOBS implements OnInit, AfterViewInit, OnDestroy, OnChanges {
 
       // Guardar el dispositivo en la lista
       this.audioOutputDevices.push(device);
+      this.cdr.detectChanges();
 
       await this.ensureAudioContext();
 
@@ -890,6 +892,7 @@ export class WebOBS implements OnInit, AfterViewInit, OnDestroy, OnChanges {
 
       // Agregar el audio al DOM
       document.body.appendChild(audio);
+      this.cdr.detectChanges();
 
       // Visualizar los niveles de audio
       const audioLevelRef = await this.waitForElement(() => this.audioLevelDivs.find((el) => el.nativeElement.id === 'audio-level-' + device.deviceId));
@@ -1089,6 +1092,7 @@ export class WebOBS implements OnInit, AfterViewInit, OnDestroy, OnChanges {
         this.videosElements = this.videosElements.filter((v) => v.id !== stream.id);
         this.audiosElements = this.audiosElements.filter((element: AudioElement) => element.id !== stream.id);
         this.audiosConnections = this.audiosConnections.filter((element: AudioConnection) => element.idEntrada !== stream.id || element.idSalida !== stream.id);
+        this.cdr.detectChanges();
         this.drawAudioConnections();
       };
     } catch (error) {
@@ -2595,6 +2599,7 @@ export class WebOBS implements OnInit, AfterViewInit, OnDestroy, OnChanges {
 
       this.audiosElements = this.audiosElements.filter((element: AudioElement) => element.id !== (ele as File).name);
       this.audiosConnections = this.audiosConnections.filter((element: AudioConnection) => element.idEntrada !== (ele as File).name || element.idSalida !== (ele as File).name);
+      this.cdr.detectChanges();
     }
     this.drawAudioConnections();
   }
