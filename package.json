@@ -45,9 +45,9 @@
     "publish:web-obs": "cd dist/web-obs && npm publish --access public",
     "publish:elements": "cd dist/web-obs/elements && npm publish --access public",
     "publish": "npm run build && npm run publish:web-obs && npm run publish:elements && node publish-visits.js && gh-pages -d dist/web-obs/elements",
-    "release:patch": "npm version patch && cd projects/web-obs && npm version patch && cd ../.. && npm run publish",
-    "release:minor": "npm version minor && cd projects/web-obs && npm version minor && cd ../.. && npm run publish",
-    "release:major": "npm version major && cd projects/web-obs && npm version major && cd ../.. && npm run publish",
+    "release:patch": "npm version patch --force && cd projects/web-obs && npm version patch --force && cd ../.. && npm run publish",
+    "release:minor": "npm version minor --force && cd projects/web-obs && npm version minor --force && cd ../.. && npm run publish",
+    "release:major": "npm version major --force && cd projects/web-obs && npm version major --force && cd ../.. && npm run publish",
     "license-report": "license-checker --txt --out THIRD-PARTY-LICENSES.txt && sed -i \"s|$PWD|.|g\" THIRD-PARTY-LICENSES.txt"
   },
   "prettier": {
@@ -94,6 +94,7 @@
     "karma-firefox-launcher": "^2.1.3",
     "karma-jasmine": "~5.1.0",
     "karma-jasmine-html-reporter": "~2.3.0",
+    "license-checker": "^25.0.1",
     "ng-packagr": "^22.2.4",
     "ngx-build-plus": "^20.0.0",
     "postcss": "^8.5.29",
@@ -105,9 +106,8 @@
   "allowScripts": {
     "@parcel/watcher@2.6.0": true,
     "@parcel/watcher@2.5.1": true,
-    "esbuild@0.28.1": true,
-    "esbuild@0.25.12": true,
-    "lmdb@3.4.2": true,
-    "msgpackr-extract@3.0.4": true
+    "msgpackr-extract@3.0.4": true,
+    "esbuild@0.28.2": true,
+    "lmdb@3.5.6": true
   }
 }
