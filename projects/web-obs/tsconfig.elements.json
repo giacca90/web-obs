@@ -8,6 +8,12 @@
   },
   "files": ["src/lib/elements.ts"],
   "angularCompilerOptions": {
-    "compilationMode": "full"
+    "compilationMode": "full",
+    "extendedDiagnostics": {
+      "checks": {
+        "nullishCoalescingNotNullable": "suppress",
+        "optionalChainNotNullable": "suppress"
+      }
+    }
   }
 }

@@ -5562,7 +5562,7 @@
 │  ├─ publisher: Kris Zyp
 │  ├─ path: ./node_modules/weak-lru-cache
 │  └─ licenseFile: ./node_modules/weak-lru-cache/README.md
-├─ web-obs@0.0.17
+├─ web-obs@0.0.18
 │  ├─ licenses: MIT
 │  ├─ repository: https://github.com/giacca90/web-obs
 │  ├─ publisher: Giacca90

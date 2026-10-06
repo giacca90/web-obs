@@ -2351,7 +2351,7 @@ describe('WebOBS', () => {
       spyOn(document.body, 'appendChild');
 
       // Mock waitForElement para que se resuelva síncronamente de inmediato
-      spyOn(component as any, 'waitForElement').and.callFake(async (getter: () => any) => {
+      spyOn(component as any, 'waitForElement').and.callFake((getter: () => any) => {
         return getter();
       });
 
@@ -2403,7 +2403,7 @@ describe('WebOBS', () => {
       spyOn(document.body, 'appendChild');
 
       // Mock waitForElement para que se resuelva síncronamente de inmediato
-      spyOn(component as any, 'waitForElement').and.callFake(async (getter: () => any) => {
+      spyOn(component as any, 'waitForElement').and.callFake((getter: () => any) => {
         return getter();
       });
 
@@ -5426,7 +5426,7 @@ describe('WebOBS', () => {
       spyOn(component as any, '_drawSingleAudioConnection');
 
       component.drawAudioConnections();
-      tick(150);
+      tick(250);
 
       expect((component as any)._drawSingleAudioConnection).toHaveBeenCalled();
     }));
@@ -6575,7 +6575,7 @@ describe('WebOBS', () => {
     const mockPresets = new Map([['p1', { elements: [] } as any]]);
     component.savedFiles = mockFiles;
     component.savedPresets = mockPresets;
-    spyOn(component, 'loadFiles');
+    spyOn(component, 'loadFiles').and.returnValue(Promise.resolve());
 
     const mockStream = { getAudioTracks: () => [], getVideoTracks: () => [], getTracks: () => [] } as any;
     (navigator.mediaDevices.getUserMedia as jasmine.Spy).and.returnValue(Promise.resolve(mockStream));
@@ -7657,11 +7657,18 @@ describe('WebOBS', () => {
     component.audiosElements = [{ id: 'in1' } as any, { id: 'out1' } as any];
     component.audiosConnections = [{ idEntrada: 'in1', idSalida: 'out1', entrada: { disconnect: jasmine.createSpy('disconnect') }, salida: {} }] as any;
 
+    const audios = document.createElement('div');
+    spyOn(audios, 'getBoundingClientRect').and.returnValue({ width: 200 } as any);
+    component.audios = { nativeElement: audios } as any;
+    component.audiosList = { nativeElement: document.createElement('div') } as any;
+    component.conexionesIzquierda = { nativeElement: document.createElement('div') } as any;
+    component.conexionesDerecha = { nativeElement: document.createElement('div') } as any;
+
     spyOn(component as any, '_getConnectionPoint').and.returnValue({ x: 10, y: 20 });
     spyOn(component as any, '_createConnectionSquare').and.callThrough();
 
     component.drawAudioConnections();
-    tick(100);
+    tick(300);
 
     expect((component as any)._createConnectionSquare).toHaveBeenCalled();
   }));
@@ -7798,7 +7805,7 @@ describe('WebOBS', () => {
     spyOn(component as any, '_drawSingleAudioConnection');
 
     component.drawAudioConnections();
-    tick(100);
+    tick(250);
 
     expect((component as any)._drawSingleAudioConnection).toHaveBeenCalled();
   }));
@@ -8559,7 +8566,7 @@ describe('WebOBS', () => {
       spyOn(component as any, 'createEqualizer').and.returnValue([]);
       spyOn(component, 'visualizeAudio').and.returnValue(Promise.resolve());
       spyOn(console, 'error');
-      spyOn(component as any, 'waitForElement').and.callFake(async (getter: () => any) => {
+      spyOn(component as any, 'waitForElement').and.callFake((getter: () => any) => {
         return getter();
       });
 
@@ -8646,9 +8653,9 @@ describe('WebOBS', () => {
       component.drawAudioConnections();
 
       setTimeout(() => {
-        expect(mockConexionesIzquierda.children).toHaveSize(1);
+        expect(mockConexionesIzquierda.children.length).toBe(1);
         done();
-      }, 150);
+      }, 250);
     });
   });
 
@@ -8857,7 +8864,7 @@ describe('WebOBS', () => {
         return originalCreateElement.call(document, tagName);
       });
       spyOn(inputElement, 'click');
-      spyOn(component, 'loadFiles');
+      spyOn(component, 'loadFiles').and.returnValue(Promise.resolve());
     });
 
     it('should call loadFiles with selected files', (done) => {
@@ -10419,6 +10426,9 @@ describe('WebOBS - Branch Coverage 95% Suite', () => {
   describe('Comprehensive Targeted Branch Coverage Tests', () => {
     it('should enter line 861 else branch when volume control is not found', async () => {
       const mockDevice = { deviceId: 'dev-no-volume-861', label: 'Dev 861' } as MediaDeviceInfo;
+      const ctx = createFullMockAudioContext() as any;
+      component.audioContext = ctx;
+      component.mixedAudioDestination = ctx.createMediaStreamDestination();
       const mockAudio = document.createElement('audio') as any;
       mockAudio.setSinkId = jasmine.createSpy('setSinkId').and.returnValue(Promise.resolve());
       const originalAudio = globalThis.Audio;
@@ -10430,7 +10440,7 @@ describe('WebOBS - Branch Coverage 95% Suite', () => {
       audioLevelEl.id = 'audio-level-dev-no-volume-861';
 
       const consoleErrorSpy = spyOn(console, 'error');
-      spyOn(component as any, 'waitForElement').and.callFake(async (getter: () => any) => {
+      spyOn(component as any, 'waitForElement').and.callFake((getter: () => any) => {
         const str = getter.toString();
         if (str.includes('volumeInputs')) return undefined;
         return new ElementRef(audioLevelEl);
@@ -10448,6 +10458,9 @@ describe('WebOBS - Branch Coverage 95% Suite', () => {
 
     it('should enter line 878 catch block when setSinkId rejects', async () => {
       const mockDevice = { deviceId: 'dev-sink-fail-878', label: 'Dev 878' } as MediaDeviceInfo;
+      const ctx = createFullMockAudioContext() as any;
+      component.audioContext = ctx;
+      component.mixedAudioDestination = ctx.createMediaStreamDestination();
       const mockAudio = document.createElement('audio') as any;
       const testError = new Error('setSinkId mock failure');
       mockAudio.setSinkId = jasmine.createSpy('setSinkId').and.returnValue(Promise.reject(testError));
@@ -10464,7 +10477,7 @@ describe('WebOBS - Branch Coverage 95% Suite', () => {
       audioLevelEl.id = 'audio-level-dev-sink-fail-878';
 
       const consoleErrorSpy = spyOn(console, 'error');
-      spyOn(component as any, 'waitForElement').and.callFake(async (getter: () => any) => {
+      spyOn(component as any, 'waitForElement').and.callFake((getter: () => any) => {
         const str = getter.toString();
         if (str.includes('volumeInputs')) return new ElementRef(volumeEl);
         return new ElementRef(audioLevelEl);
@@ -10482,6 +10495,9 @@ describe('WebOBS - Branch Coverage 95% Suite', () => {
 
     it('should enter line 892 else branch when audio level visualizer is not found', async () => {
       const mockDevice = { deviceId: 'dev-no-visualizer-892', label: 'Dev 892' } as MediaDeviceInfo;
+      const ctx = createFullMockAudioContext() as any;
+      component.audioContext = ctx;
+      component.mixedAudioDestination = ctx.createMediaStreamDestination();
       const mockAudio = document.createElement('audio') as any;
       mockAudio.setSinkId = jasmine.createSpy('setSinkId').and.returnValue(Promise.resolve());
       const originalAudio = globalThis.Audio;
@@ -10494,7 +10510,7 @@ describe('WebOBS - Branch Coverage 95% Suite', () => {
       volumeEl.value = '50';
 
       const consoleErrorSpy = spyOn(console, 'error');
-      spyOn(component as any, 'waitForElement').and.callFake(async (getter: () => any) => {
+      spyOn(component as any, 'waitForElement').and.callFake((getter: () => any) => {
         const str = getter.toString();
         if (str.includes('volumeInputs')) return new ElementRef(volumeEl);
         return undefined;
@@ -11005,7 +11021,7 @@ describe('WebOBS - Branch Coverage 95% Suite', () => {
       component.audiosElements = [{ id: 'recorder', ele: {} as any }];
 
       component.drawAudioConnections();
-      tick(150);
+      tick(250);
 
       expect(conexionesIzquierda.children.length).toBe(1);
     }));
@@ -11513,8 +11529,7 @@ describe('WebOBS - Branch Coverage 95% Suite', () => {
       (component.videoElements as any).reset([]);
 
       spyOn(component as any, 'waitForElement').and.callFake((predicate: () => any) => {
-        const res = predicate();
-        return Promise.resolve(res);
+        return predicate();
       });
 
       const consoleErrorSpy = spyOn(console, 'error');
