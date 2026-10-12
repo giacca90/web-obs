@@ -13,95 +13,89 @@
 │  ├─ email: jridgewell@google.com
 │  ├─ path: ./node_modules/@ampproject/remapping
 │  └─ licenseFile: ./node_modules/@ampproject/remapping/LICENSE
-├─ @angular-devkit/architect@0.2202.0
+├─ @angular-devkit/architect@0.2202.1
 │  ├─ licenses: MIT
 │  ├─ repository: https://github.com/angular/angular-cli
 │  ├─ publisher: Angular Authors
 │  ├─ path: ./node_modules/@angular-devkit/architect
 │  └─ licenseFile: ./node_modules/@angular-devkit/architect/LICENSE
-├─ @angular-devkit/build-angular@22.2.0
+├─ @angular-devkit/build-angular@22.2.1
 │  ├─ licenses: MIT
 │  ├─ repository: https://github.com/angular/angular-cli
 │  ├─ publisher: Angular Authors
 │  ├─ path: ./node_modules/@angular-devkit/build-angular
 │  └─ licenseFile: ./node_modules/@angular-devkit/build-angular/LICENSE
-├─ @angular-devkit/build-webpack@0.2202.0
+├─ @angular-devkit/build-webpack@0.2202.1
 │  ├─ licenses: MIT
 │  ├─ repository: https://github.com/angular/angular-cli
 │  ├─ publisher: Angular Authors
 │  ├─ path: ./node_modules/@angular-devkit/build-webpack
 │  └─ licenseFile: ./node_modules/@angular-devkit/build-webpack/LICENSE
-├─ @angular-devkit/core@22.2.0
+├─ @angular-devkit/core@22.2.1
 │  ├─ licenses: MIT
 │  ├─ repository: https://github.com/angular/angular-cli
 │  ├─ publisher: Angular Authors
 │  ├─ path: ./node_modules/@angular-devkit/core
 │  └─ licenseFile: ./node_modules/@angular-devkit/core/LICENSE
-├─ @angular-devkit/schematics@22.2.0
+├─ @angular-devkit/schematics@22.2.1
 │  ├─ licenses: MIT
 │  ├─ repository: https://github.com/angular/angular-cli
 │  ├─ publisher: Angular Authors
 │  ├─ path: ./node_modules/@angular-devkit/schematics
 │  └─ licenseFile: ./node_modules/@angular-devkit/schematics/LICENSE
-├─ @angular/build@22.2.0
+├─ @angular/build@22.2.1
 │  ├─ licenses: MIT
 │  ├─ repository: https://github.com/angular/angular-cli
 │  ├─ publisher: Angular Authors
 │  ├─ path: ./node_modules/@angular/build
 │  └─ licenseFile: ./node_modules/@angular/build/LICENSE
-├─ @angular/cli@22.2.0
+├─ @angular/cli@22.2.1
 │  ├─ licenses: MIT
 │  ├─ repository: https://github.com/angular/angular-cli
 │  ├─ publisher: Angular Authors
 │  ├─ path: ./node_modules/@angular/cli
 │  └─ licenseFile: ./node_modules/@angular/cli/LICENSE
-├─ @angular/common@22.2.0
+├─ @angular/common@22.2.1
 │  ├─ licenses: MIT
 │  ├─ repository: https://github.com/angular/angular
 │  ├─ publisher: angular
 │  ├─ path: ./node_modules/@angular/common
 │  └─ licenseFile: ./node_modules/@angular/common/LICENSE
-├─ @angular/compiler-cli@22.2.0
+├─ @angular/compiler-cli@22.2.1
 │  ├─ licenses: MIT
 │  ├─ repository: https://github.com/angular/angular
 │  └─ path: ./node_modules/@angular/compiler-cli
-├─ @angular/compiler@22.2.0
+├─ @angular/compiler@22.2.1
 │  ├─ licenses: MIT
 │  ├─ repository: https://github.com/angular/angular
 │  ├─ publisher: angular
 │  ├─ path: ./node_modules/@angular/compiler
 │  └─ licenseFile: ./node_modules/@angular/compiler/LICENSE
-├─ @angular/core@22.2.0
+├─ @angular/core@22.2.1
 │  ├─ licenses: MIT
 │  ├─ repository: https://github.com/angular/angular
 │  ├─ publisher: angular
 │  ├─ path: ./node_modules/@angular/core
 │  └─ licenseFile: ./node_modules/@angular/core/LICENSE
-├─ @angular/elements@22.2.0
+├─ @angular/elements@22.2.1
 │  ├─ licenses: MIT
 │  ├─ repository: https://github.com/angular/angular
 │  ├─ publisher: angular
 │  ├─ path: ./node_modules/@angular/elements
 │  └─ licenseFile: ./node_modules/@angular/elements/LICENSE
-├─ @angular/forms@22.2.0
+├─ @angular/forms@22.2.1
 │  ├─ licenses: MIT
 │  ├─ repository: https://github.com/angular/angular
 │  ├─ publisher: angular
 │  ├─ path: ./node_modules/@angular/forms
 │  └─ licenseFile: ./node_modules/@angular/forms/LICENSE
-├─ @angular/platform-browser-dynamic@22.2.0
-│  ├─ licenses: MIT
-│  ├─ repository: https://github.com/angular/angular
-│  ├─ publisher: angular
-│  ├─ path: ./node_modules/@angular/platform-browser-dynamic
-│  └─ licenseFile: ./node_modules/@angular/platform-browser-dynamic/LICENSE
-├─ @angular/platform-browser@22.2.0
+├─ @angular/platform-browser@22.2.1
 │  ├─ licenses: MIT
 │  ├─ repository: https://github.com/angular/angular
 │  ├─ publisher: angular
 │  ├─ path: ./node_modules/@angular/platform-browser
 │  └─ licenseFile: ./node_modules/@angular/platform-browser/LICENSE
-├─ @angular/router@22.2.0
+├─ @angular/router@22.2.1
 │  ├─ licenses: MIT
 │  ├─ repository: https://github.com/angular/angular
 │  ├─ publisher: angular
@@ -112,22 +106,22 @@
 │  ├─ repository: https://github.com/babel/babel
 │  ├─ publisher: The Babel Team
 │  ├─ url: https://babel.dev/team
-│  ├─ path: ./node_modules/parse-json/node_modules/@babel/code-frame
-│  └─ licenseFile: ./node_modules/parse-json/node_modules/@babel/code-frame/LICENSE
+│  ├─ path: ./node_modules/@babel/code-frame
+│  └─ licenseFile: ./node_modules/@babel/code-frame/LICENSE
 ├─ @babel/code-frame@8.0.6
 │  ├─ licenses: MIT
 │  ├─ repository: https://github.com/babel/babel
 │  ├─ publisher: The Babel Team
 │  ├─ url: https://babel.dev/team
-│  ├─ path: ./node_modules/@babel/code-frame
-│  └─ licenseFile: ./node_modules/@babel/code-frame/LICENSE
+│  ├─ path: ./node_modules/@babel/traverse/node_modules/@babel/code-frame
+│  └─ licenseFile: ./node_modules/@babel/traverse/node_modules/@babel/code-frame/LICENSE
 ├─ @babel/compat-data@7.29.7
 │  ├─ licenses: MIT
 │  ├─ repository: https://github.com/babel/babel
 │  ├─ publisher: The Babel Team
 │  ├─ url: https://babel.dev/team
-│  ├─ path: ./node_modules/istanbul-lib-instrument/node_modules/@babel/compat-data
-│  └─ licenseFile: ./node_modules/istanbul-lib-instrument/node_modules/@babel/compat-data/LICENSE
+│  ├─ path: ./node_modules/karma-coverage/node_modules/@babel/compat-data
+│  └─ licenseFile: ./node_modules/karma-coverage/node_modules/@babel/compat-data/LICENSE
 ├─ @babel/compat-data@8.0.5
 │  ├─ licenses: MIT
 │  ├─ repository: https://github.com/babel/babel
@@ -140,8 +134,8 @@
 │  ├─ repository: https://github.com/babel/babel
 │  ├─ publisher: The Babel Team
 │  ├─ url: https://babel.dev/team
-│  ├─ path: ./node_modules/istanbul-lib-instrument/node_modules/@babel/core
-│  └─ licenseFile: ./node_modules/istanbul-lib-instrument/node_modules/@babel/core/LICENSE
+│  ├─ path: ./node_modules/karma-coverage/node_modules/@babel/core
+│  └─ licenseFile: ./node_modules/karma-coverage/node_modules/@babel/core/LICENSE
 ├─ @babel/core@8.0.1
 │  ├─ licenses: MIT
 │  ├─ repository: https://github.com/babel/babel
@@ -154,6 +148,13 @@
 │  ├─ repository: https://github.com/babel/babel
 │  ├─ publisher: The Babel Team
 │  ├─ url: https://babel.dev/team
+│  ├─ path: ./node_modules/@angular/build/node_modules/@babel/core
+│  └─ licenseFile: ./node_modules/@angular/build/node_modules/@babel/core/LICENSE
+├─ @babel/core@8.0.6
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/babel/babel
+│  ├─ publisher: The Babel Team
+│  ├─ url: https://babel.dev/team
 │  ├─ path: ./node_modules/@babel/core
 │  └─ licenseFile: ./node_modules/@babel/core/LICENSE
 ├─ @babel/generator@7.29.8
@@ -161,8 +162,8 @@
 │  ├─ repository: https://github.com/babel/babel
 │  ├─ publisher: The Babel Team
 │  ├─ url: https://babel.dev/team
-│  ├─ path: ./node_modules/istanbul-lib-instrument/node_modules/@babel/generator
-│  └─ licenseFile: ./node_modules/istanbul-lib-instrument/node_modules/@babel/generator/LICENSE
+│  ├─ path: ./node_modules/karma-coverage/node_modules/@babel/generator
+│  └─ licenseFile: ./node_modules/karma-coverage/node_modules/@babel/generator/LICENSE
 ├─ @babel/generator@8.0.5
 │  ├─ licenses: MIT
 │  ├─ repository: https://github.com/babel/babel
@@ -189,8 +190,8 @@
 │  ├─ repository: https://github.com/babel/babel
 │  ├─ publisher: The Babel Team
 │  ├─ url: https://babel.dev/team
-│  ├─ path: ./node_modules/istanbul-lib-instrument/node_modules/@babel/helper-compilation-targets
-│  └─ licenseFile: ./node_modules/istanbul-lib-instrument/node_modules/@babel/helper-compilation-targets/LICENSE
+│  ├─ path: ./node_modules/karma-coverage/node_modules/@babel/helper-compilation-targets
+│  └─ licenseFile: ./node_modules/karma-coverage/node_modules/@babel/helper-compilation-targets/LICENSE
 ├─ @babel/helper-compilation-targets@8.0.6
 │  ├─ licenses: MIT
 │  ├─ repository: https://github.com/babel/babel
@@ -222,8 +223,8 @@
 │  ├─ repository: https://github.com/babel/babel
 │  ├─ publisher: The Babel Team
 │  ├─ url: https://babel.dev/team
-│  ├─ path: ./node_modules/istanbul-lib-instrument/node_modules/@babel/helper-globals
-│  └─ licenseFile: ./node_modules/istanbul-lib-instrument/node_modules/@babel/helper-globals/LICENSE
+│  ├─ path: ./node_modules/karma-coverage/node_modules/@babel/helper-globals
+│  └─ licenseFile: ./node_modules/karma-coverage/node_modules/@babel/helper-globals/LICENSE
 ├─ @babel/helper-globals@8.0.6
 │  ├─ licenses: MIT
 │  ├─ repository: https://github.com/babel/babel
@@ -243,8 +244,8 @@
 │  ├─ repository: https://github.com/babel/babel
 │  ├─ publisher: The Babel Team
 │  ├─ url: https://babel.dev/team
-│  ├─ path: ./node_modules/istanbul-lib-instrument/node_modules/@babel/helper-module-imports
-│  └─ licenseFile: ./node_modules/istanbul-lib-instrument/node_modules/@babel/helper-module-imports/LICENSE
+│  ├─ path: ./node_modules/karma-coverage/node_modules/@babel/helper-module-imports
+│  └─ licenseFile: ./node_modules/karma-coverage/node_modules/@babel/helper-module-imports/LICENSE
 ├─ @babel/helper-module-imports@8.0.0
 │  ├─ licenses: MIT
 │  ├─ repository: https://github.com/babel/babel
@@ -257,8 +258,8 @@
 │  ├─ repository: https://github.com/babel/babel
 │  ├─ publisher: The Babel Team
 │  ├─ url: https://babel.dev/team
-│  ├─ path: ./node_modules/istanbul-lib-instrument/node_modules/@babel/helper-module-transforms
-│  └─ licenseFile: ./node_modules/istanbul-lib-instrument/node_modules/@babel/helper-module-transforms/LICENSE
+│  ├─ path: ./node_modules/karma-coverage/node_modules/@babel/helper-module-transforms
+│  └─ licenseFile: ./node_modules/karma-coverage/node_modules/@babel/helper-module-transforms/LICENSE
 ├─ @babel/helper-module-transforms@8.0.6
 │  ├─ licenses: MIT
 │  ├─ repository: https://github.com/babel/babel
@@ -285,8 +286,8 @@
 │  ├─ repository: https://github.com/babel/babel
 │  ├─ publisher: The Babel Team
 │  ├─ url: https://babel.dev/team
-│  ├─ path: ./node_modules/@babel/helper-remap-async-to-generator
-│  └─ licenseFile: ./node_modules/@babel/helper-remap-async-to-generator/LICENSE
+│  ├─ path: ./node_modules/@angular-devkit/build-angular/node_modules/@babel/helper-remap-async-to-generator
+│  └─ licenseFile: ./node_modules/@angular-devkit/build-angular/node_modules/@babel/helper-remap-async-to-generator/LICENSE
 ├─ @babel/helper-replace-supers@8.0.1
 │  ├─ licenses: MIT
 │  ├─ repository: https://github.com/babel/babel
@@ -313,36 +314,36 @@
 │  ├─ repository: https://github.com/babel/babel
 │  ├─ publisher: The Babel Team
 │  ├─ url: https://babel.dev/team
-│  ├─ path: ./node_modules/@babel/helper-split-export-declaration/node_modules/@babel/helper-string-parser
-│  └─ licenseFile: ./node_modules/@babel/helper-split-export-declaration/node_modules/@babel/helper-string-parser/LICENSE
+│  ├─ path: ./node_modules/@babel/helper-string-parser
+│  └─ licenseFile: ./node_modules/@babel/helper-string-parser/LICENSE
 ├─ @babel/helper-string-parser@8.0.6
 │  ├─ licenses: MIT
 │  ├─ repository: https://github.com/babel/babel
 │  ├─ publisher: The Babel Team
 │  ├─ url: https://babel.dev/team
-│  ├─ path: ./node_modules/@babel/helper-string-parser
-│  └─ licenseFile: ./node_modules/@babel/helper-string-parser/LICENSE
+│  ├─ path: ./node_modules/@babel/helper-annotate-as-pure/node_modules/@babel/helper-string-parser
+│  └─ licenseFile: ./node_modules/@babel/helper-annotate-as-pure/node_modules/@babel/helper-string-parser/LICENSE
 ├─ @babel/helper-validator-identifier@7.29.7
-│  ├─ licenses: MIT
-│  ├─ repository: https://github.com/babel/babel
-│  ├─ publisher: The Babel Team
-│  ├─ url: https://babel.dev/team
-│  ├─ path: ./node_modules/parse-json/node_modules/@babel/helper-validator-identifier
-│  └─ licenseFile: ./node_modules/parse-json/node_modules/@babel/helper-validator-identifier/LICENSE
-├─ @babel/helper-validator-identifier@8.0.6
 │  ├─ licenses: MIT
 │  ├─ repository: https://github.com/babel/babel
 │  ├─ publisher: The Babel Team
 │  ├─ url: https://babel.dev/team
 │  ├─ path: ./node_modules/@babel/helper-validator-identifier
 │  └─ licenseFile: ./node_modules/@babel/helper-validator-identifier/LICENSE
+├─ @babel/helper-validator-identifier@8.0.6
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/babel/babel
+│  ├─ publisher: The Babel Team
+│  ├─ url: https://babel.dev/team
+│  ├─ path: ./node_modules/@babel/helper-annotate-as-pure/node_modules/@babel/helper-validator-identifier
+│  └─ licenseFile: ./node_modules/@babel/helper-annotate-as-pure/node_modules/@babel/helper-validator-identifier/LICENSE
 ├─ @babel/helper-validator-option@7.29.7
 │  ├─ licenses: MIT
 │  ├─ repository: https://github.com/babel/babel
 │  ├─ publisher: The Babel Team
 │  ├─ url: https://babel.dev/team
-│  ├─ path: ./node_modules/istanbul-lib-instrument/node_modules/@babel/helper-validator-option
-│  └─ licenseFile: ./node_modules/istanbul-lib-instrument/node_modules/@babel/helper-validator-option/LICENSE
+│  ├─ path: ./node_modules/karma-coverage/node_modules/@babel/helper-validator-option
+│  └─ licenseFile: ./node_modules/karma-coverage/node_modules/@babel/helper-validator-option/LICENSE
 ├─ @babel/helper-validator-option@8.0.0
 │  ├─ licenses: MIT
 │  ├─ repository: https://github.com/babel/babel
@@ -362,8 +363,8 @@
 │  ├─ repository: https://github.com/babel/babel
 │  ├─ publisher: The Babel Team
 │  ├─ url: https://babel.dev/team
-│  ├─ path: ./node_modules/istanbul-lib-instrument/node_modules/@babel/helpers
-│  └─ licenseFile: ./node_modules/istanbul-lib-instrument/node_modules/@babel/helpers/LICENSE
+│  ├─ path: ./node_modules/karma-coverage/node_modules/@babel/helpers
+│  └─ licenseFile: ./node_modules/karma-coverage/node_modules/@babel/helpers/LICENSE
 ├─ @babel/helpers@8.0.5
 │  ├─ licenses: MIT
 │  ├─ repository: https://github.com/babel/babel
@@ -376,433 +377,433 @@
 │  ├─ repository: https://github.com/babel/babel
 │  ├─ publisher: The Babel Team
 │  ├─ url: https://babel.dev/team
-│  ├─ path: ./node_modules/istanbul-lib-instrument/node_modules/@babel/parser
-│  └─ licenseFile: ./node_modules/istanbul-lib-instrument/node_modules/@babel/parser/LICENSE
+│  ├─ path: ./node_modules/@babel/parser
+│  └─ licenseFile: ./node_modules/@babel/parser/LICENSE
 ├─ @babel/parser@8.0.6
 │  ├─ licenses: MIT
 │  ├─ repository: https://github.com/babel/babel
 │  ├─ publisher: The Babel Team
 │  ├─ url: https://babel.dev/team
-│  ├─ path: ./node_modules/@babel/parser
-│  └─ licenseFile: ./node_modules/@babel/parser/LICENSE
+│  ├─ path: ./node_modules/@babel/traverse/node_modules/@babel/parser
+│  └─ licenseFile: ./node_modules/@babel/traverse/node_modules/@babel/parser/LICENSE
 ├─ @babel/plugin-bugfix-firefox-class-in-computed-class-key@8.0.1
 │  ├─ licenses: MIT
 │  ├─ repository: https://github.com/babel/babel
 │  ├─ publisher: The Babel Team
 │  ├─ url: https://babel.dev/team
-│  ├─ path: ./node_modules/@babel/plugin-bugfix-firefox-class-in-computed-class-key
-│  └─ licenseFile: ./node_modules/@babel/plugin-bugfix-firefox-class-in-computed-class-key/LICENSE
+│  ├─ path: ./node_modules/@angular-devkit/build-angular/node_modules/@babel/plugin-bugfix-firefox-class-in-computed-class-key
+│  └─ licenseFile: ./node_modules/@angular-devkit/build-angular/node_modules/@babel/plugin-bugfix-firefox-class-in-computed-class-key/LICENSE
 ├─ @babel/plugin-bugfix-safari-class-field-initializer-scope@8.0.1
 │  ├─ licenses: MIT
 │  ├─ repository: https://github.com/babel/babel
 │  ├─ publisher: The Babel Team
 │  ├─ url: https://babel.dev/team
-│  ├─ path: ./node_modules/@babel/plugin-bugfix-safari-class-field-initializer-scope
-│  └─ licenseFile: ./node_modules/@babel/plugin-bugfix-safari-class-field-initializer-scope/LICENSE
+│  ├─ path: ./node_modules/@angular-devkit/build-angular/node_modules/@babel/plugin-bugfix-safari-class-field-initializer-scope
+│  └─ licenseFile: ./node_modules/@angular-devkit/build-angular/node_modules/@babel/plugin-bugfix-safari-class-field-initializer-scope/LICENSE
 ├─ @babel/plugin-bugfix-safari-id-destructuring-collision-in-function-expression@8.0.1
 │  ├─ licenses: MIT
 │  ├─ repository: https://github.com/babel/babel
 │  ├─ publisher: The Babel Team
 │  ├─ url: https://babel.dev/team
-│  ├─ path: ./node_modules/@babel/plugin-bugfix-safari-id-destructuring-collision-in-function-expression
-│  └─ licenseFile: ./node_modules/@babel/plugin-bugfix-safari-id-destructuring-collision-in-function-expression/LICENSE
+│  ├─ path: ./node_modules/@angular-devkit/build-angular/node_modules/@babel/plugin-bugfix-safari-id-destructuring-collision-in-function-expression
+│  └─ licenseFile: ./node_modules/@angular-devkit/build-angular/node_modules/@babel/plugin-bugfix-safari-id-destructuring-collision-in-function-expression/LICENSE
 ├─ @babel/plugin-bugfix-safari-rest-destructuring-rhs-array@8.0.6
 │  ├─ licenses: MIT
 │  ├─ repository: https://github.com/babel/babel
 │  ├─ publisher: The Babel Team
 │  ├─ url: https://babel.dev/team
-│  ├─ path: ./node_modules/@babel/plugin-bugfix-safari-rest-destructuring-rhs-array
-│  └─ licenseFile: ./node_modules/@babel/plugin-bugfix-safari-rest-destructuring-rhs-array/LICENSE
+│  ├─ path: ./node_modules/@angular-devkit/build-angular/node_modules/@babel/plugin-bugfix-safari-rest-destructuring-rhs-array
+│  └─ licenseFile: ./node_modules/@angular-devkit/build-angular/node_modules/@babel/plugin-bugfix-safari-rest-destructuring-rhs-array/LICENSE
 ├─ @babel/plugin-bugfix-v8-spread-parameters-in-optional-chaining@8.0.1
 │  ├─ licenses: MIT
 │  ├─ repository: https://github.com/babel/babel
 │  ├─ publisher: The Babel Team
 │  ├─ url: https://babel.dev/team
-│  ├─ path: ./node_modules/@babel/plugin-bugfix-v8-spread-parameters-in-optional-chaining
-│  └─ licenseFile: ./node_modules/@babel/plugin-bugfix-v8-spread-parameters-in-optional-chaining/LICENSE
+│  ├─ path: ./node_modules/@angular-devkit/build-angular/node_modules/@babel/plugin-bugfix-v8-spread-parameters-in-optional-chaining
+│  └─ licenseFile: ./node_modules/@angular-devkit/build-angular/node_modules/@babel/plugin-bugfix-v8-spread-parameters-in-optional-chaining/LICENSE
 ├─ @babel/plugin-bugfix-v8-static-class-fields-redefine-readonly@8.0.1
 │  ├─ licenses: MIT
 │  ├─ repository: https://github.com/babel/babel
 │  ├─ publisher: The Babel Team
 │  ├─ url: https://babel.dev/team
-│  ├─ path: ./node_modules/@babel/plugin-bugfix-v8-static-class-fields-redefine-readonly
-│  └─ licenseFile: ./node_modules/@babel/plugin-bugfix-v8-static-class-fields-redefine-readonly/LICENSE
+│  ├─ path: ./node_modules/@angular-devkit/build-angular/node_modules/@babel/plugin-bugfix-v8-static-class-fields-redefine-readonly
+│  └─ licenseFile: ./node_modules/@angular-devkit/build-angular/node_modules/@babel/plugin-bugfix-v8-static-class-fields-redefine-readonly/LICENSE
 ├─ @babel/plugin-transform-arrow-functions@8.0.1
 │  ├─ licenses: MIT
 │  ├─ repository: https://github.com/babel/babel
 │  ├─ publisher: The Babel Team
 │  ├─ url: https://babel.dev/team
-│  ├─ path: ./node_modules/@babel/plugin-transform-arrow-functions
-│  └─ licenseFile: ./node_modules/@babel/plugin-transform-arrow-functions/LICENSE
+│  ├─ path: ./node_modules/@angular-devkit/build-angular/node_modules/@babel/plugin-transform-arrow-functions
+│  └─ licenseFile: ./node_modules/@angular-devkit/build-angular/node_modules/@babel/plugin-transform-arrow-functions/LICENSE
 ├─ @babel/plugin-transform-async-generator-functions@8.0.1
 │  ├─ licenses: MIT
 │  ├─ repository: https://github.com/babel/babel
 │  ├─ publisher: The Babel Team
 │  ├─ url: https://babel.dev/team
-│  ├─ path: ./node_modules/@babel/plugin-transform-async-generator-functions
-│  └─ licenseFile: ./node_modules/@babel/plugin-transform-async-generator-functions/LICENSE
+│  ├─ path: ./node_modules/@angular-devkit/build-angular/node_modules/@babel/plugin-transform-async-generator-functions
+│  └─ licenseFile: ./node_modules/@angular-devkit/build-angular/node_modules/@babel/plugin-transform-async-generator-functions/LICENSE
 ├─ @babel/plugin-transform-async-to-generator@8.0.1
 │  ├─ licenses: MIT
 │  ├─ repository: https://github.com/babel/babel
 │  ├─ publisher: The Babel Team
 │  ├─ url: https://babel.dev/team
-│  ├─ path: ./node_modules/@babel/plugin-transform-async-to-generator
-│  └─ licenseFile: ./node_modules/@babel/plugin-transform-async-to-generator/LICENSE
+│  ├─ path: ./node_modules/@angular-devkit/build-angular/node_modules/@babel/plugin-transform-async-to-generator
+│  └─ licenseFile: ./node_modules/@angular-devkit/build-angular/node_modules/@babel/plugin-transform-async-to-generator/LICENSE
 ├─ @babel/plugin-transform-block-scoped-functions@8.0.1
 │  ├─ licenses: MIT
 │  ├─ repository: https://github.com/babel/babel
 │  ├─ publisher: The Babel Team
 │  ├─ url: https://babel.dev/team
-│  ├─ path: ./node_modules/@babel/plugin-transform-block-scoped-functions
-│  └─ licenseFile: ./node_modules/@babel/plugin-transform-block-scoped-functions/LICENSE
+│  ├─ path: ./node_modules/@angular-devkit/build-angular/node_modules/@babel/plugin-transform-block-scoped-functions
+│  └─ licenseFile: ./node_modules/@angular-devkit/build-angular/node_modules/@babel/plugin-transform-block-scoped-functions/LICENSE
 ├─ @babel/plugin-transform-block-scoping@8.0.5
 │  ├─ licenses: MIT
 │  ├─ repository: https://github.com/babel/babel
 │  ├─ publisher: The Babel Team
 │  ├─ url: https://babel.dev/team
-│  ├─ path: ./node_modules/@babel/plugin-transform-block-scoping
-│  └─ licenseFile: ./node_modules/@babel/plugin-transform-block-scoping/LICENSE
+│  ├─ path: ./node_modules/@angular-devkit/build-angular/node_modules/@babel/plugin-transform-block-scoping
+│  └─ licenseFile: ./node_modules/@angular-devkit/build-angular/node_modules/@babel/plugin-transform-block-scoping/LICENSE
 ├─ @babel/plugin-transform-class-properties@8.0.1
 │  ├─ licenses: MIT
 │  ├─ repository: https://github.com/babel/babel
 │  ├─ publisher: The Babel Team
 │  ├─ url: https://babel.dev/team
-│  ├─ path: ./node_modules/@babel/plugin-transform-class-properties
-│  └─ licenseFile: ./node_modules/@babel/plugin-transform-class-properties/LICENSE
+│  ├─ path: ./node_modules/@angular-devkit/build-angular/node_modules/@babel/plugin-transform-class-properties
+│  └─ licenseFile: ./node_modules/@angular-devkit/build-angular/node_modules/@babel/plugin-transform-class-properties/LICENSE
 ├─ @babel/plugin-transform-class-static-block@8.0.5
 │  ├─ licenses: MIT
 │  ├─ repository: https://github.com/babel/babel
 │  ├─ publisher: The Babel Team
 │  ├─ url: https://babel.dev/team
-│  ├─ path: ./node_modules/@babel/plugin-transform-class-static-block
-│  └─ licenseFile: ./node_modules/@babel/plugin-transform-class-static-block/LICENSE
+│  ├─ path: ./node_modules/@angular-devkit/build-angular/node_modules/@babel/plugin-transform-class-static-block
+│  └─ licenseFile: ./node_modules/@angular-devkit/build-angular/node_modules/@babel/plugin-transform-class-static-block/LICENSE
 ├─ @babel/plugin-transform-classes@8.0.5
 │  ├─ licenses: MIT
 │  ├─ repository: https://github.com/babel/babel
 │  ├─ publisher: The Babel Team
 │  ├─ url: https://babel.dev/team
-│  ├─ path: ./node_modules/@babel/plugin-transform-classes
-│  └─ licenseFile: ./node_modules/@babel/plugin-transform-classes/LICENSE
+│  ├─ path: ./node_modules/@angular-devkit/build-angular/node_modules/@babel/plugin-transform-classes
+│  └─ licenseFile: ./node_modules/@angular-devkit/build-angular/node_modules/@babel/plugin-transform-classes/LICENSE
 ├─ @babel/plugin-transform-computed-properties@8.0.1
 │  ├─ licenses: MIT
 │  ├─ repository: https://github.com/babel/babel
 │  ├─ publisher: The Babel Team
 │  ├─ url: https://babel.dev/team
-│  ├─ path: ./node_modules/@babel/plugin-transform-computed-properties
-│  └─ licenseFile: ./node_modules/@babel/plugin-transform-computed-properties/LICENSE
+│  ├─ path: ./node_modules/@angular-devkit/build-angular/node_modules/@babel/plugin-transform-computed-properties
+│  └─ licenseFile: ./node_modules/@angular-devkit/build-angular/node_modules/@babel/plugin-transform-computed-properties/LICENSE
 ├─ @babel/plugin-transform-destructuring@8.0.5
 │  ├─ licenses: MIT
 │  ├─ repository: https://github.com/babel/babel
 │  ├─ publisher: The Babel Team
 │  ├─ url: https://babel.dev/team
-│  ├─ path: ./node_modules/@babel/plugin-transform-destructuring
-│  └─ licenseFile: ./node_modules/@babel/plugin-transform-destructuring/LICENSE
+│  ├─ path: ./node_modules/@angular-devkit/build-angular/node_modules/@babel/plugin-transform-destructuring
+│  └─ licenseFile: ./node_modules/@angular-devkit/build-angular/node_modules/@babel/plugin-transform-destructuring/LICENSE
 ├─ @babel/plugin-transform-dotall-regex@8.0.1
 │  ├─ licenses: MIT
 │  ├─ repository: https://github.com/babel/babel
 │  ├─ publisher: The Babel Team
 │  ├─ url: https://babel.dev/team
-│  ├─ path: ./node_modules/@babel/plugin-transform-dotall-regex
-│  └─ licenseFile: ./node_modules/@babel/plugin-transform-dotall-regex/LICENSE
+│  ├─ path: ./node_modules/@angular-devkit/build-angular/node_modules/@babel/plugin-transform-dotall-regex
+│  └─ licenseFile: ./node_modules/@angular-devkit/build-angular/node_modules/@babel/plugin-transform-dotall-regex/LICENSE
 ├─ @babel/plugin-transform-duplicate-keys@8.0.1
 │  ├─ licenses: MIT
 │  ├─ repository: https://github.com/babel/babel
 │  ├─ publisher: The Babel Team
 │  ├─ url: https://babel.dev/team
-│  ├─ path: ./node_modules/@babel/plugin-transform-duplicate-keys
-│  └─ licenseFile: ./node_modules/@babel/plugin-transform-duplicate-keys/LICENSE
+│  ├─ path: ./node_modules/@angular-devkit/build-angular/node_modules/@babel/plugin-transform-duplicate-keys
+│  └─ licenseFile: ./node_modules/@angular-devkit/build-angular/node_modules/@babel/plugin-transform-duplicate-keys/LICENSE
 ├─ @babel/plugin-transform-duplicate-named-capturing-groups-regex@8.0.1
 │  ├─ licenses: MIT
 │  ├─ repository: https://github.com/babel/babel
 │  ├─ publisher: The Babel Team
 │  ├─ url: https://babel.dev/team
-│  ├─ path: ./node_modules/@babel/plugin-transform-duplicate-named-capturing-groups-regex
-│  └─ licenseFile: ./node_modules/@babel/plugin-transform-duplicate-named-capturing-groups-regex/LICENSE
+│  ├─ path: ./node_modules/@angular-devkit/build-angular/node_modules/@babel/plugin-transform-duplicate-named-capturing-groups-regex
+│  └─ licenseFile: ./node_modules/@angular-devkit/build-angular/node_modules/@babel/plugin-transform-duplicate-named-capturing-groups-regex/LICENSE
 ├─ @babel/plugin-transform-dynamic-import@8.0.1
 │  ├─ licenses: MIT
 │  ├─ repository: https://github.com/babel/babel
 │  ├─ publisher: The Babel Team
 │  ├─ url: https://babel.dev/team
-│  ├─ path: ./node_modules/@babel/plugin-transform-dynamic-import
-│  └─ licenseFile: ./node_modules/@babel/plugin-transform-dynamic-import/LICENSE
+│  ├─ path: ./node_modules/@angular-devkit/build-angular/node_modules/@babel/plugin-transform-dynamic-import
+│  └─ licenseFile: ./node_modules/@angular-devkit/build-angular/node_modules/@babel/plugin-transform-dynamic-import/LICENSE
 ├─ @babel/plugin-transform-explicit-resource-management@8.0.5
 │  ├─ licenses: MIT
 │  ├─ repository: https://github.com/babel/babel
 │  ├─ publisher: The Babel Team
 │  ├─ url: https://babel.dev/team
-│  ├─ path: ./node_modules/@babel/plugin-transform-explicit-resource-management
-│  └─ licenseFile: ./node_modules/@babel/plugin-transform-explicit-resource-management/LICENSE
+│  ├─ path: ./node_modules/@angular-devkit/build-angular/node_modules/@babel/plugin-transform-explicit-resource-management
+│  └─ licenseFile: ./node_modules/@angular-devkit/build-angular/node_modules/@babel/plugin-transform-explicit-resource-management/LICENSE
 ├─ @babel/plugin-transform-exponentiation-operator@8.0.1
 │  ├─ licenses: MIT
 │  ├─ repository: https://github.com/babel/babel
 │  ├─ publisher: The Babel Team
 │  ├─ url: https://babel.dev/team
-│  ├─ path: ./node_modules/@babel/plugin-transform-exponentiation-operator
-│  └─ licenseFile: ./node_modules/@babel/plugin-transform-exponentiation-operator/LICENSE
+│  ├─ path: ./node_modules/@angular-devkit/build-angular/node_modules/@babel/plugin-transform-exponentiation-operator
+│  └─ licenseFile: ./node_modules/@angular-devkit/build-angular/node_modules/@babel/plugin-transform-exponentiation-operator/LICENSE
 ├─ @babel/plugin-transform-export-namespace-from@8.0.1
 │  ├─ licenses: MIT
 │  ├─ repository: https://github.com/babel/babel
 │  ├─ publisher: The Babel Team
 │  ├─ url: https://babel.dev/team
-│  ├─ path: ./node_modules/@babel/plugin-transform-export-namespace-from
-│  └─ licenseFile: ./node_modules/@babel/plugin-transform-export-namespace-from/LICENSE
+│  ├─ path: ./node_modules/@angular-devkit/build-angular/node_modules/@babel/plugin-transform-export-namespace-from
+│  └─ licenseFile: ./node_modules/@angular-devkit/build-angular/node_modules/@babel/plugin-transform-export-namespace-from/LICENSE
 ├─ @babel/plugin-transform-for-of@8.0.1
 │  ├─ licenses: MIT
 │  ├─ repository: https://github.com/babel/babel
 │  ├─ publisher: The Babel Team
 │  ├─ url: https://babel.dev/team
-│  ├─ path: ./node_modules/@babel/plugin-transform-for-of
-│  └─ licenseFile: ./node_modules/@babel/plugin-transform-for-of/LICENSE
+│  ├─ path: ./node_modules/@angular-devkit/build-angular/node_modules/@babel/plugin-transform-for-of
+│  └─ licenseFile: ./node_modules/@angular-devkit/build-angular/node_modules/@babel/plugin-transform-for-of/LICENSE
 ├─ @babel/plugin-transform-function-name@8.0.1
 │  ├─ licenses: MIT
 │  ├─ repository: https://github.com/babel/babel
 │  ├─ publisher: The Babel Team
 │  ├─ url: https://babel.dev/team
-│  ├─ path: ./node_modules/@babel/plugin-transform-function-name
-│  └─ licenseFile: ./node_modules/@babel/plugin-transform-function-name/LICENSE
+│  ├─ path: ./node_modules/@angular-devkit/build-angular/node_modules/@babel/plugin-transform-function-name
+│  └─ licenseFile: ./node_modules/@angular-devkit/build-angular/node_modules/@babel/plugin-transform-function-name/LICENSE
 ├─ @babel/plugin-transform-json-strings@8.0.1
 │  ├─ licenses: MIT
 │  ├─ repository: https://github.com/babel/babel
 │  ├─ publisher: The Babel Team
 │  ├─ url: https://babel.dev/team
-│  ├─ path: ./node_modules/@babel/plugin-transform-json-strings
-│  └─ licenseFile: ./node_modules/@babel/plugin-transform-json-strings/LICENSE
+│  ├─ path: ./node_modules/@angular-devkit/build-angular/node_modules/@babel/plugin-transform-json-strings
+│  └─ licenseFile: ./node_modules/@angular-devkit/build-angular/node_modules/@babel/plugin-transform-json-strings/LICENSE
 ├─ @babel/plugin-transform-literals@8.0.1
 │  ├─ licenses: MIT
 │  ├─ repository: https://github.com/babel/babel
 │  ├─ publisher: The Babel Team
 │  ├─ url: https://babel.dev/team
-│  ├─ path: ./node_modules/@babel/plugin-transform-literals
-│  └─ licenseFile: ./node_modules/@babel/plugin-transform-literals/LICENSE
+│  ├─ path: ./node_modules/@angular-devkit/build-angular/node_modules/@babel/plugin-transform-literals
+│  └─ licenseFile: ./node_modules/@angular-devkit/build-angular/node_modules/@babel/plugin-transform-literals/LICENSE
 ├─ @babel/plugin-transform-logical-assignment-operators@8.0.1
 │  ├─ licenses: MIT
 │  ├─ repository: https://github.com/babel/babel
 │  ├─ publisher: The Babel Team
 │  ├─ url: https://babel.dev/team
-│  ├─ path: ./node_modules/@babel/plugin-transform-logical-assignment-operators
-│  └─ licenseFile: ./node_modules/@babel/plugin-transform-logical-assignment-operators/LICENSE
+│  ├─ path: ./node_modules/@angular-devkit/build-angular/node_modules/@babel/plugin-transform-logical-assignment-operators
+│  └─ licenseFile: ./node_modules/@angular-devkit/build-angular/node_modules/@babel/plugin-transform-logical-assignment-operators/LICENSE
 ├─ @babel/plugin-transform-member-expression-literals@8.0.1
 │  ├─ licenses: MIT
 │  ├─ repository: https://github.com/babel/babel
 │  ├─ publisher: The Babel Team
 │  ├─ url: https://babel.dev/team
-│  ├─ path: ./node_modules/@babel/plugin-transform-member-expression-literals
-│  └─ licenseFile: ./node_modules/@babel/plugin-transform-member-expression-literals/LICENSE
+│  ├─ path: ./node_modules/@angular-devkit/build-angular/node_modules/@babel/plugin-transform-member-expression-literals
+│  └─ licenseFile: ./node_modules/@angular-devkit/build-angular/node_modules/@babel/plugin-transform-member-expression-literals/LICENSE
 ├─ @babel/plugin-transform-modules-amd@8.0.1
 │  ├─ licenses: MIT
 │  ├─ repository: https://github.com/babel/babel
 │  ├─ publisher: The Babel Team
 │  ├─ url: https://babel.dev/team
-│  ├─ path: ./node_modules/@babel/plugin-transform-modules-amd
-│  └─ licenseFile: ./node_modules/@babel/plugin-transform-modules-amd/LICENSE
+│  ├─ path: ./node_modules/@angular-devkit/build-angular/node_modules/@babel/plugin-transform-modules-amd
+│  └─ licenseFile: ./node_modules/@angular-devkit/build-angular/node_modules/@babel/plugin-transform-modules-amd/LICENSE
 ├─ @babel/plugin-transform-modules-commonjs@8.0.1
 │  ├─ licenses: MIT
 │  ├─ repository: https://github.com/babel/babel
 │  ├─ publisher: The Babel Team
 │  ├─ url: https://babel.dev/team
-│  ├─ path: ./node_modules/@babel/plugin-transform-modules-commonjs
-│  └─ licenseFile: ./node_modules/@babel/plugin-transform-modules-commonjs/LICENSE
+│  ├─ path: ./node_modules/@angular-devkit/build-angular/node_modules/@babel/plugin-transform-modules-commonjs
+│  └─ licenseFile: ./node_modules/@angular-devkit/build-angular/node_modules/@babel/plugin-transform-modules-commonjs/LICENSE
 ├─ @babel/plugin-transform-modules-systemjs@8.0.1
 │  ├─ licenses: MIT
 │  ├─ repository: https://github.com/babel/babel
 │  ├─ publisher: The Babel Team
 │  ├─ url: https://babel.dev/team
-│  ├─ path: ./node_modules/@babel/plugin-transform-modules-systemjs
-│  └─ licenseFile: ./node_modules/@babel/plugin-transform-modules-systemjs/LICENSE
+│  ├─ path: ./node_modules/@angular-devkit/build-angular/node_modules/@babel/plugin-transform-modules-systemjs
+│  └─ licenseFile: ./node_modules/@angular-devkit/build-angular/node_modules/@babel/plugin-transform-modules-systemjs/LICENSE
 ├─ @babel/plugin-transform-modules-umd@8.0.1
 │  ├─ licenses: MIT
 │  ├─ repository: https://github.com/babel/babel
 │  ├─ publisher: The Babel Team
 │  ├─ url: https://babel.dev/team
-│  ├─ path: ./node_modules/@babel/plugin-transform-modules-umd
-│  └─ licenseFile: ./node_modules/@babel/plugin-transform-modules-umd/LICENSE
+│  ├─ path: ./node_modules/@angular-devkit/build-angular/node_modules/@babel/plugin-transform-modules-umd
+│  └─ licenseFile: ./node_modules/@angular-devkit/build-angular/node_modules/@babel/plugin-transform-modules-umd/LICENSE
 ├─ @babel/plugin-transform-named-capturing-groups-regex@8.0.1
 │  ├─ licenses: MIT
 │  ├─ repository: https://github.com/babel/babel
 │  ├─ publisher: The Babel Team
 │  ├─ url: https://babel.dev/team
-│  ├─ path: ./node_modules/@babel/plugin-transform-named-capturing-groups-regex
-│  └─ licenseFile: ./node_modules/@babel/plugin-transform-named-capturing-groups-regex/LICENSE
+│  ├─ path: ./node_modules/@angular-devkit/build-angular/node_modules/@babel/plugin-transform-named-capturing-groups-regex
+│  └─ licenseFile: ./node_modules/@angular-devkit/build-angular/node_modules/@babel/plugin-transform-named-capturing-groups-regex/LICENSE
 ├─ @babel/plugin-transform-new-target@8.0.1
 │  ├─ licenses: MIT
 │  ├─ repository: https://github.com/babel/babel
 │  ├─ publisher: The Babel Team
 │  ├─ url: https://babel.dev/team
-│  ├─ path: ./node_modules/@babel/plugin-transform-new-target
-│  └─ licenseFile: ./node_modules/@babel/plugin-transform-new-target/LICENSE
+│  ├─ path: ./node_modules/@angular-devkit/build-angular/node_modules/@babel/plugin-transform-new-target
+│  └─ licenseFile: ./node_modules/@angular-devkit/build-angular/node_modules/@babel/plugin-transform-new-target/LICENSE
 ├─ @babel/plugin-transform-nullish-coalescing-operator@8.0.1
 │  ├─ licenses: MIT
 │  ├─ repository: https://github.com/babel/babel
 │  ├─ publisher: The Babel Team
 │  ├─ url: https://babel.dev/team
-│  ├─ path: ./node_modules/@babel/plugin-transform-nullish-coalescing-operator
-│  └─ licenseFile: ./node_modules/@babel/plugin-transform-nullish-coalescing-operator/LICENSE
+│  ├─ path: ./node_modules/@angular-devkit/build-angular/node_modules/@babel/plugin-transform-nullish-coalescing-operator
+│  └─ licenseFile: ./node_modules/@angular-devkit/build-angular/node_modules/@babel/plugin-transform-nullish-coalescing-operator/LICENSE
 ├─ @babel/plugin-transform-numeric-separator@8.0.1
 │  ├─ licenses: MIT
 │  ├─ repository: https://github.com/babel/babel
 │  ├─ publisher: The Babel Team
 │  ├─ url: https://babel.dev/team
-│  ├─ path: ./node_modules/@babel/plugin-transform-numeric-separator
-│  └─ licenseFile: ./node_modules/@babel/plugin-transform-numeric-separator/LICENSE
+│  ├─ path: ./node_modules/@angular-devkit/build-angular/node_modules/@babel/plugin-transform-numeric-separator
+│  └─ licenseFile: ./node_modules/@angular-devkit/build-angular/node_modules/@babel/plugin-transform-numeric-separator/LICENSE
 ├─ @babel/plugin-transform-object-rest-spread@8.0.1
 │  ├─ licenses: MIT
 │  ├─ repository: https://github.com/babel/babel
 │  ├─ publisher: The Babel Team
 │  ├─ url: https://babel.dev/team
-│  ├─ path: ./node_modules/@babel/plugin-transform-object-rest-spread
-│  └─ licenseFile: ./node_modules/@babel/plugin-transform-object-rest-spread/LICENSE
+│  ├─ path: ./node_modules/@angular-devkit/build-angular/node_modules/@babel/plugin-transform-object-rest-spread
+│  └─ licenseFile: ./node_modules/@angular-devkit/build-angular/node_modules/@babel/plugin-transform-object-rest-spread/LICENSE
 ├─ @babel/plugin-transform-object-super@8.0.1
 │  ├─ licenses: MIT
 │  ├─ repository: https://github.com/babel/babel
 │  ├─ publisher: The Babel Team
 │  ├─ url: https://babel.dev/team
-│  ├─ path: ./node_modules/@babel/plugin-transform-object-super
-│  └─ licenseFile: ./node_modules/@babel/plugin-transform-object-super/LICENSE
+│  ├─ path: ./node_modules/@angular-devkit/build-angular/node_modules/@babel/plugin-transform-object-super
+│  └─ licenseFile: ./node_modules/@angular-devkit/build-angular/node_modules/@babel/plugin-transform-object-super/LICENSE
 ├─ @babel/plugin-transform-optional-catch-binding@8.0.1
 │  ├─ licenses: MIT
 │  ├─ repository: https://github.com/babel/babel
 │  ├─ publisher: The Babel Team
 │  ├─ url: https://babel.dev/team
-│  ├─ path: ./node_modules/@babel/plugin-transform-optional-catch-binding
-│  └─ licenseFile: ./node_modules/@babel/plugin-transform-optional-catch-binding/LICENSE
+│  ├─ path: ./node_modules/@angular-devkit/build-angular/node_modules/@babel/plugin-transform-optional-catch-binding
+│  └─ licenseFile: ./node_modules/@angular-devkit/build-angular/node_modules/@babel/plugin-transform-optional-catch-binding/LICENSE
 ├─ @babel/plugin-transform-optional-chaining@8.0.5
 │  ├─ licenses: MIT
 │  ├─ repository: https://github.com/babel/babel
 │  ├─ publisher: The Babel Team
 │  ├─ url: https://babel.dev/team
-│  ├─ path: ./node_modules/@babel/plugin-transform-optional-chaining
-│  └─ licenseFile: ./node_modules/@babel/plugin-transform-optional-chaining/LICENSE
+│  ├─ path: ./node_modules/@angular-devkit/build-angular/node_modules/@babel/plugin-transform-optional-chaining
+│  └─ licenseFile: ./node_modules/@angular-devkit/build-angular/node_modules/@babel/plugin-transform-optional-chaining/LICENSE
 ├─ @babel/plugin-transform-parameters@8.0.5
 │  ├─ licenses: MIT
 │  ├─ repository: https://github.com/babel/babel
 │  ├─ publisher: The Babel Team
 │  ├─ url: https://babel.dev/team
-│  ├─ path: ./node_modules/@babel/plugin-transform-parameters
-│  └─ licenseFile: ./node_modules/@babel/plugin-transform-parameters/LICENSE
+│  ├─ path: ./node_modules/@angular-devkit/build-angular/node_modules/@babel/plugin-transform-parameters
+│  └─ licenseFile: ./node_modules/@angular-devkit/build-angular/node_modules/@babel/plugin-transform-parameters/LICENSE
 ├─ @babel/plugin-transform-private-methods@8.0.1
 │  ├─ licenses: MIT
 │  ├─ repository: https://github.com/babel/babel
 │  ├─ publisher: The Babel Team
 │  ├─ url: https://babel.dev/team
-│  ├─ path: ./node_modules/@babel/plugin-transform-private-methods
-│  └─ licenseFile: ./node_modules/@babel/plugin-transform-private-methods/LICENSE
+│  ├─ path: ./node_modules/@angular-devkit/build-angular/node_modules/@babel/plugin-transform-private-methods
+│  └─ licenseFile: ./node_modules/@angular-devkit/build-angular/node_modules/@babel/plugin-transform-private-methods/LICENSE
 ├─ @babel/plugin-transform-private-property-in-object@8.0.5
 │  ├─ licenses: MIT
 │  ├─ repository: https://github.com/babel/babel
 │  ├─ publisher: The Babel Team
 │  ├─ url: https://babel.dev/team
-│  ├─ path: ./node_modules/@babel/plugin-transform-private-property-in-object
-│  └─ licenseFile: ./node_modules/@babel/plugin-transform-private-property-in-object/LICENSE
+│  ├─ path: ./node_modules/@angular-devkit/build-angular/node_modules/@babel/plugin-transform-private-property-in-object
+│  └─ licenseFile: ./node_modules/@angular-devkit/build-angular/node_modules/@babel/plugin-transform-private-property-in-object/LICENSE
 ├─ @babel/plugin-transform-property-literals@8.0.1
 │  ├─ licenses: MIT
 │  ├─ repository: https://github.com/babel/babel
 │  ├─ publisher: The Babel Team
 │  ├─ url: https://babel.dev/team
-│  ├─ path: ./node_modules/@babel/plugin-transform-property-literals
-│  └─ licenseFile: ./node_modules/@babel/plugin-transform-property-literals/LICENSE
+│  ├─ path: ./node_modules/@angular-devkit/build-angular/node_modules/@babel/plugin-transform-property-literals
+│  └─ licenseFile: ./node_modules/@angular-devkit/build-angular/node_modules/@babel/plugin-transform-property-literals/LICENSE
 ├─ @babel/plugin-transform-regenerator@8.0.6
 │  ├─ licenses: MIT
 │  ├─ repository: https://github.com/babel/babel
 │  ├─ publisher: The Babel Team
 │  ├─ url: https://babel.dev/team
-│  ├─ path: ./node_modules/@babel/plugin-transform-regenerator
-│  └─ licenseFile: ./node_modules/@babel/plugin-transform-regenerator/LICENSE
+│  ├─ path: ./node_modules/@angular-devkit/build-angular/node_modules/@babel/plugin-transform-regenerator
+│  └─ licenseFile: ./node_modules/@angular-devkit/build-angular/node_modules/@babel/plugin-transform-regenerator/LICENSE
 ├─ @babel/plugin-transform-regexp-modifiers@8.0.1
 │  ├─ licenses: MIT
 │  ├─ repository: https://github.com/babel/babel
 │  ├─ publisher: The Babel Team
 │  ├─ url: https://babel.dev/team
-│  ├─ path: ./node_modules/@babel/plugin-transform-regexp-modifiers
-│  └─ licenseFile: ./node_modules/@babel/plugin-transform-regexp-modifiers/LICENSE
+│  ├─ path: ./node_modules/@angular-devkit/build-angular/node_modules/@babel/plugin-transform-regexp-modifiers
+│  └─ licenseFile: ./node_modules/@angular-devkit/build-angular/node_modules/@babel/plugin-transform-regexp-modifiers/LICENSE
 ├─ @babel/plugin-transform-reserved-words@8.0.1
 │  ├─ licenses: MIT
 │  ├─ repository: https://github.com/babel/babel
 │  ├─ publisher: The Babel Team
 │  ├─ url: https://babel.dev/team
-│  ├─ path: ./node_modules/@babel/plugin-transform-reserved-words
-│  └─ licenseFile: ./node_modules/@babel/plugin-transform-reserved-words/LICENSE
+│  ├─ path: ./node_modules/@angular-devkit/build-angular/node_modules/@babel/plugin-transform-reserved-words
+│  └─ licenseFile: ./node_modules/@angular-devkit/build-angular/node_modules/@babel/plugin-transform-reserved-words/LICENSE
 ├─ @babel/plugin-transform-runtime@8.0.1
 │  ├─ licenses: MIT
 │  ├─ repository: https://github.com/babel/babel
 │  ├─ publisher: The Babel Team
 │  ├─ url: https://babel.dev/team
-│  ├─ path: ./node_modules/@babel/plugin-transform-runtime
-│  └─ licenseFile: ./node_modules/@babel/plugin-transform-runtime/LICENSE
+│  ├─ path: ./node_modules/@angular-devkit/build-angular/node_modules/@babel/plugin-transform-runtime
+│  └─ licenseFile: ./node_modules/@angular-devkit/build-angular/node_modules/@babel/plugin-transform-runtime/LICENSE
 ├─ @babel/plugin-transform-shorthand-properties@8.0.1
 │  ├─ licenses: MIT
 │  ├─ repository: https://github.com/babel/babel
 │  ├─ publisher: The Babel Team
 │  ├─ url: https://babel.dev/team
-│  ├─ path: ./node_modules/@babel/plugin-transform-shorthand-properties
-│  └─ licenseFile: ./node_modules/@babel/plugin-transform-shorthand-properties/LICENSE
+│  ├─ path: ./node_modules/@angular-devkit/build-angular/node_modules/@babel/plugin-transform-shorthand-properties
+│  └─ licenseFile: ./node_modules/@angular-devkit/build-angular/node_modules/@babel/plugin-transform-shorthand-properties/LICENSE
 ├─ @babel/plugin-transform-spread@8.0.5
 │  ├─ licenses: MIT
 │  ├─ repository: https://github.com/babel/babel
 │  ├─ publisher: The Babel Team
 │  ├─ url: https://babel.dev/team
-│  ├─ path: ./node_modules/@babel/plugin-transform-spread
-│  └─ licenseFile: ./node_modules/@babel/plugin-transform-spread/LICENSE
+│  ├─ path: ./node_modules/@angular-devkit/build-angular/node_modules/@babel/plugin-transform-spread
+│  └─ licenseFile: ./node_modules/@angular-devkit/build-angular/node_modules/@babel/plugin-transform-spread/LICENSE
 ├─ @babel/plugin-transform-sticky-regex@8.0.1
 │  ├─ licenses: MIT
 │  ├─ repository: https://github.com/babel/babel
 │  ├─ publisher: The Babel Team
 │  ├─ url: https://babel.dev/team
-│  ├─ path: ./node_modules/@babel/plugin-transform-sticky-regex
-│  └─ licenseFile: ./node_modules/@babel/plugin-transform-sticky-regex/LICENSE
+│  ├─ path: ./node_modules/@angular-devkit/build-angular/node_modules/@babel/plugin-transform-sticky-regex
+│  └─ licenseFile: ./node_modules/@angular-devkit/build-angular/node_modules/@babel/plugin-transform-sticky-regex/LICENSE
 ├─ @babel/plugin-transform-template-literals@8.0.1
 │  ├─ licenses: MIT
 │  ├─ repository: https://github.com/babel/babel
 │  ├─ publisher: The Babel Team
 │  ├─ url: https://babel.dev/team
-│  ├─ path: ./node_modules/@babel/plugin-transform-template-literals
-│  └─ licenseFile: ./node_modules/@babel/plugin-transform-template-literals/LICENSE
+│  ├─ path: ./node_modules/@angular-devkit/build-angular/node_modules/@babel/plugin-transform-template-literals
+│  └─ licenseFile: ./node_modules/@angular-devkit/build-angular/node_modules/@babel/plugin-transform-template-literals/LICENSE
 ├─ @babel/plugin-transform-typeof-symbol@8.0.1
 │  ├─ licenses: MIT
 │  ├─ repository: https://github.com/babel/babel
 │  ├─ publisher: The Babel Team
 │  ├─ url: https://babel.dev/team
-│  ├─ path: ./node_modules/@babel/plugin-transform-typeof-symbol
-│  └─ licenseFile: ./node_modules/@babel/plugin-transform-typeof-symbol/LICENSE
+│  ├─ path: ./node_modules/@angular-devkit/build-angular/node_modules/@babel/plugin-transform-typeof-symbol
+│  └─ licenseFile: ./node_modules/@angular-devkit/build-angular/node_modules/@babel/plugin-transform-typeof-symbol/LICENSE
 ├─ @babel/plugin-transform-unicode-escapes@8.0.1
 │  ├─ licenses: MIT
 │  ├─ repository: https://github.com/babel/babel
 │  ├─ publisher: The Babel Team
 │  ├─ url: https://babel.dev/team
-│  ├─ path: ./node_modules/@babel/plugin-transform-unicode-escapes
-│  └─ licenseFile: ./node_modules/@babel/plugin-transform-unicode-escapes/LICENSE
+│  ├─ path: ./node_modules/@angular-devkit/build-angular/node_modules/@babel/plugin-transform-unicode-escapes
+│  └─ licenseFile: ./node_modules/@angular-devkit/build-angular/node_modules/@babel/plugin-transform-unicode-escapes/LICENSE
 ├─ @babel/plugin-transform-unicode-property-regex@8.0.1
 │  ├─ licenses: MIT
 │  ├─ repository: https://github.com/babel/babel
 │  ├─ publisher: The Babel Team
 │  ├─ url: https://babel.dev/team
-│  ├─ path: ./node_modules/@babel/plugin-transform-unicode-property-regex
-│  └─ licenseFile: ./node_modules/@babel/plugin-transform-unicode-property-regex/LICENSE
+│  ├─ path: ./node_modules/@angular-devkit/build-angular/node_modules/@babel/plugin-transform-unicode-property-regex
+│  └─ licenseFile: ./node_modules/@angular-devkit/build-angular/node_modules/@babel/plugin-transform-unicode-property-regex/LICENSE
 ├─ @babel/plugin-transform-unicode-regex@8.0.1
 │  ├─ licenses: MIT
 │  ├─ repository: https://github.com/babel/babel
 │  ├─ publisher: The Babel Team
 │  ├─ url: https://babel.dev/team
-│  ├─ path: ./node_modules/@babel/plugin-transform-unicode-regex
-│  └─ licenseFile: ./node_modules/@babel/plugin-transform-unicode-regex/LICENSE
+│  ├─ path: ./node_modules/@angular-devkit/build-angular/node_modules/@babel/plugin-transform-unicode-regex
+│  └─ licenseFile: ./node_modules/@angular-devkit/build-angular/node_modules/@babel/plugin-transform-unicode-regex/LICENSE
 ├─ @babel/plugin-transform-unicode-sets-regex@8.0.1
 │  ├─ licenses: MIT
 │  ├─ repository: https://github.com/babel/babel
 │  ├─ publisher: The Babel Team
 │  ├─ url: https://babel.dev/team
-│  ├─ path: ./node_modules/@babel/plugin-transform-unicode-sets-regex
-│  └─ licenseFile: ./node_modules/@babel/plugin-transform-unicode-sets-regex/LICENSE
+│  ├─ path: ./node_modules/@angular-devkit/build-angular/node_modules/@babel/plugin-transform-unicode-sets-regex
+│  └─ licenseFile: ./node_modules/@angular-devkit/build-angular/node_modules/@babel/plugin-transform-unicode-sets-regex/LICENSE
 ├─ @babel/preset-env@8.0.5
 │  ├─ licenses: MIT
 │  ├─ repository: https://github.com/babel/babel
 │  ├─ publisher: The Babel Team
 │  ├─ url: https://babel.dev/team
-│  ├─ path: ./node_modules/@babel/preset-env
-│  └─ licenseFile: ./node_modules/@babel/preset-env/LICENSE
+│  ├─ path: ./node_modules/@angular-devkit/build-angular/node_modules/@babel/preset-env
+│  └─ licenseFile: ./node_modules/@angular-devkit/build-angular/node_modules/@babel/preset-env/LICENSE
 ├─ @babel/preset-modules@0.2.0
 │  ├─ licenses: MIT
 │  ├─ repository: https://github.com/babel/preset-modules
-│  ├─ path: ./node_modules/@babel/preset-modules
-│  └─ licenseFile: ./node_modules/@babel/preset-modules/LICENSE
+│  ├─ path: ./node_modules/@angular-devkit/build-angular/node_modules/@babel/preset-modules
+│  └─ licenseFile: ./node_modules/@angular-devkit/build-angular/node_modules/@babel/preset-modules/LICENSE
 ├─ @babel/runtime@8.0.5
 │  ├─ licenses: MIT
 │  ├─ repository: https://github.com/babel/babel
@@ -815,8 +816,8 @@
 │  ├─ repository: https://github.com/babel/babel
 │  ├─ publisher: The Babel Team
 │  ├─ url: https://babel.dev/team
-│  ├─ path: ./node_modules/istanbul-lib-instrument/node_modules/@babel/template
-│  └─ licenseFile: ./node_modules/istanbul-lib-instrument/node_modules/@babel/template/LICENSE
+│  ├─ path: ./node_modules/karma-coverage/node_modules/@babel/template
+│  └─ licenseFile: ./node_modules/karma-coverage/node_modules/@babel/template/LICENSE
 ├─ @babel/template@8.0.0
 │  ├─ licenses: MIT
 │  ├─ repository: https://github.com/babel/babel
@@ -829,8 +830,8 @@
 │  ├─ repository: https://github.com/babel/babel
 │  ├─ publisher: The Babel Team
 │  ├─ url: https://babel.dev/team
-│  ├─ path: ./node_modules/istanbul-lib-instrument/node_modules/@babel/traverse
-│  └─ licenseFile: ./node_modules/istanbul-lib-instrument/node_modules/@babel/traverse/LICENSE
+│  ├─ path: ./node_modules/karma-coverage/node_modules/@babel/traverse
+│  └─ licenseFile: ./node_modules/karma-coverage/node_modules/@babel/traverse/LICENSE
 ├─ @babel/traverse@8.0.6
 │  ├─ licenses: MIT
 │  ├─ repository: https://github.com/babel/babel
@@ -843,16 +844,16 @@
 │  ├─ repository: https://github.com/babel/babel
 │  ├─ publisher: The Babel Team
 │  ├─ url: https://babel.dev/team
-│  ├─ path: ./node_modules/@babel/helper-split-export-declaration/node_modules/@babel/types
-│  └─ licenseFile: ./node_modules/@babel/helper-split-export-declaration/node_modules/@babel/types/LICENSE
+│  ├─ path: ./node_modules/@babel/types
+│  └─ licenseFile: ./node_modules/@babel/types/LICENSE
 ├─ @babel/types@8.0.6
 │  ├─ licenses: MIT
 │  ├─ repository: https://github.com/babel/babel
 │  ├─ publisher: The Babel Team
 │  ├─ url: https://babel.dev/team
-│  ├─ path: ./node_modules/@babel/types
-│  └─ licenseFile: ./node_modules/@babel/types/LICENSE
-├─ @bufbuild/protobuf@2.15.0
+│  ├─ path: ./node_modules/@babel/helper-annotate-as-pure/node_modules/@babel/types
+│  └─ licenseFile: ./node_modules/@babel/helper-annotate-as-pure/node_modules/@babel/types/LICENSE
+├─ @bufbuild/protobuf@2.16.0
 │  ├─ licenses: (Apache-2.0 AND BSD-3-Clause)
 │  ├─ repository: https://github.com/bufbuild/protobuf-es
 │  ├─ path: ./node_modules/@bufbuild/protobuf
@@ -882,14 +883,14 @@
 │  ├─ publisher: Harper
 │  ├─ path: ./node_modules/@harperfast/extended-iterable
 │  └─ licenseFile: ./node_modules/@harperfast/extended-iterable/LICENSE
-├─ @inquirer/ansi@2.0.8
+├─ @inquirer/ansi@2.0.9
 │  ├─ licenses: MIT
 │  ├─ repository: https://github.com/SBoudrias/Inquirer.js
 │  ├─ publisher: Simon Boudrias
 │  ├─ email: admin@simonboudrias.com
 │  ├─ path: ./node_modules/@inquirer/ansi
 │  └─ licenseFile: ./node_modules/@inquirer/ansi/LICENSE
-├─ @inquirer/checkbox@5.2.5
+├─ @inquirer/checkbox@5.2.6
 │  ├─ licenses: MIT
 │  ├─ repository: https://github.com/SBoudrias/Inquirer.js
 │  ├─ publisher: Simon Boudrias
@@ -903,28 +904,28 @@
 │  ├─ email: admin@simonboudrias.com
 │  ├─ path: ./node_modules/@inquirer/confirm
 │  └─ licenseFile: ./node_modules/@inquirer/confirm/LICENSE
-├─ @inquirer/core@12.0.3
+├─ @inquirer/core@12.0.4
 │  ├─ licenses: MIT
 │  ├─ repository: https://github.com/SBoudrias/Inquirer.js
 │  ├─ publisher: Simon Boudrias
 │  ├─ email: admin@simonboudrias.com
 │  ├─ path: ./node_modules/@inquirer/core
 │  └─ licenseFile: ./node_modules/@inquirer/core/LICENSE
-├─ @inquirer/editor@5.3.3
+├─ @inquirer/editor@5.3.4
 │  ├─ licenses: MIT
 │  ├─ repository: https://github.com/SBoudrias/Inquirer.js
 │  ├─ publisher: Simon Boudrias
 │  ├─ email: admin@simonboudrias.com
 │  ├─ path: ./node_modules/@inquirer/editor
 │  └─ licenseFile: ./node_modules/@inquirer/editor/LICENSE
-├─ @inquirer/expand@5.1.5
+├─ @inquirer/expand@5.1.6
 │  ├─ licenses: MIT
 │  ├─ repository: https://github.com/SBoudrias/Inquirer.js
 │  ├─ publisher: Simon Boudrias
 │  ├─ email: admin@simonboudrias.com
 │  ├─ path: ./node_modules/@inquirer/expand
 │  └─ licenseFile: ./node_modules/@inquirer/expand/LICENSE
-├─ @inquirer/external-editor@3.0.5
+├─ @inquirer/external-editor@3.0.6
 │  ├─ licenses: MIT
 │  ├─ repository: https://github.com/SBoudrias/Inquirer.js
 │  ├─ publisher: Simon Boudrias
@@ -938,21 +939,21 @@
 │  ├─ email: admin@simonboudrias.com
 │  ├─ path: ./node_modules/@inquirer/figures
 │  └─ licenseFile: ./node_modules/@inquirer/figures/LICENSE
-├─ @inquirer/input@5.1.6
+├─ @inquirer/input@5.1.7
 │  ├─ licenses: MIT
 │  ├─ repository: https://github.com/SBoudrias/Inquirer.js
 │  ├─ publisher: Simon Boudrias
 │  ├─ email: admin@simonboudrias.com
 │  ├─ path: ./node_modules/@inquirer/input
 │  └─ licenseFile: ./node_modules/@inquirer/input/LICENSE
-├─ @inquirer/number@4.2.3
+├─ @inquirer/number@4.2.4
 │  ├─ licenses: MIT
 │  ├─ repository: https://github.com/SBoudrias/Inquirer.js
 │  ├─ publisher: Simon Boudrias
 │  ├─ email: admin@simonboudrias.com
 │  ├─ path: ./node_modules/@inquirer/number
 │  └─ licenseFile: ./node_modules/@inquirer/number/LICENSE
-├─ @inquirer/password@5.2.2
+├─ @inquirer/password@5.2.3
 │  ├─ licenses: MIT
 │  ├─ repository: https://github.com/SBoudrias/Inquirer.js
 │  ├─ publisher: Simon Boudrias
@@ -966,21 +967,21 @@
 │  ├─ email: admin@simonboudrias.com
 │  ├─ path: ./node_modules/@inquirer/prompts
 │  └─ licenseFile: ./node_modules/@inquirer/prompts/LICENSE
-├─ @inquirer/rawlist@5.3.5
+├─ @inquirer/rawlist@5.3.6
 │  ├─ licenses: MIT
 │  ├─ repository: https://github.com/SBoudrias/Inquirer.js
 │  ├─ publisher: Simon Boudrias
 │  ├─ email: admin@simonboudrias.com
 │  ├─ path: ./node_modules/@inquirer/rawlist
 │  └─ licenseFile: ./node_modules/@inquirer/rawlist/LICENSE
-├─ @inquirer/search@4.3.3
+├─ @inquirer/search@4.3.4
 │  ├─ licenses: MIT
 │  ├─ repository: https://github.com/SBoudrias/Inquirer.js
 │  ├─ publisher: Simon Boudrias
 │  ├─ email: admin@simonboudrias.com
 │  ├─ path: ./node_modules/@inquirer/search
 │  └─ licenseFile: ./node_modules/@inquirer/search/LICENSE
-├─ @inquirer/select@5.2.5
+├─ @inquirer/select@5.2.6
 │  ├─ licenses: MIT
 │  ├─ repository: https://github.com/SBoudrias/Inquirer.js
 │  ├─ publisher: Simon Boudrias
@@ -994,6 +995,13 @@
 │  ├─ email: admin@simonboudrias.com
 │  ├─ path: ./node_modules/@inquirer/type
 │  └─ licenseFile: ./node_modules/@inquirer/type/LICENSE
+├─ @inquirer/type@4.2.0
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/SBoudrias/Inquirer.js
+│  ├─ publisher: Simon Boudrias
+│  ├─ email: admin@simonboudrias.com
+│  ├─ path: ./node_modules/@inquirer/core/node_modules/@inquirer/type
+│  └─ licenseFile: ./node_modules/@inquirer/core/node_modules/@inquirer/type/LICENSE
 ├─ @istanbuljs/schema@0.1.6
 │  ├─ licenses: MIT
 │  ├─ repository: https://github.com/istanbuljs/schema
@@ -1012,8 +1020,8 @@
 │  ├─ repository: https://github.com/jridgewell/sourcemaps
 │  ├─ publisher: Justin Ridgewell
 │  ├─ email: justin@ridgewell.name
-│  ├─ path: ./node_modules/@babel/generator/node_modules/@jridgewell/gen-mapping
-│  └─ licenseFile: ./node_modules/@babel/generator/node_modules/@jridgewell/gen-mapping/LICENSE
+│  ├─ path: ./node_modules/@babel/traverse/node_modules/@jridgewell/gen-mapping
+│  └─ licenseFile: ./node_modules/@babel/traverse/node_modules/@jridgewell/gen-mapping/LICENSE
 ├─ @jridgewell/remapping@2.3.5
 │  ├─ licenses: MIT
 │  ├─ repository: https://github.com/jridgewell/sourcemaps
@@ -1091,56 +1099,56 @@
 │  ├─ url: https://github.com/streamich
 │  ├─ path: ./node_modules/@jsonjoy.com/fs-snapshot/node_modules/@jsonjoy.com/codegen
 │  └─ licenseFile: ./node_modules/@jsonjoy.com/fs-snapshot/node_modules/@jsonjoy.com/codegen/LICENSE
-├─ @jsonjoy.com/fs-core@4.79.0
+├─ @jsonjoy.com/fs-core@4.80.0
 │  ├─ licenses: Apache-2.0
 │  ├─ repository: https://github.com/streamich/memfs
 │  ├─ publisher: streamich
 │  ├─ url: https://github.com/streamich
 │  ├─ path: ./node_modules/@jsonjoy.com/fs-core
 │  └─ licenseFile: ./node_modules/@jsonjoy.com/fs-core/LICENSE
-├─ @jsonjoy.com/fs-fsa@4.79.0
+├─ @jsonjoy.com/fs-fsa@4.80.0
 │  ├─ licenses: Apache-2.0
 │  ├─ repository: https://github.com/streamich/memfs
 │  ├─ publisher: streamich
 │  ├─ url: https://github.com/streamich
 │  ├─ path: ./node_modules/@jsonjoy.com/fs-fsa
 │  └─ licenseFile: ./node_modules/@jsonjoy.com/fs-fsa/LICENSE
-├─ @jsonjoy.com/fs-node-builtins@4.79.0
+├─ @jsonjoy.com/fs-node-builtins@4.80.0
 │  ├─ licenses: Apache-2.0
 │  ├─ repository: https://github.com/streamich/memfs
 │  ├─ publisher: streamich
 │  ├─ url: https://github.com/streamich
 │  ├─ path: ./node_modules/@jsonjoy.com/fs-node-builtins
 │  └─ licenseFile: ./node_modules/@jsonjoy.com/fs-node-builtins/LICENSE
-├─ @jsonjoy.com/fs-node-to-fsa@4.79.0
+├─ @jsonjoy.com/fs-node-to-fsa@4.80.0
 │  ├─ licenses: Apache-2.0
 │  ├─ repository: https://github.com/streamich/memfs
 │  ├─ publisher: streamich
 │  ├─ url: https://github.com/streamich
 │  ├─ path: ./node_modules/@jsonjoy.com/fs-node-to-fsa
 │  └─ licenseFile: ./node_modules/@jsonjoy.com/fs-node-to-fsa/LICENSE
-├─ @jsonjoy.com/fs-node-utils@4.79.0
+├─ @jsonjoy.com/fs-node-utils@4.80.0
 │  ├─ licenses: Apache-2.0
 │  ├─ repository: https://github.com/streamich/memfs
 │  ├─ publisher: streamich
 │  ├─ url: https://github.com/streamich
 │  ├─ path: ./node_modules/@jsonjoy.com/fs-node-utils
 │  └─ licenseFile: ./node_modules/@jsonjoy.com/fs-node-utils/LICENSE
-├─ @jsonjoy.com/fs-node@4.79.0
+├─ @jsonjoy.com/fs-node@4.80.0
 │  ├─ licenses: Apache-2.0
 │  ├─ repository: https://github.com/streamich/memfs
 │  ├─ publisher: streamich
 │  ├─ url: https://github.com/streamich
 │  ├─ path: ./node_modules/@jsonjoy.com/fs-node
 │  └─ licenseFile: ./node_modules/@jsonjoy.com/fs-node/LICENSE
-├─ @jsonjoy.com/fs-print@4.79.0
+├─ @jsonjoy.com/fs-print@4.80.0
 │  ├─ licenses: Apache-2.0
 │  ├─ repository: https://github.com/streamich/memfs
 │  ├─ publisher: streamich
 │  ├─ url: https://github.com/streamich
 │  ├─ path: ./node_modules/@jsonjoy.com/fs-print
 │  └─ licenseFile: ./node_modules/@jsonjoy.com/fs-print/LICENSE
-├─ @jsonjoy.com/fs-snapshot@4.79.0
+├─ @jsonjoy.com/fs-snapshot@4.80.0
 │  ├─ licenses: Apache-2.0
 │  ├─ repository: https://github.com/streamich/memfs
 │  ├─ publisher: streamich
@@ -1239,7 +1247,7 @@
 │  ├─ repository: https://github.com/Brooooooklyn/nice
 │  ├─ path: ./node_modules/@napi-rs/nice
 │  └─ licenseFile: ./node_modules/@napi-rs/nice/LICENSE
-├─ @ngtools/webpack@22.2.0
+├─ @ngtools/webpack@22.2.1
 │  ├─ licenses: MIT
 │  ├─ repository: https://github.com/angular/angular-cli
 │  ├─ publisher: Angular Authors
@@ -1305,61 +1313,61 @@
 │  ├─ repository: https://github.com/parcel-bundler/watcher
 │  ├─ path: ./node_modules/@parcel/watcher
 │  └─ licenseFile: ./node_modules/@parcel/watcher/LICENSE
-├─ @peculiar/asn1-cms@2.9.5
+├─ @peculiar/asn1-cms@2.10.0
 │  ├─ licenses: MIT
 │  ├─ repository: https://github.com/PeculiarVentures/asn1-schema
 │  ├─ publisher: PeculiarVentures, LLC
 │  ├─ path: ./node_modules/@peculiar/asn1-cms
 │  └─ licenseFile: ./node_modules/@peculiar/asn1-cms/LICENSE
-├─ @peculiar/asn1-csr@2.9.5
+├─ @peculiar/asn1-csr@2.10.0
 │  ├─ licenses: MIT
 │  ├─ repository: https://github.com/PeculiarVentures/asn1-schema
 │  ├─ publisher: PeculiarVentures, LLC
 │  ├─ path: ./node_modules/@peculiar/asn1-csr
 │  └─ licenseFile: ./node_modules/@peculiar/asn1-csr/LICENSE
-├─ @peculiar/asn1-ecc@2.9.5
+├─ @peculiar/asn1-ecc@2.10.0
 │  ├─ licenses: MIT
 │  ├─ repository: https://github.com/PeculiarVentures/asn1-schema
 │  ├─ publisher: PeculiarVentures, LLC
 │  ├─ path: ./node_modules/@peculiar/asn1-ecc
 │  └─ licenseFile: ./node_modules/@peculiar/asn1-ecc/LICENSE
-├─ @peculiar/asn1-pfx@2.9.5
+├─ @peculiar/asn1-pfx@2.10.0
 │  ├─ licenses: MIT
 │  ├─ repository: https://github.com/PeculiarVentures/asn1-schema
 │  ├─ publisher: PeculiarVentures, LLC
 │  ├─ path: ./node_modules/@peculiar/asn1-pfx
 │  └─ licenseFile: ./node_modules/@peculiar/asn1-pfx/LICENSE
-├─ @peculiar/asn1-pkcs8@2.9.5
+├─ @peculiar/asn1-pkcs8@2.10.0
 │  ├─ licenses: MIT
 │  ├─ repository: https://github.com/PeculiarVentures/asn1-schema
 │  ├─ publisher: PeculiarVentures, LLC
 │  ├─ path: ./node_modules/@peculiar/asn1-pkcs8
 │  └─ licenseFile: ./node_modules/@peculiar/asn1-pkcs8/LICENSE
-├─ @peculiar/asn1-pkcs9@2.9.5
+├─ @peculiar/asn1-pkcs9@2.10.0
 │  ├─ licenses: MIT
 │  ├─ repository: https://github.com/PeculiarVentures/asn1-schema
 │  ├─ publisher: PeculiarVentures, LLC
 │  ├─ path: ./node_modules/@peculiar/asn1-pkcs9
 │  └─ licenseFile: ./node_modules/@peculiar/asn1-pkcs9/LICENSE
-├─ @peculiar/asn1-rsa@2.9.5
+├─ @peculiar/asn1-rsa@2.10.0
 │  ├─ licenses: MIT
 │  ├─ repository: https://github.com/PeculiarVentures/asn1-schema
 │  ├─ publisher: PeculiarVentures, LLC
 │  ├─ path: ./node_modules/@peculiar/asn1-rsa
 │  └─ licenseFile: ./node_modules/@peculiar/asn1-rsa/LICENSE
-├─ @peculiar/asn1-schema@2.9.5
+├─ @peculiar/asn1-schema@2.10.0
 │  ├─ licenses: MIT
 │  ├─ repository: https://github.com/PeculiarVentures/asn1-schema
 │  ├─ publisher: PeculiarVentures, LLC
 │  ├─ path: ./node_modules/@peculiar/asn1-schema
 │  └─ licenseFile: ./node_modules/@peculiar/asn1-schema/LICENSE
-├─ @peculiar/asn1-x509-attr@2.9.5
+├─ @peculiar/asn1-x509-attr@2.10.0
 │  ├─ licenses: MIT
 │  ├─ repository: https://github.com/PeculiarVentures/asn1-schema
 │  ├─ publisher: PeculiarVentures, LLC
 │  ├─ path: ./node_modules/@peculiar/asn1-x509-attr
 │  └─ licenseFile: ./node_modules/@peculiar/asn1-x509-attr/LICENSE
-├─ @peculiar/asn1-x509@2.9.5
+├─ @peculiar/asn1-x509@2.10.0
 │  ├─ licenses: MIT
 │  ├─ repository: https://github.com/PeculiarVentures/asn1-schema
 │  ├─ publisher: PeculiarVentures, LLC
@@ -1387,7 +1395,7 @@
 │  ├─ repository: https://github.com/rolldown/plugins
 │  ├─ path: ./node_modules/@rolldown/pluginutils
 │  └─ licenseFile: ./node_modules/@rolldown/pluginutils/LICENSE
-├─ @schematics/angular@22.2.0
+├─ @schematics/angular@22.2.1
 │  ├─ licenses: MIT
 │  ├─ repository: https://github.com/angular/angular-cli
 │  ├─ publisher: Angular Authors
@@ -1479,7 +1487,7 @@
 │  ├─ repository: https://github.com/DefinitelyTyped/DefinitelyTyped
 │  ├─ path: ./node_modules/@types/http-errors
 │  └─ licenseFile: ./node_modules/@types/http-errors/LICENSE
-├─ @types/jasmine@6.0.0
+├─ @types/jasmine@7.0.0
 │  ├─ licenses: MIT
 │  ├─ repository: https://github.com/DefinitelyTyped/DefinitelyTyped
 │  ├─ path: ./node_modules/@types/jasmine
@@ -2234,8 +2242,8 @@
 │  ├─ publisher: Thorsten Lorenz
 │  ├─ email: thlorenz@gmx.de
 │  ├─ url: http://thlorenz.com
-│  ├─ path: ./node_modules/@babel/core/node_modules/convert-source-map
-│  └─ licenseFile: ./node_modules/@babel/core/node_modules/convert-source-map/LICENSE
+│  ├─ path: ./node_modules/karma-coverage/node_modules/convert-source-map
+│  └─ licenseFile: ./node_modules/karma-coverage/node_modules/convert-source-map/LICENSE
 ├─ cookie-signature@1.2.2
 │  ├─ licenses: MIT
 │  ├─ repository: https://github.com/visionmedia/node-cookie-signature
@@ -3495,14 +3503,14 @@
 │  ├─ licenses: MIT
 │  ├─ repository: https://github.com/lydell/js-tokens
 │  ├─ publisher: Simon Lydell
-│  ├─ path: ./node_modules/js-tokens
-│  └─ licenseFile: ./node_modules/js-tokens/LICENSE
+│  ├─ path: ./node_modules/@babel/traverse/node_modules/js-tokens
+│  └─ licenseFile: ./node_modules/@babel/traverse/node_modules/js-tokens/LICENSE
 ├─ js-tokens@4.0.0
 │  ├─ licenses: MIT
 │  ├─ repository: https://github.com/lydell/js-tokens
 │  ├─ publisher: Simon Lydell
-│  ├─ path: ./node_modules/parse-json/node_modules/js-tokens
-│  └─ licenseFile: ./node_modules/parse-json/node_modules/js-tokens/LICENSE
+│  ├─ path: ./node_modules/js-tokens
+│  └─ licenseFile: ./node_modules/js-tokens/LICENSE
 ├─ js-yaml@4.3.2
 │  ├─ licenses: MIT
 │  ├─ repository: https://github.com/nodeca/js-yaml
@@ -3620,7 +3628,7 @@
 │  ├─ url: https://github.com/jonschlinkert
 │  ├─ path: ./node_modules/kind-of
 │  └─ licenseFile: ./node_modules/kind-of/LICENSE
-├─ launch-editor@2.14.1
+├─ launch-editor@2.14.2
 │  ├─ licenses: MIT
 │  ├─ repository: https://github.com/vitejs/launch-editor
 │  ├─ publisher: Evan You
@@ -3770,15 +3778,15 @@
 │  ├─ repository: https://github.com/isaacs/node-lru-cache
 │  ├─ publisher: Isaac Z. Schlueter
 │  ├─ email: i@izs.me
-│  ├─ path: ./node_modules/lru-cache
-│  └─ licenseFile: ./node_modules/lru-cache/LICENSE.md
+│  ├─ path: ./node_modules/hosted-git-info/node_modules/lru-cache
+│  └─ licenseFile: ./node_modules/hosted-git-info/node_modules/lru-cache/LICENSE.md
 ├─ lru-cache@5.1.1
 │  ├─ licenses: ISC
 │  ├─ repository: https://github.com/isaacs/node-lru-cache
 │  ├─ publisher: Isaac Z. Schlueter
 │  ├─ email: i@izs.me
-│  ├─ path: ./node_modules/istanbul-lib-instrument/node_modules/lru-cache
-│  └─ licenseFile: ./node_modules/istanbul-lib-instrument/node_modules/lru-cache/LICENSE
+│  ├─ path: ./node_modules/lru-cache
+│  └─ licenseFile: ./node_modules/lru-cache/LICENSE
 ├─ magic-string@0.30.21
 │  ├─ licenses: MIT
 │  ├─ repository: https://github.com/Rich-Harris/magic-string
@@ -3844,7 +3852,7 @@
 │  ├─ email: doug@somethingdoug.com
 │  ├─ path: ./node_modules/express/node_modules/media-typer
 │  └─ licenseFile: ./node_modules/express/node_modules/media-typer/LICENSE
-├─ memfs@4.79.0
+├─ memfs@4.80.0
 │  ├─ licenses: Apache-2.0
 │  ├─ repository: https://github.com/streamich/memfs
 │  ├─ publisher: streamich
@@ -4042,7 +4050,7 @@
 │  ├─ repository: https://github.com/jshttp/negotiator
 │  ├─ path: ./node_modules/express/node_modules/negotiator
 │  └─ licenseFile: ./node_modules/express/node_modules/negotiator/LICENSE
-├─ ng-packagr@22.2.1
+├─ ng-packagr@22.2.4
 │  ├─ licenses: MIT
 │  ├─ repository: https://github.com/ng-packagr/ng-packagr
 │  ├─ publisher: ng-packagr GitHub organization
@@ -4141,15 +4149,15 @@
 │  ├─ repository: https://github.com/sxzz/obug
 │  ├─ publisher: Kevin Deng
 │  ├─ email: sxzz@sxzz.moe
-│  ├─ path: ./node_modules/obug
-│  └─ licenseFile: ./node_modules/obug/LICENSE
+│  ├─ path: ./node_modules/@babel/traverse/node_modules/obug
+│  └─ licenseFile: ./node_modules/@babel/traverse/node_modules/obug/LICENSE
 ├─ obug@3.0.0
 │  ├─ licenses: MIT
 │  ├─ repository: https://github.com/sxzz/obug
 │  ├─ publisher: Kevin Deng
 │  ├─ email: sxzz@sxzz.moe
-│  ├─ path: ./node_modules/rolldown-plugin-dts/node_modules/obug
-│  └─ licenseFile: ./node_modules/rolldown-plugin-dts/node_modules/obug/LICENSE
+│  ├─ path: ./node_modules/obug
+│  └─ licenseFile: ./node_modules/obug/LICENSE
 ├─ on-finished@2.3.0
 │  ├─ licenses: MIT
 │  ├─ repository: https://github.com/jshttp/on-finished
@@ -4491,16 +4499,15 @@
 │  ├─ repository: https://github.com/postcss/postcss
 │  ├─ publisher: Andrey Sitnik
 │  ├─ email: andrey@sitnik.es
+│  ├─ path: ./node_modules/@angular-devkit/build-angular/node_modules/postcss
+│  └─ licenseFile: ./node_modules/@angular-devkit/build-angular/node_modules/postcss/LICENSE
+├─ postcss@8.5.29
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/postcss/postcss
+│  ├─ publisher: Andrey Sitnik
+│  ├─ email: andrey@sitnik.es
 │  ├─ path: ./node_modules/postcss
 │  └─ licenseFile: ./node_modules/postcss/LICENSE
-├─ powershell-utils@0.1.0
-│  ├─ licenses: MIT
-│  ├─ repository: https://github.com/sindresorhus/powershell-utils
-│  ├─ publisher: Sindre Sorhus
-│  ├─ email: sindresorhus@gmail.com
-│  ├─ url: https://sindresorhus.com
-│  ├─ path: ./node_modules/wsl-utils/node_modules/powershell-utils
-│  └─ licenseFile: ./node_modules/wsl-utils/node_modules/powershell-utils/license
 ├─ powershell-utils@0.2.1
 │  ├─ licenses: MIT
 │  ├─ repository: https://github.com/sindresorhus/powershell-utils
@@ -4509,7 +4516,7 @@
 │  ├─ url: https://sindresorhus.com
 │  ├─ path: ./node_modules/powershell-utils
 │  └─ licenseFile: ./node_modules/powershell-utils/license
-├─ prettier-plugin-tailwindcss@0.8.1
+├─ prettier-plugin-tailwindcss@0.6.14
 │  ├─ licenses: MIT
 │  ├─ repository: https://github.com/tailwindlabs/prettier-plugin-tailwindcss
 │  ├─ path: ./node_modules/prettier-plugin-tailwindcss
@@ -4674,14 +4681,14 @@
 │  ├─ url: http://github.com/rbuckton
 │  ├─ path: ./node_modules/reflect-metadata
 │  └─ licenseFile: ./node_modules/reflect-metadata/LICENSE
-├─ regenerate-unicode-properties@10.2.2
+├─ regenerate-unicode-properties@10.3.0
 │  ├─ licenses: MIT
 │  ├─ repository: https://github.com/mathiasbynens/regenerate-unicode-properties
 │  ├─ publisher: Mathias Bynens
 │  ├─ url: https://mathiasbynens.be/
 │  ├─ path: ./node_modules/regenerate-unicode-properties
 │  └─ licenseFile: ./node_modules/regenerate-unicode-properties/LICENSE-MIT.txt
-├─ regenerate@1.4.2
+├─ regenerate@1.5.0
 │  ├─ licenses: MIT
 │  ├─ repository: https://github.com/mathiasbynens/regenerate
 │  ├─ publisher: Mathias Bynens
@@ -4696,7 +4703,7 @@
 │  ├─ url: https://ionicabizau.net
 │  ├─ path: ./node_modules/regex-parser
 │  └─ licenseFile: ./node_modules/regex-parser/LICENSE
-├─ regexpu-core@6.4.0
+├─ regexpu-core@6.5.3
 │  ├─ licenses: MIT
 │  ├─ repository: https://github.com/mathiasbynens/regexpu-core
 │  ├─ publisher: Mathias Bynens
@@ -4710,7 +4717,7 @@
 │  ├─ url: https://ofcr.se/
 │  ├─ path: ./node_modules/regjsgen
 │  └─ licenseFile: ./node_modules/regjsgen/LICENSE-MIT.txt
-├─ regjsparser@0.13.3
+├─ regjsparser@0.13.4
 │  ├─ licenses: BSD-2-Clause
 │  ├─ repository: https://github.com/jviereck/regjsparser
 │  ├─ publisher: 'Julian Viereck'
@@ -4979,6 +4986,14 @@
 │  ├─ url: https://github.com/jonschlinkert
 │  ├─ path: ./node_modules/shallow-clone
 │  └─ licenseFile: ./node_modules/shallow-clone/LICENSE
+├─ shell-quote@1.12.0
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/ljharb/shell-quote
+│  ├─ publisher: James Halliday
+│  ├─ email: mail@substack.net
+│  ├─ url: http://substack.net
+│  ├─ path: ./node_modules/launch-editor/node_modules/shell-quote
+│  └─ licenseFile: ./node_modules/launch-editor/node_modules/shell-quote/LICENSE
 ├─ shell-quote@1.9.0
 │  ├─ licenses: MIT
 │  ├─ repository: https://github.com/ljharb/shell-quote
@@ -5058,7 +5073,7 @@
 │  ├─ repository: https://github.com/socketio/socket.io
 │  ├─ path: ./node_modules/socket.io
 │  └─ licenseFile: ./node_modules/socket.io/LICENSE
-├─ source-map-js@1.2.1
+├─ source-map-js@1.2.2
 │  ├─ licenses: BSD-3-Clause
 │  ├─ repository: https://github.com/7rulnik/source-map-js
 │  ├─ publisher: Valentin 7rulnik Semirulnik
@@ -5225,8 +5240,8 @@
 │  ├─ publisher: Sindre Sorhus
 │  ├─ email: sindresorhus@gmail.com
 │  ├─ url: https://sindresorhus.com
-│  ├─ path: ./node_modules/supports-color
-│  └─ licenseFile: ./node_modules/supports-color/license
+│  ├─ path: ./node_modules/concurrently/node_modules/supports-color
+│  └─ licenseFile: ./node_modules/concurrently/node_modules/supports-color/license
 ├─ supports-color@5.5.0
 │  ├─ licenses: MIT
 │  ├─ repository: https://github.com/chalk/supports-color
@@ -5249,8 +5264,8 @@
 │  ├─ publisher: Sindre Sorhus
 │  ├─ email: sindresorhus@gmail.com
 │  ├─ url: https://sindresorhus.com
-│  ├─ path: ./node_modules/sass-embedded/node_modules/supports-color
-│  └─ licenseFile: ./node_modules/sass-embedded/node_modules/supports-color/license
+│  ├─ path: ./node_modules/supports-color
+│  └─ licenseFile: ./node_modules/supports-color/license
 ├─ supports-preserve-symlinks-flag@1.0.0
 │  ├─ licenses: MIT
 │  ├─ repository: https://github.com/inspect-js/node-supports-preserve-symlinks-flag
@@ -5562,7 +5577,7 @@
 │  ├─ publisher: Kris Zyp
 │  ├─ path: ./node_modules/weak-lru-cache
 │  └─ licenseFile: ./node_modules/weak-lru-cache/README.md
-├─ web-obs@0.0.18
+├─ web-obs@0.0.21
 │  ├─ licenses: MIT
 │  ├─ repository: https://github.com/giacca90/web-obs
 │  ├─ publisher: Giacca90
@@ -5668,7 +5683,7 @@
 │  ├─ url: http://2x.io
 │  ├─ path: ./node_modules/ws
 │  └─ licenseFile: ./node_modules/ws/LICENSE
-├─ wsl-utils@1.0.0
+├─ wsl-utils@1.0.1
 │  ├─ licenses: MIT
 │  ├─ repository: https://github.com/sindresorhus/wsl-utils
 │  ├─ publisher: Sindre Sorhus

@@ -93,8 +93,6 @@ Ejemplo completo:
 
 ```
 
-````
-
 ### Personalización de Estilos
 
 Web-OBS permite personalizar su apariencia utilizando **Variables CSS** y **Shadow Parts**, lo que facilita su integración con el diseño de tu aplicación.
@@ -105,14 +103,14 @@ Puedes sobrescribir los siguientes valores en el contenedor de `web-obs`:
 
 ```css
 web-obs {
-  --web-obs-bg-color: #1a1a1a;       /* Fondo principal */
-  --web-obs-text-color: #ffffff;     /* Color de texto */
-  --web-obs-border-color: #333333;   /* Color de bordes */
-  --web-obs-accent-color: #ff4444;   /* Color de guías y énfasis */
-  --web-obs-canvas-bg: #000000;      /* Fondo del área de dibujo */
-  --web-obs-control-bg: #2d2d2d;     /* Fondo de botones y controles */
+  --web-obs-bg-color: #1a1a1a; /* Fondo principal */
+  --web-obs-text-color: #ffffff; /* Color de texto */
+  --web-obs-border-color: #333333; /* Color de bordes */
+  --web-obs-accent-color: #ff4444; /* Color de guías y énfasis */
+  --web-obs-canvas-bg: #000000; /* Fondo del área de dibujo */
+  --web-obs-control-bg: #2d2d2d; /* Fondo de botones y controles */
 }
-````
+```
 
 #### Shadow Parts
 
