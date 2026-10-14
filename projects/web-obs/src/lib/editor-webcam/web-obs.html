@@ -77,14 +77,14 @@
       </div>
       <div #presetsDiv part="presets-container" id="presets" class="mi-grid h-full max-w-full max-h-full scrollbar-thin scrollbar-thumb-gray-400 scrollbar-thumb-rounded overflow-auto">
         <!-- Preset Items -->
-        @for (presetName of this.presets.keys(); track presetName) {
+        @for (presetName of this.presets().keys(); track presetName) {
           <div part="preset-item" class="mi-group">
             <div id="preset-{{ presetName }}" (click)="this.aplicaPreset(presetName)" (keydown.enter)="this.aplicaPreset(presetName)" class="relative h-full w-full justify-center group-hover:border-black dark:border-gray-400"></div>
             <p (click)="this.aplicaPreset(presetName)" (keydown.enter)="this.aplicaPreset(presetName)" class="absolute top-2 w-full text-center text-sm text-white">
               {{ presetName }}
             </p>
             <p (click)="this.aplicaPreset(presetName)" (keydown.enter)="this.aplicaPreset(presetName)" class="absolute bottom-2 w-full text-center text-sm text-white">
-              {{ this.presets.get(presetName)?.shortcut }}
+              {{ this.presets().get(presetName)?.shortcut }}
             </p>
           </div>
         }

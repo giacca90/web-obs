@@ -35,7 +35,7 @@ export class WebOBS implements OnInit, AfterViewInit, OnDestroy, OnChanges {
   canvas!: HTMLCanvasElement; // El elemento canvas
   private canvasWorker!: Worker; // Worker para el canvas
   editandoDimensiones = false; // Indica si se está editando las dimensiones de un video
-  presets = new Map<string, Preset>(); // Presets
+  presets = signal<Map<string, Preset>>(new Map()); // Presets guardados
   audioContext!: AudioContext;
   mixedAudioDestination!: MediaStreamAudioDestinationNode;
   recordAudioDestination!: MediaStreamAudioDestinationNode;
@@ -92,6 +92,29 @@ export class WebOBS implements OnInit, AfterViewInit, OnDestroy, OnChanges {
 
         for (let i = 0; i < totalConnections; i++) {
           this._drawSingleAudioConnection(i, audiosRect, connectionWidth);
+        }
+      });
+    });
+
+    effect(() => {
+      console.log('calculatePreset effect');
+      const _resizeTick = this.windowResizeTrigger();
+
+      // 1. LEER LA SEÑAL AQUÍ DE FORMA SÍNCRONA REGISTRA LA DEPENDENCIA
+      const currentPresets = this.presets();
+
+      requestAnimationFrame(() => {
+        // 2. Usamos la variable capturada de forma síncrona
+        for (const [key, preset] of currentPresets.entries()) {
+          console.log('calculatePreset preset', key);
+          const presetDiv = this.presetsDiv()?.nativeElement.querySelector(`[id="preset-${key}"]`);
+          if (!presetDiv) {
+            console.log('calculatePreset presetDiv not found');
+            continue;
+          }
+
+          presetDiv.innerHTML = '';
+          this.renderPresetElements(presetDiv as HTMLElement, preset.elements);
         }
       });
     });
@@ -195,9 +218,7 @@ export class WebOBS implements OnInit, AfterViewInit, OnDestroy, OnChanges {
    */
   @HostListener('window:resize')
   onResize(): void {
-    this.calculatePreset();
     this.windowResizeTrigger.update((v) => v + 1);
-    //this.drawAudioConnections();
   }
 
   /**
@@ -218,26 +239,41 @@ export class WebOBS implements OnInit, AfterViewInit, OnDestroy, OnChanges {
         alert('¡¡¡ATENCIÓN!! Esta aplicación no está pensada para dispositivos móviles.');
         this.statusMessage.set('<span style="color: red; font-weight: bold;">¡¡¡ATENCIÓN!! Esta aplicación no está pensada para dispositivos móviles.</span>');
       }
-      const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+
+      let stream: MediaStream;
+
+      // 1. Intentar adquirir Audio + Vídeo con fallback inteligente
+      try {
+        stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+      } catch (audioVideoError) {
+        console.warn('No se pudo acceder al micrófono (dispositivo ocupado o no disponible). Reintentando solo con vídeo:', audioVideoError);
+        // FALLBACK: Si el audio falla o está bloqueado por el sistema, rescatamos la cámara
+        stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
+      }
+
+      // 2. Enumerar los dispositivos una vez concedidos los permisos
       const devices = await navigator.mediaDevices.enumerateDevices();
+
+      // 3. Detener el stream de prueba e iniciar la lógica de la app
       this.stopStream(stream);
       this.startMedias(devices);
 
+      // 4. Listener para cambios en caliente
       navigator.mediaDevices.ondevicechange = async () => {
         await this.updateDevices();
       };
-
-      if (this.savedFiles()) {
-        this.staticContent.set(this.savedFiles()!);
-        this.loadFiles(this.staticContent()).catch((error) => console.error('Error cargando archivos guardados:', error));
-      }
-
-      if (this.savedPresets()) {
-        this.presets = this.savedPresets()!;
-      }
     } catch (error) {
-      console.error('Error al acceder a los dispositivos:', error);
+      console.error('Error definitivo al acceder a los dispositivos:', error);
       throw new Error('Error al acceder a los dispositivos: ' + error);
+    }
+
+    if (this.savedFiles()) {
+      this.staticContent.set(this.savedFiles()!);
+      this.loadFiles(this.staticContent()).catch((error) => console.error('Error cargando archivos guardados:', error));
+    }
+
+    if (this.savedPresets()) {
+      this.presets.set(this.savedPresets()!);
     }
   }
 
@@ -351,10 +387,10 @@ export class WebOBS implements OnInit, AfterViewInit, OnDestroy, OnChanges {
     }
 
     // Carga los presets recibidos (si hay)
-    if (this.presets?.size > 0) {
+    /* if (this.presets()?.size > 0) {
       //setTimeout(() => {
-      for (const key of Array.from(this.presets.keys())) {
-        const preset = this.presets.get(key);
+      for (const key of Array.from(this.presets().keys())) {
+        const preset = this.presets().get(key);
         if (preset) {
           for (const element of preset.elements) {
             element.element = this.elementosDiv()?.nativeElement.querySelector(`#${CSS.escape(element.id)}`) ?? null;
@@ -363,7 +399,7 @@ export class WebOBS implements OnInit, AfterViewInit, OnDestroy, OnChanges {
       }
       this.calculatePreset();
       //}, 2000);
-    }
+    } */
   }
 
   /**
@@ -467,7 +503,7 @@ export class WebOBS implements OnInit, AfterViewInit, OnDestroy, OnChanges {
     if (event.ctrlKey && !Number.isNaN(Number(event.key))) {
       event.preventDefault(); // Evitar el comportamiento predeterminado solo para Ctrl + número
       const shortcut = `ctrl+${event.key}`;
-      const preset = Array.from(this.presets.entries()).find(([_, value]) => value.shortcut === shortcut);
+      const preset = Array.from(this.presets().entries()).find(([_, value]) => value.shortcut === shortcut);
       if (preset) {
         this.aplicaPreset(preset[0]);
       } else {
@@ -479,7 +515,7 @@ export class WebOBS implements OnInit, AfterViewInit, OnDestroy, OnChanges {
   aplicaPreset(name: string) {
     this._removeExistingLayers();
 
-    const preset = this.presets.get(name);
+    const preset = this.presets().get(name);
     if (!preset) {
       console.error('Missing preset');
       return;
@@ -509,7 +545,7 @@ export class WebOBS implements OnInit, AfterViewInit, OnDestroy, OnChanges {
     const presetsDiv = this.presetsDiv()?.nativeElement;
     if (!presetsDiv) return;
 
-    for (const key of Array.from(this.presets.keys())) {
+    for (const key of Array.from(this.presets().keys())) {
       presetsDiv.querySelector(`#capa-${CSS.escape(key)}`)?.remove();
     }
   }
@@ -2551,13 +2587,24 @@ export class WebOBS implements OnInit, AfterViewInit, OnDestroy, OnChanges {
     if (!name) return;
 
     const videoElements = this.createVideoElementsList();
-    this.presets.set(name, {
-      elements: videoElements,
-      shortcut: 'ctrl+' + (this.presets.size + 1),
+
+    this.presets.update((currentPresets) => {
+      // 1. Creamos una NUEVA instancia de Map basada en la anterior para romper la referencia
+      const newPresets = new Map(currentPresets);
+
+      // 2. Modificamos el nuevo Map
+      newPresets.set(name, {
+        elements: videoElements,
+        shortcut: 'ctrl+' + (newPresets.size + 1),
+      });
+
+      // 3. Devolvemos el nuevo Map, lo que obliga al Signal a disparar la reactividad
+      return newPresets;
     });
-    this.calculatePreset();
-    //setTimeout(() => this.calculatePreset(), 100);
-    this.aplicaPreset(name);
+
+    requestAnimationFrame(() => {
+      this.aplicaPreset(name);
+    });
   }
 
   /**
@@ -2944,17 +2991,6 @@ export class WebOBS implements OnInit, AfterViewInit, OnDestroy, OnChanges {
    * @description Renderiza una miniatura de cada preset guardado en su contenedor correspondiente.
    * @returns {Promise<void>} Una promesa que se resuelve cuando todos los presets han sido calculados.
    */
-  async calculatePreset() {
-    //setTimeout(() => {
-    for (const [key, preset] of this.presets.entries()) {
-      const presetDiv = this.presetsDiv()?.nativeElement.querySelector(`[id="preset-${key}"]`);
-      if (!presetDiv) continue;
-
-      presetDiv.innerHTML = '';
-      this.renderPresetElements(presetDiv as HTMLElement, preset.elements);
-    }
-    //}, 50);
-  }
 
   /**
    * @summary Renderiza los elementos de un preset en un contenedor específico.
@@ -2962,6 +2998,7 @@ export class WebOBS implements OnInit, AfterViewInit, OnDestroy, OnChanges {
    * @param {VideoElement[]} elements Elementos a renderizar.
    */
   private renderPresetElements(presetDiv: HTMLElement, elements: VideoElement[]) {
+    console.log('renderPresetElements called');
     const divRect = presetDiv.getBoundingClientRect();
     if (!this.canvas) return;
 
@@ -2972,6 +3009,7 @@ export class WebOBS implements OnInit, AfterViewInit, OnDestroy, OnChanges {
     const scaleY = canvasHeight / (divRect.height || 1);
 
     for (const element of elements) {
+      console.log('renderPresetElements element', element);
       const ele = this.createPresetElement(element);
       if (!ele || !element.position) continue;
 
@@ -3488,7 +3526,7 @@ export class WebOBS implements OnInit, AfterViewInit, OnDestroy, OnChanges {
    * @description Emite un evento para guardar los presets definidos.
    */
   savePresetsFunction() {
-    this.savePresets.emit(this.presets);
+    this.savePresets.emit(this.presets());
   }
 
   /**
