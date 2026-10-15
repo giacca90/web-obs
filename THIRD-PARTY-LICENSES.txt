@@ -13,89 +13,89 @@
 │  ├─ email: jridgewell@google.com
 │  ├─ path: ./node_modules/@ampproject/remapping
 │  └─ licenseFile: ./node_modules/@ampproject/remapping/LICENSE
-├─ @angular-devkit/architect@0.2202.1
+├─ @angular-devkit/architect@0.2202.2
 │  ├─ licenses: MIT
 │  ├─ repository: https://github.com/angular/angular-cli
 │  ├─ publisher: Angular Authors
 │  ├─ path: ./node_modules/@angular-devkit/architect
 │  └─ licenseFile: ./node_modules/@angular-devkit/architect/LICENSE
-├─ @angular-devkit/build-angular@22.2.1
+├─ @angular-devkit/build-angular@22.2.2
 │  ├─ licenses: MIT
 │  ├─ repository: https://github.com/angular/angular-cli
 │  ├─ publisher: Angular Authors
 │  ├─ path: ./node_modules/@angular-devkit/build-angular
 │  └─ licenseFile: ./node_modules/@angular-devkit/build-angular/LICENSE
-├─ @angular-devkit/build-webpack@0.2202.1
+├─ @angular-devkit/build-webpack@0.2202.2
 │  ├─ licenses: MIT
 │  ├─ repository: https://github.com/angular/angular-cli
 │  ├─ publisher: Angular Authors
 │  ├─ path: ./node_modules/@angular-devkit/build-webpack
 │  └─ licenseFile: ./node_modules/@angular-devkit/build-webpack/LICENSE
-├─ @angular-devkit/core@22.2.1
+├─ @angular-devkit/core@22.2.2
 │  ├─ licenses: MIT
 │  ├─ repository: https://github.com/angular/angular-cli
 │  ├─ publisher: Angular Authors
 │  ├─ path: ./node_modules/@angular-devkit/core
 │  └─ licenseFile: ./node_modules/@angular-devkit/core/LICENSE
-├─ @angular-devkit/schematics@22.2.1
+├─ @angular-devkit/schematics@22.2.2
 │  ├─ licenses: MIT
 │  ├─ repository: https://github.com/angular/angular-cli
 │  ├─ publisher: Angular Authors
 │  ├─ path: ./node_modules/@angular-devkit/schematics
 │  └─ licenseFile: ./node_modules/@angular-devkit/schematics/LICENSE
-├─ @angular/build@22.2.1
+├─ @angular/build@22.2.2
 │  ├─ licenses: MIT
 │  ├─ repository: https://github.com/angular/angular-cli
 │  ├─ publisher: Angular Authors
 │  ├─ path: ./node_modules/@angular/build
 │  └─ licenseFile: ./node_modules/@angular/build/LICENSE
-├─ @angular/cli@22.2.1
+├─ @angular/cli@22.2.2
 │  ├─ licenses: MIT
 │  ├─ repository: https://github.com/angular/angular-cli
 │  ├─ publisher: Angular Authors
 │  ├─ path: ./node_modules/@angular/cli
 │  └─ licenseFile: ./node_modules/@angular/cli/LICENSE
-├─ @angular/common@22.2.1
+├─ @angular/common@22.2.2
 │  ├─ licenses: MIT
 │  ├─ repository: https://github.com/angular/angular
 │  ├─ publisher: angular
 │  ├─ path: ./node_modules/@angular/common
 │  └─ licenseFile: ./node_modules/@angular/common/LICENSE
-├─ @angular/compiler-cli@22.2.1
+├─ @angular/compiler-cli@22.2.2
 │  ├─ licenses: MIT
 │  ├─ repository: https://github.com/angular/angular
 │  └─ path: ./node_modules/@angular/compiler-cli
-├─ @angular/compiler@22.2.1
+├─ @angular/compiler@22.2.2
 │  ├─ licenses: MIT
 │  ├─ repository: https://github.com/angular/angular
 │  ├─ publisher: angular
 │  ├─ path: ./node_modules/@angular/compiler
 │  └─ licenseFile: ./node_modules/@angular/compiler/LICENSE
-├─ @angular/core@22.2.1
+├─ @angular/core@22.2.2
 │  ├─ licenses: MIT
 │  ├─ repository: https://github.com/angular/angular
 │  ├─ publisher: angular
 │  ├─ path: ./node_modules/@angular/core
 │  └─ licenseFile: ./node_modules/@angular/core/LICENSE
-├─ @angular/elements@22.2.1
+├─ @angular/elements@22.2.2
 │  ├─ licenses: MIT
 │  ├─ repository: https://github.com/angular/angular
 │  ├─ publisher: angular
 │  ├─ path: ./node_modules/@angular/elements
 │  └─ licenseFile: ./node_modules/@angular/elements/LICENSE
-├─ @angular/forms@22.2.1
+├─ @angular/forms@22.2.2
 │  ├─ licenses: MIT
 │  ├─ repository: https://github.com/angular/angular
 │  ├─ publisher: angular
 │  ├─ path: ./node_modules/@angular/forms
 │  └─ licenseFile: ./node_modules/@angular/forms/LICENSE
-├─ @angular/platform-browser@22.2.1
+├─ @angular/platform-browser@22.2.2
 │  ├─ licenses: MIT
 │  ├─ repository: https://github.com/angular/angular
 │  ├─ publisher: angular
 │  ├─ path: ./node_modules/@angular/platform-browser
 │  └─ licenseFile: ./node_modules/@angular/platform-browser/LICENSE
-├─ @angular/router@22.2.1
+├─ @angular/router@22.2.2
 │  ├─ licenses: MIT
 │  ├─ repository: https://github.com/angular/angular
 │  ├─ publisher: angular
@@ -386,6 +386,13 @@
 │  ├─ url: https://babel.dev/team
 │  ├─ path: ./node_modules/@babel/traverse/node_modules/@babel/parser
 │  └─ licenseFile: ./node_modules/@babel/traverse/node_modules/@babel/parser/LICENSE
+├─ @babel/parser@8.0.7
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/babel/babel
+│  ├─ publisher: The Babel Team
+│  ├─ url: https://babel.dev/team
+│  ├─ path: ./node_modules/@angular/build/node_modules/@babel/parser
+│  └─ licenseFile: ./node_modules/@angular/build/node_modules/@babel/parser/LICENSE
 ├─ @babel/plugin-bugfix-firefox-class-in-computed-class-key@8.0.1
 │  ├─ licenses: MIT
 │  ├─ repository: https://github.com/babel/babel
@@ -1217,15 +1224,15 @@
 │  ├─ publisher: Kris Zyp
 │  ├─ path: ./node_modules/@lmdb/lmdb-linux-x64
 │  └─ licenseFile: ./node_modules/@lmdb/lmdb-linux-x64/README.md
-├─ @modelcontextprotocol/core@2.0.0
-│  ├─ licenses: MIT
+├─ @modelcontextprotocol/core@2.3.1
+│  ├─ licenses: Apache-2.0
 │  ├─ repository: https://github.com/modelcontextprotocol/typescript-sdk
 │  ├─ publisher: Anthropic, PBC
 │  ├─ url: https://anthropic.com
 │  ├─ path: ./node_modules/@modelcontextprotocol/core
 │  └─ licenseFile: ./node_modules/@modelcontextprotocol/core/LICENSE
-├─ @modelcontextprotocol/server@2.0.0
-│  ├─ licenses: MIT
+├─ @modelcontextprotocol/server@2.3.1
+│  ├─ licenses: Apache-2.0
 │  ├─ repository: https://github.com/modelcontextprotocol/typescript-sdk
 │  ├─ publisher: Anthropic, PBC
 │  ├─ url: https://anthropic.com
@@ -1247,7 +1254,7 @@
 │  ├─ repository: https://github.com/Brooooooklyn/nice
 │  ├─ path: ./node_modules/@napi-rs/nice
 │  └─ licenseFile: ./node_modules/@napi-rs/nice/LICENSE
-├─ @ngtools/webpack@22.2.1
+├─ @ngtools/webpack@22.2.2
 │  ├─ licenses: MIT
 │  ├─ repository: https://github.com/angular/angular-cli
 │  ├─ publisher: Angular Authors
@@ -1313,61 +1320,61 @@
 │  ├─ repository: https://github.com/parcel-bundler/watcher
 │  ├─ path: ./node_modules/@parcel/watcher
 │  └─ licenseFile: ./node_modules/@parcel/watcher/LICENSE
-├─ @peculiar/asn1-cms@2.10.0
+├─ @peculiar/asn1-cms@2.11.0
 │  ├─ licenses: MIT
 │  ├─ repository: https://github.com/PeculiarVentures/asn1-schema
 │  ├─ publisher: PeculiarVentures, LLC
 │  ├─ path: ./node_modules/@peculiar/asn1-cms
 │  └─ licenseFile: ./node_modules/@peculiar/asn1-cms/LICENSE
-├─ @peculiar/asn1-csr@2.10.0
+├─ @peculiar/asn1-csr@2.11.0
 │  ├─ licenses: MIT
 │  ├─ repository: https://github.com/PeculiarVentures/asn1-schema
 │  ├─ publisher: PeculiarVentures, LLC
 │  ├─ path: ./node_modules/@peculiar/asn1-csr
 │  └─ licenseFile: ./node_modules/@peculiar/asn1-csr/LICENSE
-├─ @peculiar/asn1-ecc@2.10.0
+├─ @peculiar/asn1-ecc@2.11.0
 │  ├─ licenses: MIT
 │  ├─ repository: https://github.com/PeculiarVentures/asn1-schema
 │  ├─ publisher: PeculiarVentures, LLC
 │  ├─ path: ./node_modules/@peculiar/asn1-ecc
 │  └─ licenseFile: ./node_modules/@peculiar/asn1-ecc/LICENSE
-├─ @peculiar/asn1-pfx@2.10.0
+├─ @peculiar/asn1-pfx@2.11.0
 │  ├─ licenses: MIT
 │  ├─ repository: https://github.com/PeculiarVentures/asn1-schema
 │  ├─ publisher: PeculiarVentures, LLC
 │  ├─ path: ./node_modules/@peculiar/asn1-pfx
 │  └─ licenseFile: ./node_modules/@peculiar/asn1-pfx/LICENSE
-├─ @peculiar/asn1-pkcs8@2.10.0
+├─ @peculiar/asn1-pkcs8@2.11.0
 │  ├─ licenses: MIT
 │  ├─ repository: https://github.com/PeculiarVentures/asn1-schema
 │  ├─ publisher: PeculiarVentures, LLC
 │  ├─ path: ./node_modules/@peculiar/asn1-pkcs8
 │  └─ licenseFile: ./node_modules/@peculiar/asn1-pkcs8/LICENSE
-├─ @peculiar/asn1-pkcs9@2.10.0
+├─ @peculiar/asn1-pkcs9@2.11.0
 │  ├─ licenses: MIT
 │  ├─ repository: https://github.com/PeculiarVentures/asn1-schema
 │  ├─ publisher: PeculiarVentures, LLC
 │  ├─ path: ./node_modules/@peculiar/asn1-pkcs9
 │  └─ licenseFile: ./node_modules/@peculiar/asn1-pkcs9/LICENSE
-├─ @peculiar/asn1-rsa@2.10.0
+├─ @peculiar/asn1-rsa@2.11.0
 │  ├─ licenses: MIT
 │  ├─ repository: https://github.com/PeculiarVentures/asn1-schema
 │  ├─ publisher: PeculiarVentures, LLC
 │  ├─ path: ./node_modules/@peculiar/asn1-rsa
 │  └─ licenseFile: ./node_modules/@peculiar/asn1-rsa/LICENSE
-├─ @peculiar/asn1-schema@2.10.0
+├─ @peculiar/asn1-schema@2.11.0
 │  ├─ licenses: MIT
 │  ├─ repository: https://github.com/PeculiarVentures/asn1-schema
 │  ├─ publisher: PeculiarVentures, LLC
 │  ├─ path: ./node_modules/@peculiar/asn1-schema
 │  └─ licenseFile: ./node_modules/@peculiar/asn1-schema/LICENSE
-├─ @peculiar/asn1-x509-attr@2.10.0
+├─ @peculiar/asn1-x509-attr@2.11.0
 │  ├─ licenses: MIT
 │  ├─ repository: https://github.com/PeculiarVentures/asn1-schema
 │  ├─ publisher: PeculiarVentures, LLC
 │  ├─ path: ./node_modules/@peculiar/asn1-x509-attr
 │  └─ licenseFile: ./node_modules/@peculiar/asn1-x509-attr/LICENSE
-├─ @peculiar/asn1-x509@2.10.0
+├─ @peculiar/asn1-x509@2.11.0
 │  ├─ licenses: MIT
 │  ├─ repository: https://github.com/PeculiarVentures/asn1-schema
 │  ├─ publisher: PeculiarVentures, LLC
@@ -1395,7 +1402,7 @@
 │  ├─ repository: https://github.com/rolldown/plugins
 │  ├─ path: ./node_modules/@rolldown/pluginutils
 │  └─ licenseFile: ./node_modules/@rolldown/pluginutils/LICENSE
-├─ @schematics/angular@22.2.1
+├─ @schematics/angular@22.2.2
 │  ├─ licenses: MIT
 │  ├─ repository: https://github.com/angular/angular-cli
 │  ├─ publisher: Angular Authors
@@ -2186,7 +2193,7 @@
 │  ├─ url: http://substack.net
 │  ├─ path: ./node_modules/concat-map
 │  └─ licenseFile: ./node_modules/concat-map/LICENSE
-├─ concurrently@10.0.5
+├─ concurrently@10.0.6
 │  ├─ licenses: MIT
 │  ├─ repository: https://github.com/open-cli-tools/concurrently
 │  ├─ publisher: Kimmo Brunfeldt
@@ -2207,7 +2214,7 @@
 │  ├─ url: http://tjholowaychuk.com
 │  ├─ path: ./node_modules/connect
 │  └─ licenseFile: ./node_modules/connect/LICENSE
-├─ content-disposition@1.1.0
+├─ content-disposition@2.0.1
 │  ├─ licenses: MIT
 │  ├─ repository: https://github.com/jshttp/content-disposition
 │  ├─ publisher: Douglas Christopher Wilson
@@ -2226,8 +2233,8 @@
 │  ├─ repository: https://github.com/jshttp/content-type
 │  ├─ publisher: Douglas Christopher Wilson
 │  ├─ email: doug@somethingdoug.com
-│  ├─ path: ./node_modules/express/node_modules/negotiator/node_modules/content-type
-│  └─ licenseFile: ./node_modules/express/node_modules/negotiator/node_modules/content-type/LICENSE
+│  ├─ path: ./node_modules/express/node_modules/content-type
+│  └─ licenseFile: ./node_modules/express/node_modules/content-type/LICENSE
 ├─ convert-source-map@1.9.0
 │  ├─ licenses: MIT
 │  ├─ repository: https://github.com/thlorenz/convert-source-map
@@ -2712,7 +2719,7 @@
 │  ├─ url: http://jeditoolkit.com
 │  ├─ path: ./node_modules/events
 │  └─ licenseFile: ./node_modules/events/LICENSE
-├─ express@5.2.1
+├─ express@5.3.0
 │  ├─ licenses: MIT
 │  ├─ repository: https://github.com/expressjs/express
 │  ├─ publisher: TJ Holowaychuk
@@ -3484,7 +3491,7 @@
 │  ├─ repository: https://github.com/jasmine/jasmine
 │  ├─ path: ./node_modules/karma-jasmine/node_modules/jasmine-core
 │  └─ licenseFile: ./node_modules/karma-jasmine/node_modules/jasmine-core/README.md
-├─ jasmine-core@7.0.2
+├─ jasmine-core@5.13.0
 │  ├─ licenses: MIT
 │  ├─ repository: https://github.com/jasmine/jasmine
 │  ├─ path: ./node_modules/jasmine-core
@@ -4516,7 +4523,7 @@
 │  ├─ url: https://sindresorhus.com
 │  ├─ path: ./node_modules/powershell-utils
 │  └─ licenseFile: ./node_modules/powershell-utils/license
-├─ prettier-plugin-tailwindcss@0.6.14
+├─ prettier-plugin-tailwindcss@0.8.1
 │  ├─ licenses: MIT
 │  ├─ repository: https://github.com/tailwindlabs/prettier-plugin-tailwindcss
 │  ├─ path: ./node_modules/prettier-plugin-tailwindcss
@@ -4987,14 +4994,6 @@
 │  ├─ path: ./node_modules/shallow-clone
 │  └─ licenseFile: ./node_modules/shallow-clone/LICENSE
 ├─ shell-quote@1.12.0
-│  ├─ licenses: MIT
-│  ├─ repository: https://github.com/ljharb/shell-quote
-│  ├─ publisher: James Halliday
-│  ├─ email: mail@substack.net
-│  ├─ url: http://substack.net
-│  ├─ path: ./node_modules/launch-editor/node_modules/shell-quote
-│  └─ licenseFile: ./node_modules/launch-editor/node_modules/shell-quote/LICENSE
-├─ shell-quote@1.9.0
 │  ├─ licenses: MIT
 │  ├─ repository: https://github.com/ljharb/shell-quote
 │  ├─ publisher: James Halliday

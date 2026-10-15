@@ -25,6 +25,10 @@ function renderLoop() {
         if (source.type === 'track') {
             frame = source.latestFrame;
         }
+        else if (source.type === 'frame') {
+            // Para Firefox: el frame viene directamente en data o latestFrame
+            frame = source.data;
+        }
         else {
             frame = source.data;
         }
@@ -33,7 +37,12 @@ function renderLoop() {
             if (ctx.filter !== filter) {
                 ctx.filter = filter;
             }
-            ctx.drawImage(frame, meta.x, meta.y, meta.width, meta.height);
+            try {
+                ctx.drawImage(frame, meta.x, meta.y, meta.width, meta.height);
+            }
+            catch (e) {
+                // Por seguridad si un frame se cierra o expira a mitad de ciclo
+            }
         }
     }
     setTimeout(() => {
@@ -79,33 +88,32 @@ globalThis.self.onmessage = (event) => {
             }
             break;
         case 'addTrack':
-            // payload: { id, readable }
             if (sources.has(payload.id)) {
-                const old = sources.get(payload.id);
-                if (old?.type === 'bitmap' && old.data?.close) {
-                    old.data.close();
-                }
-                if (old?.latestFrame?.close) {
-                    old.latestFrame.close();
-                }
-                if (old?.reader) {
-                    old.reader.cancel();
-                }
+                cleanupSource(payload.id);
             }
             sources.set(payload.id, { type: 'track', data: payload.readable });
             processStream(payload.id, payload.readable);
             break;
-        case 'addBitmap': {
-            const { id, bitmap } = payload;
+        // --- NUEVO CASO PARA FIREFOX (Recibir VideoFrame unitario) ---
+        case 'addFrame': {
+            const { id, frame } = payload;
             const existing = sources.get(id);
             if (existing) {
-                if (existing.type === 'bitmap')
+                // Si ya era de tipo frame, cerramos el frame anterior para liberar memoria de GPU
+                if (existing.type === 'frame' && existing.data?.close) {
                     existing.data.close();
-                if (existing.latestFrame)
-                    existing.latestFrame.close();
-                if (existing.reader)
-                    existing.reader.cancel();
+                }
+                else {
+                    cleanupSource(id);
+                }
             }
+            sources.set(id, { type: 'frame', data: frame });
+            break;
+        }
+        case 'addBitmap': {
+            const { id, bitmap } = payload;
+            if (sources.has(id))
+                cleanupSource(id);
             sources.set(id, { type: 'bitmap', data: bitmap });
             break;
         }
@@ -117,19 +125,10 @@ globalThis.self.onmessage = (event) => {
             }
             break;
         case 'removeSource': {
-            const id = payload.id;
-            const source = sources.get(id);
-            if (source) {
-                if (source.type === 'bitmap')
-                    source.data.close();
-                if (source.latestFrame)
-                    source.latestFrame.close();
-                if (source.reader)
-                    source.reader.cancel();
-                sources.delete(id);
-            }
-            layersMetadata.delete(id);
-            layersOrder = layersOrder.filter((lid) => lid !== id);
+            cleanupSource(payload.id);
+            sources.delete(payload.id);
+            layersMetadata.delete(payload.id);
+            layersOrder = layersOrder.filter((lid) => lid !== payload.id);
             break;
         }
         case 'resize':
@@ -140,3 +139,21 @@ globalThis.self.onmessage = (event) => {
             break;
     }
 };
+// Función auxiliar para limpiar recursos y evitar fugas de memoria
+function cleanupSource(id) {
+    const source = sources.get(id);
+    if (!source)
+        return;
+    if (source.type === 'bitmap' && source.data?.close) {
+        source.data.close();
+    }
+    if (source.type === 'frame' && source.data?.close) {
+        source.data.close();
+    }
+    if (source.latestFrame?.close) {
+        source.latestFrame.close();
+    }
+    if (source.reader) {
+        source.reader.cancel();
+    }
+}

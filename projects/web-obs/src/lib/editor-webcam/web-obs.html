@@ -211,7 +211,7 @@
     }
 
     @for (captura of this.capturas(); track captura.id) {
-      <div (pointerdown)="mousedown($event, captura.id)" (contextmenu)="onContextMenu($event, captura.id)" #captureDiv [id]="'div-' + captura.id" part="screen-capture" class="cursor-grab active:cursor-grabbing group relative m-2 flex max-w-[16.6667%] justify-center bg-transparent object-contain text-center">
+      <div (pointerdown)="mousedown($event, captura.id)" (contextmenu)="onContextMenu($event, captura.id)" #captureDiv [id]="'div-' + captura.id" part="screen-capture" class="cursor-grab active:cursor-grabbing group relative m-2 flex aspect-video justify-center bg-transparent object-contain text-center">
         <video #videoElement disablePictureInPicture [id]="captura.id" autoplay playsinline muted class="w-full rounded-lg border border-black object-contain hover-2 dark:border-gray-400" [srcObject]="captura"></video>
         <!-- Botón full-screan -->
         <svg (click)="fullscreen(captura)" (keydown.enter)="fullscreen(captura)" class="absolute top-2 left-2 z-10 hidden h-4 w-4 cursor-pointer text-black group-hover:block" width="800px" height="800px" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -230,7 +230,7 @@
     }
 
     @for (estatico of this.staticContent(); track estatico.name) {
-      <div #staticDiv [id]="'div-' + estatico.name" part="static-file" class="group relative m-2 flex max-w-[16.6667%] rounded-lg border border-black bg-transparent hover:border-2 dark:border-gray-400">
+      <div #staticDiv [id]="'div-' + estatico.name" part="static-file" class="group relative m-2 flex aspect-auto rounded-lg border border-black bg-transparent hover:border-2 dark:border-gray-400">
         @if (estatico.type.startsWith("image/")) {
           <!-- Renderiza una imagen -->
           <img [id]="estatico.name" (pointerdown)="mousedown($event, estatico.name)" (contextmenu)="onContextMenu($event, estatico.name)" [src]="getFileUrl(estatico)" [alt]="estatico.name" class="h-full w-full cursor-grab rounded-lg object-contain active:cursor-grabbing" />

@@ -81,7 +81,7 @@ También puede emitir los siguientes eventos:
 
 Ejemplo completo:
 
-```
+```javascript
 <WebOBS
 (emision)="emiteWebcam($event)"
 (savePresets)="savePresets($event)"

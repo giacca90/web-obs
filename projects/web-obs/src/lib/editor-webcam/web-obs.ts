@@ -46,79 +46,13 @@ export class WebOBS implements OnInit, AfterViewInit, OnDestroy, OnChanges {
   selectedAudioForEqualizer: string | null = null;
   equalizerValues: number[] = [0, 0, 0, 0, 0]; // Variables para sincronizar con sliders
   private workletLoaded = false;
-  private readonly drawInterval: any;
+  private drawInterval: any = null;
   private readonly fileUrlCache = new Map<File, string>(); // Cache de URLs de archivos
   private readonly boundCanvasMouseMove = this.canvasMouseMove.bind(this);
   private readonly handleKeydownRef = this.handleKeydown.bind(this);
 
   private workletLoadingPromise: Promise<void> | null = null;
-  private isDrawing = false;
-  private readonly imageBitmapCache = new Map<string, { bitmap: ImageBitmap; filter: string; width: number; height: number }>();
   private ticking = false;
-
-  constructor() {
-    effect(() => {
-      // 1. Leemos las señales para que el effect se "suscriba" automáticamente a sus cambios
-      const elementsCount = this.audiosElements().length;
-      const connections = this.audiosConnections();
-      const _resizeTick = this.windowResizeTrigger(); // <- Esto vincula el resize al effect
-
-      // Si no hay elementos, limpiamos o salimos ordenadamente
-      if (elementsCount === 0) {
-        return;
-      }
-
-      // 2. Usamos requestAnimationFrame para asegurar que el DOM ya se pintó
-      requestAnimationFrame(() => {
-        const audios = this.audios()?.nativeElement;
-        if (!audios) return;
-
-        const audiosRect = audios.getBoundingClientRect();
-        const audiosList = this.audiosList()?.nativeElement;
-        const conexionesIzquierda = this.conexionesIzquierda()?.nativeElement;
-        const conexionesDerecha = this.conexionesDerecha()?.nativeElement;
-
-        if (!audiosList || !conexionesIzquierda || !conexionesDerecha) return;
-
-        conexionesIzquierda.innerHTML = '';
-        conexionesDerecha.innerHTML = '';
-
-        const connectionWidth = 8;
-        const totalConnections = connections.length;
-
-        // Corregido el operador de multiplicación que faltaba en tus líneas de estilo
-        conexionesIzquierda.style.width = `${connectionWidth * totalConnections}px`;
-        audiosList.style.width = `${audiosRect.width - 2 - connectionWidth * totalConnections}px`;
-
-        for (let i = 0; i < totalConnections; i++) {
-          this._drawSingleAudioConnection(i, audiosRect, connectionWidth);
-        }
-      });
-    });
-
-    effect(() => {
-      console.log('calculatePreset effect');
-      const _resizeTick = this.windowResizeTrigger();
-
-      // 1. LEER LA SEÑAL AQUÍ DE FORMA SÍNCRONA REGISTRA LA DEPENDENCIA
-      const currentPresets = this.presets();
-
-      requestAnimationFrame(() => {
-        // 2. Usamos la variable capturada de forma síncrona
-        for (const [key, preset] of currentPresets.entries()) {
-          console.log('calculatePreset preset', key);
-          const presetDiv = this.presetsDiv()?.nativeElement.querySelector(`[id="preset-${key}"]`);
-          if (!presetDiv) {
-            console.log('calculatePreset presetDiv not found');
-            continue;
-          }
-
-          presetDiv.innerHTML = '';
-          this.renderPresetElements(presetDiv as HTMLElement, preset.elements);
-        }
-      });
-    });
-  }
 
   // para múltiples streams
   private readonly equalizerFilters = new Map<string, BiquadFilterNode[]>();
@@ -161,11 +95,72 @@ export class WebOBS implements OnInit, AfterViewInit, OnDestroy, OnChanges {
   readonly emision = output<MediaStream | null>(); // Emisión de video y audio
   readonly savePresets = output<Map<string, Preset>>(); // Guardar presets (opcional)
   private readonly windowResizeTrigger = signal(0);
-
   /**
    * Elije si utilizar la señal del padre o la propia
    */
   estadoEmision = computed(() => this.isInLive() ?? this.emitiendo());
+
+  constructor() {
+    effect(() => {
+      // 1. Leemos las señales para que el effect se "suscriba" automáticamente a sus cambios
+      const elementsCount = this.audiosElements().length;
+      const connections = this.audiosConnections();
+      const _resizeTick = this.windowResizeTrigger(); // <- Esto vincula el resize al effect
+
+      // Si no hay elementos, limpiamos o salimos ordenadamente
+      if (elementsCount === 0) {
+        return;
+      }
+
+      // 2. Usamos requestAnimationFrame para asegurar que el DOM ya se pintó
+      requestAnimationFrame(() => {
+        const audios = this.audios()?.nativeElement;
+        if (!audios) return;
+
+        const audiosRect = audios.getBoundingClientRect();
+        const audiosList = this.audiosList()?.nativeElement;
+        const conexionesIzquierda = this.conexionesIzquierda()?.nativeElement;
+        const conexionesDerecha = this.conexionesDerecha()?.nativeElement;
+
+        if (!audiosList || !conexionesIzquierda || !conexionesDerecha) return;
+
+        conexionesIzquierda.innerHTML = '';
+        conexionesDerecha.innerHTML = '';
+
+        const connectionWidth = 8;
+        const totalConnections = connections.length;
+
+        // Corregido el operador de multiplicación que faltaba en tus líneas de estilo
+        conexionesIzquierda.style.width = `${connectionWidth * totalConnections}px`;
+        audiosList.style.width = `${audiosRect.width - 2 - connectionWidth * totalConnections}px`;
+
+        for (let i = 0; i < totalConnections; i++) {
+          this._drawSingleAudioConnection(i, audiosRect, connectionWidth);
+        }
+      });
+    });
+
+    effect(() => {
+      const _resizeTick = this.windowResizeTrigger();
+
+      // 1. LEER LA SEÑAL AQUÍ DE FORMA SÍNCRONA REGISTRA LA DEPENDENCIA
+      const currentPresets = this.presets();
+
+      requestAnimationFrame(() => {
+        // 2. Usamos la variable capturada de forma síncrona
+        for (const [key, preset] of currentPresets.entries()) {
+          const presetDiv = this.presetsDiv()?.nativeElement.querySelector(`[id="preset-${key}"]`);
+          if (!presetDiv) {
+            console.error('calculatePreset presetDiv not found');
+            continue;
+          }
+
+          presetDiv.innerHTML = '';
+          this.renderPresetElements(presetDiv as HTMLElement, preset.elements);
+        }
+      });
+    });
+  }
 
   /**
    * @summary Carga el worklet de procesamiento de audio.
@@ -230,6 +225,50 @@ export class WebOBS implements OnInit, AfterViewInit, OnDestroy, OnChanges {
   }
 
   /**
+   * @summary Inicializa el componente después de que la vista ha sido inicializada.
+   * @description Configura el canvas, inicia el bucle de dibujado, inicializa el grabador de audio y los listeners de eventos.
+   */
+  ngAfterViewInit() {
+    this.canvas = this.salida()!.nativeElement;
+
+    // Comprobamos si el navegador soporta la API nativa de workers para streams
+    // @ts-ignore
+    if (typeof MediaStreamTrackProcessor !== 'undefined') {
+      // Entorno Chromium: Activamos el Web Worker
+      console.info('TrackProcessor soportado');
+      // Inicializar el worker del canvas
+      this.startCanvasWorker();
+    } else if (typeof OffscreenCanvas !== 'undefined' && typeof VideoFrame !== 'undefined') {
+      console.info('Modo fallback activo: El renderizado de vídeo se realizará con VideoFrame y OffscreenCanvas.');
+      this.drawInterval = setInterval(this.captureAndSendFrames, 1000 / this.canvasFPS);
+      this.startCanvasWorker();
+    } else {
+      //Fallback: Omitimos el worker por completo
+      console.info('Modo fallback activo: El renderizado de vídeo se realizará directamente en el hilo principal mediante canvas.');
+      this.drawInterval = setInterval(this.drawFrameFallback, 1000 / this.canvasFPS);
+    }
+
+    // Inicialización del audio diferida hasta la interacción del usuario
+    this.initAudioRecorder();
+
+    this.initEventListeners();
+    this.loadStaticContent();
+  }
+
+  /**
+   * @summary Limpia los recursos al destruir el componente.
+   * @description Detiene todos los flujos de medios, elimina listeners y cierra el AudioContext.
+   */
+  ngOnDestroy() {
+    if (this.canvasWorker && typeof (this.canvasWorker as any).terminate === 'function') {
+      this.canvasWorker.terminate();
+    }
+    this.stopAllStreams();
+    this.removeListeners();
+    this.cleanupAudioResources();
+  }
+
+  /**
    * @summary Inicializa la aplicación.
    * @description Configura dispositivos, carga archivos y presets.
    */
@@ -277,14 +316,7 @@ export class WebOBS implements OnInit, AfterViewInit, OnDestroy, OnChanges {
     }
   }
 
-  /**
-   * @summary Inicializa el componente después de que la vista ha sido inicializada.
-   * @description Configura el canvas, inicia el bucle de dibujado, inicializa el grabador de audio y los listeners de eventos.
-   */
-  ngAfterViewInit() {
-    this.canvas = this.salida()!.nativeElement;
-
-    // Inicializar el worker del canvas
+  private startCanvasWorker() {
     const blob = new Blob([CANVAS_RENDERER], { type: 'application/javascript' });
     const blobUrl = URL.createObjectURL(blob);
     this.canvasWorker = new Worker(blobUrl);
@@ -292,15 +324,7 @@ export class WebOBS implements OnInit, AfterViewInit, OnDestroy, OnChanges {
     const offscreen = this.canvas.transferControlToOffscreen();
     this.canvasWorker.postMessage({ type: 'init', payload: { canvas: offscreen, fps: this.canvasFPS } }, [offscreen]);
 
-    // Refresca el canvas a la tasa de fotogramas requerida
-    // this.drawInterval = setInterval(this.drawFrame, 1000 / this.canvasFPS);
     this.updateWorkerLayers();
-
-    // Inicialización del audio diferida hasta la interacción del usuario
-    this.initAudioRecorder();
-
-    this.initEventListeners();
-    this.loadStaticContent();
   }
 
   /**
@@ -385,34 +409,6 @@ export class WebOBS implements OnInit, AfterViewInit, OnDestroy, OnChanges {
     if (this.staticContent?.length > 0) {
       this.loadFiles(this.staticContent());
     }
-
-    // Carga los presets recibidos (si hay)
-    /* if (this.presets()?.size > 0) {
-      //setTimeout(() => {
-      for (const key of Array.from(this.presets().keys())) {
-        const preset = this.presets().get(key);
-        if (preset) {
-          for (const element of preset.elements) {
-            element.element = this.elementosDiv()?.nativeElement.querySelector(`#${CSS.escape(element.id)}`) ?? null;
-          }
-        }
-      }
-      this.calculatePreset();
-      //}, 2000);
-    } */
-  }
-
-  /**
-   * @summary Limpia los recursos al destruir el componente.
-   * @description Detiene todos los flujos de medios, elimina listeners y cierra el AudioContext.
-   */
-  ngOnDestroy() {
-    if (this.canvasWorker && typeof (this.canvasWorker as any).terminate === 'function') {
-      this.canvasWorker.terminate();
-    }
-    this.stopAllStreams();
-    this.removeListeners();
-    this.cleanupAudioResources();
   }
 
   private stopAllStreams() {
@@ -1100,22 +1096,27 @@ export class WebOBS implements OnInit, AfterViewInit, OnDestroy, OnChanges {
    */
   async addScrean() {
     try {
-      // 1. Instanciar el controlador nativo de captura
-      const controller = new (window as any).CaptureController();
+      let controller = null;
 
-      // 2. Definir la política de enfoque ANTES de invocar getDisplayMedia
-      try {
-        controller.setFocusBehavior('no-focus-change');
-      } catch (err) {
-        console.warn('No se pudo establecer el comportamiento inicial:', err);
+      const hasCaptureController = typeof window !== 'undefined' && typeof (window as any).CaptureController === 'function';
+
+      if (hasCaptureController) {
+        try {
+          controller = new (window as any).CaptureController();
+          controller.setFocusBehavior('no-focus-change');
+        } catch (err) {
+          console.warn('CaptureController presente pero falló al inicializarse:', err);
+          controller = null; // Si falla el constructor, lo anulamos con seguridad
+        }
       }
-
       // 3. Solicitar la pantalla/ventana pasando el controlador
       const stream: MediaStream = await navigator.mediaDevices.getDisplayMedia({
         video: true,
         audio: true,
         controller: controller,
       } as any);
+
+      window.focus();
 
       // 4. Actualizar las señales de estado (esto dispara el bucle @for)
       this.capturas.update((capturas) => [...capturas, stream]);
@@ -2998,7 +2999,6 @@ export class WebOBS implements OnInit, AfterViewInit, OnDestroy, OnChanges {
    * @param {VideoElement[]} elements Elementos a renderizar.
    */
   private renderPresetElements(presetDiv: HTMLElement, elements: VideoElement[]) {
-    console.log('renderPresetElements called');
     const divRect = presetDiv.getBoundingClientRect();
     if (!this.canvas) return;
 
@@ -3009,7 +3009,6 @@ export class WebOBS implements OnInit, AfterViewInit, OnDestroy, OnChanges {
     const scaleY = canvasHeight / (divRect.height || 1);
 
     for (const element of elements) {
-      console.log('renderPresetElements element', element);
       const ele = this.createPresetElement(element);
       if (!ele || !element.position) continue;
 
@@ -3106,45 +3105,6 @@ export class WebOBS implements OnInit, AfterViewInit, OnDestroy, OnChanges {
     }
   }
 
-  /**
-   * @summary Dibuja las conexiones visuales de audio.
-   * @description Renderiza líneas y contenedores visuales que representan las conexiones entre entradas y salidas de audio.
-   */
-  /* drawAudioConnections() {
-    setTimeout(() => {
-      if (!this.audiosElements().length) {
-        console.error('No hay elementos de audio');
-        return;
-      }
-
-      const audios = this.audios()?.nativeElement;
-      if (!audios) {
-        console.error('No hay elemento nativo de audios');
-        return;
-      }
-
-      const audiosRect = audios.getBoundingClientRect();
-      const audiosList = this.audiosList()?.nativeElement;
-      const conexionesIzquierda = this.conexionesIzquierda()?.nativeElement;
-      const conexionesDerecha = this.conexionesDerecha()?.nativeElement;
-
-      if (!audiosList || !conexionesIzquierda || !conexionesDerecha) return;
-
-      conexionesIzquierda.innerHTML = '';
-      conexionesDerecha.innerHTML = '';
-
-      const connectionWidth = 8;
-      const totalConnections = this.audiosConnections().length;
-
-      conexionesIzquierda.style.width = `${connectionWidth * totalConnections}px`;
-      audiosList.style.width = `${audiosRect.width - 2 - connectionWidth * totalConnections}px`;
-
-      for (let i = 0; i < this.audiosConnections().length; i++) {
-        this._drawSingleAudioConnection(i, audiosRect, connectionWidth);
-      }
-    }, 200);
-  }
- */
   /**
    * @summary Dibuja una única conexión de audio visual.
    * @param {number} index Índice de la conexión.
@@ -3683,7 +3643,7 @@ export class WebOBS implements OnInit, AfterViewInit, OnDestroy, OnChanges {
   }
 
   private sendVideoTrackToWorker(id: string, track: MediaStreamTrack) {
-    if (!this.canvasWorker) return;
+    if (!this.canvasWorker || this.drawInterval) return;
     try {
       // @ts-ignore
       const processor = new MediaStreamTrackProcessor({ track });
@@ -3693,82 +3653,6 @@ export class WebOBS implements OnInit, AfterViewInit, OnDestroy, OnChanges {
       console.error('Error al enviar stream al worker:', e);
     }
   }
-
-  drawFrame = async () => {
-    if (!this.canvasWorker || this.isDrawing) return;
-    this.isDrawing = true;
-
-    const layers = [];
-    const transferables: (ImageBitmap | VideoFrame)[] = [];
-
-    try {
-      // Iteramos todos los elementos (videos e imágenes)
-      for (const elemento of this.videosElements()) {
-        const { element, position, painted, scale, filters } = elemento;
-
-        // Saltamos elementos que no deben dibujarse
-        if (!painted || !element || !position) continue;
-
-        // Calculamos dimensiones escaladas
-        let width = 0,
-          height = 0;
-        let isVideo = false;
-        if (element instanceof HTMLVideoElement) {
-          width = element.videoWidth * scale;
-          height = element.videoHeight * scale;
-          isVideo = true;
-        } else if (element instanceof HTMLImageElement) {
-          width = element.naturalWidth * scale;
-          height = element.naturalHeight * scale;
-        } else {
-          continue; // No es video ni imagen
-        }
-
-        const filter = filters ? `brightness(${filters.brightness}%) contrast(${filters.contrast}%) saturate(${filters.saturation}%)` : 'none';
-
-        try {
-          let source: ImageBitmap | VideoFrame;
-
-          if (isVideo) {
-            // VideoFrame es mucho más ligero para videos (WebCodecs API)
-            source = new VideoFrame(element);
-          } else {
-            // Optimización: Caché para imágenes estáticas
-            const cached = this.imageBitmapCache.get(elemento.id);
-            if (cached?.filter === filter && cached.width === width && cached.height === height) {
-              // Clonamos el bitmap de la caché para poder transferirlo sin invalidar la caché
-              source = await createImageBitmap(cached.bitmap);
-            } else {
-              const bitmap = await createImageBitmap(element);
-              // Actualizar caché
-              if (cached) cached.bitmap.close();
-              this.imageBitmapCache.set(elemento.id, { bitmap, filter, width, height });
-              source = await createImageBitmap(bitmap);
-            }
-          }
-
-          layers.push({
-            id: elemento.id,
-            bitmap: source,
-            x: position.x,
-            y: position.y,
-            width,
-            height,
-            filter,
-          });
-          transferables.push(source);
-        } catch (e) {
-          console.error('Error creando source para el elemento:', elemento.id, e);
-        }
-      }
-
-      // Enviamos todas las capas al worker en un solo mensaje
-      // Siempre enviamos el mensaje para que el worker pueda limpiar el canvas si no hay capas
-      this.canvasWorker.postMessage({ type: 'render', payload: { layers } }, transferables);
-    } finally {
-      this.isDrawing = false;
-    }
-  };
 
   /**
    * @summary Crea un nodo de ganancia de audio (GainNode).
@@ -3853,4 +3737,67 @@ export class WebOBS implements OnInit, AfterViewInit, OnDestroy, OnChanges {
       }
     }
   }
+
+  // Función para dibujar el canvas
+  private drawFrameFallback = () => {
+    if (!this.canvas) {
+      console.error('Canvas o contexto no encontrado');
+      return;
+    }
+    const context = this.canvas.getContext('2d');
+    if (!context) {
+      console.error('Missing context');
+      return;
+    }
+    context.clearRect(0, 0, this.canvas.width, this.canvas.height);
+    this.videosElements()
+      .filter((elemento) => elemento.painted && elemento.position && elemento.element)
+      .forEach((elemento) => {
+        if (elemento.element instanceof HTMLVideoElement && elemento.position) {
+          const videoWidth = elemento.element.videoWidth * elemento.scale;
+          const videoHeight = elemento.element.videoHeight * elemento.scale;
+          if (context) {
+            if (elemento.filters) {
+              context.filter = `brightness(${elemento.filters.brightness}%) contrast(${elemento.filters.contrast}%) saturate(${elemento.filters.saturation}%)`;
+            } else {
+              context.filter = '';
+            }
+          }
+          context?.drawImage(elemento.element, elemento.position.x, elemento.position.y, videoWidth, videoHeight);
+        } else if (elemento.element instanceof HTMLImageElement && elemento.position) {
+          const imageWidth = elemento.element.naturalWidth * elemento.scale;
+          const imageHeight = elemento.element.naturalHeight * elemento.scale;
+          if (context) {
+            if (elemento.filters) {
+              context.filter = `brightness(${elemento.filters.brightness}%) contrast(${elemento.filters.contrast}%) saturate(${elemento.filters.saturation}%)`;
+            } else {
+              context.filter = '';
+            }
+          }
+          context?.drawImage(elemento.element, elemento.position.x, elemento.position.y, imageWidth, imageHeight);
+        }
+      });
+  };
+
+  // Bucle que puedes ejecutar en Firefox (por ejemplo, con un requestAnimationFrame o setInterval ligero)
+  private captureAndSendFrames = () => {
+    if (!this.canvasWorker) return;
+
+    for (const el of this.videosElements()) {
+      if (el.element instanceof HTMLVideoElement && el.painted) {
+        if (el.element.readyState >= HTMLMediaElement.HAVE_CURRENT_DATA) {
+          try {
+            // @ts-ignore
+            const frame = new VideoFrame(el.element);
+            this.canvasWorker.postMessage(
+              { type: 'addFrame', payload: { id: el.id, frame } },
+              [frame], // Transferable object
+            );
+          } catch (e) {
+            console.error('Error al capturar el frame:', e);
+          }
+        }
+      }
+    }
+  };
 }

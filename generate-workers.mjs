@@ -6,7 +6,7 @@ import { minify } from "terser"; // 👈 Asegúrate de tenerlo instalado: npm i 
 // --- resolver rutas absolutas ---
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
-const scriptsDir = resolve(__dirname, "scripts");
+const scriptsDir = resolve(__dirname, "projects/web-obs/src/lib/editor-webcam/workers");
 const outputDir = resolve(__dirname, "projects/web-obs/src/lib/editor-webcam");
 
 // --- función de log con color ---

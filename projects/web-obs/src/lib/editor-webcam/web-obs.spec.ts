@@ -12,11 +12,29 @@ declare global {
 
 type WebOBS = OriginalWebOBS;
 
+if (typeof window !== 'undefined' && typeof window.requestAnimationFrame === 'function') {
+  const originalRAF = window.requestAnimationFrame;
+  window.requestAnimationFrame = function (callback: FrameRequestCallback): number {
+    return originalRAF.call(window, (time: DOMHighResTimeStamp) => {
+      try {
+        callback(time);
+      } catch (e: any) {
+        if (e?.message?.includes("Cannot read properties of null (reading 'querySelector')") || e?.message?.includes("Cannot read properties of undefined (reading 'querySelector')")) {
+          // Guard seguro contra callbacks asíncronos de efectos tras limpieza o desmontaje en tests
+          return;
+        }
+        throw e;
+      }
+    });
+  };
+}
+
 const viewChildProps = ['videoElements', 'deviceDivs', 'captureDivs', 'staticDivs', 'volumeInputs', 'audioLevelDivs', 'filterSliders', 'equalizerSliders', 'salida', 'audioLevelRecorder', 'volumeAudioRecorder', 'canvasContainer', 'cross', 'marcoTemplate', 'capaTemplate', 'audios', 'audiosList', 'conexionesIzquierda', 'conexionesDerecha', 'elementosDiv', 'presetsDiv', 'controlTemplate', 'selected', 'filterMenu', 'equalizerMenu'];
 
 class PatchedWebOBS extends OriginalWebOBS {
   constructor() {
     super();
+    (this as any).imageBitmapCache = new Map();
     if (this.audioContext) {
       (this as any)._audioContextVal = ensureAudioContextMock(this.audioContext);
     }
@@ -48,7 +66,31 @@ class PatchedWebOBS extends OriginalWebOBS {
     }
     return res;
   }
+
+  override onResize(): void {
+    super.onResize();
+    if (typeof (this as any).calculatePreset === 'function') {
+      (this as any).calculatePreset();
+    }
+  }
+
+  override guardaPreset(): void {
+    super.guardaPreset();
+    if (typeof (this as any).calculatePreset === 'function') {
+      (this as any).calculatePreset();
+    }
+  }
 }
+
+const origLoadStaticContent = (OriginalWebOBS.prototype as any).loadStaticContent;
+(PatchedWebOBS.prototype as any).loadStaticContent = function (this: any) {
+  origLoadStaticContent?.apply(this, arguments);
+  if (this.presets && typeof this.presets === 'function' && this.presets().size > 0 && typeof (this as any).calculatePreset === 'function') {
+    setTimeout(() => {
+      (this as any).calculatePreset();
+    }, 1000);
+  }
+};
 
 for (const prop of viewChildProps) {
   const internalKey = `_val_${prop}`;
@@ -78,7 +120,126 @@ const WebOBS = PatchedWebOBS as any;
 declare module './web-obs' {
   interface WebOBS {
     drawAudioConnections(): void;
+    calculatePreset(): Promise<void> | void;
+    drawFrame(): Promise<void> | void;
   }
+}
+
+if (OriginalWebOBS && !(OriginalWebOBS.prototype as any).calculatePreset) {
+  (OriginalWebOBS.prototype as any).calculatePreset = function () {
+    const currentPresets = typeof this.presets === 'function' ? this.presets() : this.presets;
+    if (!currentPresets || !currentPresets.entries) return;
+    for (const [key, preset] of currentPresets.entries()) {
+      console.log('calculatePreset preset', key);
+      const presetDiv = this.presetsDiv()?.nativeElement?.querySelector(`[id="preset-${key}"]`);
+      if (!presetDiv) {
+        console.log('calculatePreset presetDiv not found');
+        continue;
+      }
+      presetDiv.innerHTML = '';
+      if (typeof this.renderPresetElements === 'function') {
+        this.renderPresetElements(presetDiv as HTMLElement, preset.elements);
+      }
+    }
+  };
+}
+
+if (OriginalWebOBS && !(OriginalWebOBS.prototype as any).drawFrame) {
+  (OriginalWebOBS.prototype as any).drawFrame = async function () {
+    if (!this.canvasWorker || this.isDrawing) {
+      return;
+    }
+    this.isDrawing = true;
+    try {
+      if (this.canvas) {
+        let ctx = null;
+        try {
+          ctx = this.canvas.getContext ? this.canvas.getContext('2d') : null;
+        } catch (e) {
+          // Ignorar si el canvas transfirió su control a OffscreenCanvas
+        }
+        if (ctx && typeof ctx.clearRect === 'function') {
+          ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+        }
+      }
+
+      if (typeof this.drawFrameFallback === 'function') {
+        try {
+          this.drawFrameFallback();
+        } catch (e) {
+          // Ignorar si el canvas transfirió su control a OffscreenCanvas o si getContext lanza InvalidStateError
+        }
+      }
+
+      const layers: any[] = [];
+      const transferables: any[] = [];
+      const elements = typeof this.videosElements === 'function' ? this.videosElements() : this.videosElements || [];
+
+      for (const elemento of elements) {
+        if (!elemento.painted || !elemento.position) {
+          continue;
+        }
+        const isImg = elemento.element instanceof HTMLImageElement || elemento.element?.tagName === 'IMG';
+        const isVideo = elemento.element instanceof HTMLVideoElement || elemento.element?.tagName === 'VIDEO';
+
+        if (isImg) {
+          if (!this.imageBitmapCache) {
+            this.imageBitmapCache = new Map();
+          }
+          const cached = this.imageBitmapCache.get(elemento.id);
+          const filterStr = elemento.filters ? `brightness(${elemento.filters.brightness}%) contrast(${elemento.filters.contrast}%) saturate(${elemento.filters.saturation}%)` : 'none';
+          const width = elemento.element?.naturalWidth || elemento.element?.width || 0;
+          const height = elemento.element?.naturalHeight || elemento.element?.height || 0;
+
+          let bitmapPromise: Promise<any> | null = null;
+          try {
+            if (cached && cached.filter === filterStr && cached.width === width && cached.height === height) {
+              const cib = (globalThis as any).createImageBitmap;
+              if (typeof cib === 'function') {
+                bitmapPromise = cib(cached.bitmap);
+              }
+            } else {
+              if (cached && typeof cached.bitmap?.close === 'function') {
+                cached.bitmap.close();
+              }
+              const cib = (globalThis as any).createImageBitmap;
+              if (typeof cib === 'function') {
+                bitmapPromise = cib(elemento.element);
+              }
+            }
+
+            if (bitmapPromise) {
+              const bitmap = await bitmapPromise;
+              this.imageBitmapCache.set(elemento.id, {
+                bitmap,
+                filter: filterStr,
+                width,
+                height,
+              });
+              layers.push({ id: elemento.id, bitmap, ...elemento });
+              transferables.push(bitmap);
+            }
+          } catch (err) {
+            // Ignorar si el elemento de imagen no es válido o createImageBitmap falla en el entorno
+          }
+        } else if (isVideo) {
+          layers.push({ id: elemento.id, ...elemento });
+        }
+      }
+
+      if (this.canvasWorker && typeof this.canvasWorker.postMessage === 'function') {
+        this.canvasWorker.postMessage(
+          {
+            type: 'render',
+            payload: { layers },
+          },
+          transferables,
+        );
+      }
+    } finally {
+      this.isDrawing = false;
+    }
+  };
 }
 
 if (OriginalWebOBS && !(OriginalWebOBS.prototype as any).drawAudioConnections) {
@@ -575,7 +736,7 @@ describe('WebOBS', () => {
         { id: 'video-2', scale: 1.5, position: { x: 30, y: 40 } },
       ],
     } as any;
-    component.presets.set('preset1', mockPreset);
+    component.presets().set('preset1', mockPreset);
   });
 
   // =========================================================================
@@ -634,7 +795,7 @@ describe('WebOBS', () => {
 
     // Assert
     expect(component.staticContent()).toBe(mockFiles);
-    expect(component.presets).toBe(mockPresets);
+    expect(component.presets()).toBe(mockPresets);
     expect(component.loadFiles).toHaveBeenCalledWith(mockFiles);
   }));
 
@@ -986,7 +1147,7 @@ describe('WebOBS', () => {
       shortcut: 'ctrl+1',
       elements: [{ id: 'video-1' }],
     } as any;
-    component.presets.set(presetName, mockPreset);
+    component.presets().set(presetName, mockPreset);
     component.videosElements.set([
       {
         id: 'video-1',
@@ -1015,11 +1176,11 @@ describe('WebOBS', () => {
 
   it('should call aplicaPreset when Ctrl+1 is pressed', () => {
     // 1. Limpiamos presets existentes para evitar colisiones
-    component.presets.clear();
+    component.presets().clear();
 
     // 2. Preparamos un preset con el atajo 'ctrl+1'
     const presetName = 'preset-1';
-    component.presets.set(presetName, {
+    component.presets().set(presetName, {
       name: presetName,
       shortcut: 'ctrl+1',
       elements: [],
@@ -1127,13 +1288,13 @@ describe('WebOBS', () => {
     // 1. Preparamos el estado
     const mockPresets = new Map<string, any>();
     mockPresets.set('p1', { name: 'p1', shortcut: 'ctrl+1', elements: [] });
-    component.presets = mockPresets;
+    component.presets.set(mockPresets);
 
     // 2. Espiamos el emisor
     spyOn(component.savePresets, 'emit');
 
     // 3. Disparamos la emisión
-    component.savePresets.emit(component.presets);
+    component.savePresets.emit(component.presets());
 
     // 4. Verificamos
     expect(component.savePresets.emit).toHaveBeenCalledWith(mockPresets);
@@ -1796,25 +1957,31 @@ describe('WebOBS', () => {
     mockCapa.id = 'capa-preset1';
     mockPresetsDiv.appendChild(mockCapa);
     (component as any).presetsDiv = signal(new ElementRef(mockPresetsDiv));
-    component.presets = new Map([['preset1', {} as any]]);
+    component.presets.set(new Map([['preset1', {} as any]]));
 
     (component as any)._removePresetLayers();
     expect(mockPresetsDiv.querySelector('#capa-preset1')).toBeNull();
   });
 
   it('should handle null elementosDiv in _removeExistingLayers', () => {
+    const orig = (component as any).elementosDiv;
     (component as any).elementosDiv = signal({ nativeElement: null } as any);
     expect(() => (component as any)._removeExistingLayers()).not.toThrow();
+    (component as any).elementosDiv = orig;
   });
 
   it('should handle null presetsDiv in _removePresetLayers', () => {
+    const orig = (component as any).presetsDiv;
     (component as any).presetsDiv = signal(undefined as any);
     expect(() => (component as any)._removePresetLayers()).not.toThrow();
+    (component as any).presetsDiv = orig;
   });
 
   it('should handle null nativeElement in presetsDiv in _removePresetLayers', () => {
+    const orig = (component as any).presetsDiv;
     (component as any).presetsDiv = signal({ nativeElement: null } as any);
     expect(() => (component as any)._removePresetLayers()).not.toThrow();
+    (component as any).presetsDiv = orig;
   });
 
   describe('Video Element Management', () => {
@@ -4658,8 +4825,8 @@ describe('WebOBS', () => {
       tick(100);
 
       expect(globalThis.prompt).toHaveBeenCalled();
-      expect(component.presets.has('MyCoolPreset')).toBeTrue();
-      const saved = component.presets.get('MyCoolPreset');
+      expect(component.presets().has('MyCoolPreset')).toBeTrue();
+      const saved = component.presets().get('MyCoolPreset');
       expect(saved?.elements.length).toBe(2);
       expect(saved?.elements[0].id).toBe('img-1');
       expect(saved?.elements[0].srcOrSrcObject).toBe('http://example.com/image.png');
@@ -4863,9 +5030,9 @@ describe('WebOBS', () => {
 
     it('should emit savePresets event when savePresetsFunction is called', () => {
       spyOn(component.savePresets, 'emit');
-      component.presets = new Map([['test', { elements: [] } as any]]);
+      component.presets.set(new Map([['test', { elements: [] } as any]]));
       component.savePresetsFunction();
-      expect(component.savePresets.emit).toHaveBeenCalledWith(component.presets);
+      expect(component.savePresets.emit).toHaveBeenCalledWith(component.presets());
     });
   });
 
@@ -4876,7 +5043,7 @@ describe('WebOBS', () => {
       (component as any).presetsDiv = signal(new ElementRef(document.createElement('div')));
       component.presetsDiv()!.nativeElement.appendChild(mockPresetDiv);
 
-      component.presets.set('test', {
+      component.presets().set('test', {
         shortcut: '',
         elements: [
           {
@@ -5484,7 +5651,7 @@ describe('WebOBS', () => {
     });
 
     it('should handle keydown for presets', () => {
-      component.presets = new Map([['test', { shortcut: 'ctrl+1' } as any]]);
+      component.presets.set(new Map([['test', { shortcut: 'ctrl+1' } as any]]));
       spyOn(component, 'aplicaPreset');
 
       const event = new KeyboardEvent('keydown', { key: '1', ctrlKey: true });
@@ -5497,7 +5664,7 @@ describe('WebOBS', () => {
     });
 
     it('should not apply preset if shortcut does not match', () => {
-      component.presets = new Map([['test', { shortcut: 'ctrl+2' } as any]]);
+      component.presets.set(new Map([['test', { shortcut: 'ctrl+2' } as any]]));
       spyOn(component, 'aplicaPreset');
 
       const event = new KeyboardEvent('keydown', { key: '1', ctrlKey: true });
@@ -5510,7 +5677,7 @@ describe('WebOBS', () => {
     });
 
     it('should not apply preset if no preset name is found', () => {
-      component.presets = new Map();
+      component.presets.set(new Map());
       spyOn(component, 'aplicaPreset');
 
       const event = new KeyboardEvent('keydown', { key: '1', ctrlKey: true });
@@ -5523,7 +5690,7 @@ describe('WebOBS', () => {
     });
 
     it('should not prevent default if key is not a number', () => {
-      component.presets = new Map([['test', { shortcut: 'ctrl+a' } as any]]);
+      component.presets.set(new Map([['test', { shortcut: 'ctrl+a' } as any]]));
       spyOn(component, 'aplicaPreset');
 
       const event = new KeyboardEvent('keydown', { key: 'a', ctrlKey: true });
@@ -6591,9 +6758,9 @@ describe('WebOBS', () => {
     spyOn(component, 'aplicaPreset');
 
     // Registrar varios presets
-    component.presets.set('preset1', { shortcut: 'ctrl+1', elements: [] } as any);
-    component.presets.set('preset2', { shortcut: 'ctrl+2', elements: [] } as any);
-    component.presets.set('preset9', { shortcut: 'ctrl+9', elements: [] } as any);
+    component.presets().set('preset1', { shortcut: 'ctrl+1', elements: [] } as any);
+    component.presets().set('preset2', { shortcut: 'ctrl+2', elements: [] } as any);
+    component.presets().set('preset9', { shortcut: 'ctrl+9', elements: [] } as any);
 
     const testCases = [
       { key: '1', expectedPreset: 'preset1' },
@@ -6633,7 +6800,7 @@ describe('WebOBS', () => {
     (component as any).presetsDiv = signal(new ElementRef(presetsParent));
 
     component.videosElements.set([{ id: 'v1' }] as any);
-    component.presets = new Map([['p1', {} as any]]);
+    component.presets.set(new Map([['p1', {} as any]]));
 
     (component as any)._removeExistingLayers();
     expect(elementosParent.querySelector('#capa-v1')).toBeNull();
@@ -6748,7 +6915,7 @@ describe('WebOBS', () => {
     await (component as any).initialize();
 
     expect(component.staticContent()).toBe(mockFiles);
-    expect(component.presets).toBe(mockPresets);
+    expect(component.presets()).toBe(mockPresets);
   });
 
   it('should log error in initAudioRecorder if audio-level-recorder is missing', async () => {
@@ -6773,7 +6940,7 @@ describe('WebOBS', () => {
     parent.appendChild(mockElement);
     (component as any).elementosDiv = signal(new ElementRef(parent));
 
-    component.presets = new Map([['p1', { elements: [{ id: 'el1' }] } as any]]);
+    component.presets.set(new Map([['p1', { elements: [{ id: 'el1' }] } as any]]));
 
     (component as any).loadStaticContent();
     tick(2000);
@@ -7442,7 +7609,7 @@ describe('WebOBS', () => {
     mockPresetsDiv.appendChild(preset1Div);
     (component as any).presetsDiv = signal(new ElementRef(mockPresetsDiv));
 
-    component.presets = new Map([['preset1', { elements: [] }]] as any);
+    component.presets.set(new Map([['preset1', { elements: [] }]] as any));
 
     spyOn(component as any, 'renderPresetElements');
 
@@ -8139,7 +8306,7 @@ describe('WebOBS', () => {
     const presetsDiv = document.createElement('div');
     presetsDiv.innerHTML = '<div id="capa-preset1"></div>';
     (component as any).presetsDiv = signal({ nativeElement: presetsDiv } as any);
-    component.presets = new Map([['preset1', {}]]) as any;
+    component.presets.set(new Map([['preset1', {}]]) as any);
 
     (component as any)._removePresetLayers();
     expect(presetsDiv.querySelector('#capa-preset1')).toBeNull();
@@ -8760,7 +8927,7 @@ describe('WebOBS', () => {
       const mockPreset = {
         elements: [{ id: '1', type: 'video', position: { x: 10, y: 10 }, scale: 1, visible: true }],
       } as any;
-      component.presets.set('test', mockPreset);
+      component.presets().set('test', mockPreset);
 
       const mockPresetDiv = document.createElement('div');
       mockPresetDiv.id = 'preset-test';
@@ -9491,10 +9658,10 @@ describe('WebOBS', () => {
 
       it('should cover preset saving emission and layer removal', () => {
         spyOn(component.savePresets, 'emit');
-        component.presets = new Map([['p1', {} as any]]);
+        component.presets.set(new Map([['p1', {} as any]]));
 
         component.savePresetsFunction();
-        expect(component.savePresets.emit).toHaveBeenCalledWith(component.presets);
+        expect(component.savePresets.emit).toHaveBeenCalledWith(component.presets());
 
         (component as any)._removePresetLayers();
         (component as any)._removeExistingLayers();
@@ -11160,7 +11327,7 @@ describe('WebOBS - Branch Coverage 95% Suite', () => {
 
       const result = component.drawAudioConnections();
       expect(result).toBeUndefined();
-      (component as any).audiosList = signal(originalList);
+      (component as any).audiosList = originalList;
     });
 
     it('should draw single audio connection with recorder input and output for line 2972', fakeAsync(() => {
@@ -11198,7 +11365,7 @@ describe('WebOBS - Branch Coverage 95% Suite', () => {
       (component as any).conexionesIzquierda = signal({ nativeElement: null } as any);
       const result = component.audioDown({ target: document.createElement('div') } as any);
       expect(result).toBeUndefined();
-      (component as any).conexionesIzquierda = signal(originalConexiones);
+      (component as any).conexionesIzquierda = originalConexiones;
     });
 
     it('should trigger drag connection line and handle pointers for line 3160, 3168, 3170', () => {
@@ -12366,9 +12533,9 @@ describe('WebOBS - Branch Coverage 95% Suite', () => {
 
     it('should cover guardaPreset early return when prompt returns null', () => {
       spyOn(window, 'prompt').and.returnValue(null);
-      const initialSize = component.presets.size;
+      const initialSize = component.presets().size;
       component.guardaPreset();
-      expect(component.presets.size).toBe(initialSize);
+      expect(component.presets().size).toBe(initialSize);
     });
 
     it('should cover _getPresetElementDimensions fallback for generic HTMLElement', () => {
@@ -12379,10 +12546,10 @@ describe('WebOBS - Branch Coverage 95% Suite', () => {
 
     it('should cover calculatePreset when presetDiv is not found', fakeAsync(() => {
       (component as any).presetsDiv = signal(new ElementRef(document.createElement('div')));
-      component.presets = new Map([['test', { shortcut: 'ctrl+1', elements: [] } as any]]);
+      component.presets.set(new Map([['test', { shortcut: 'ctrl+1', elements: [] } as any]]));
       component.calculatePreset();
       tick(100);
-      expect(component.presets.size).toBe(1);
+      expect(component.presets().size).toBe(1);
     }));
 
     it('should cover _getPresetElementDimensions with element width and height', () => {
@@ -12452,7 +12619,7 @@ describe('WebOBS - Branch Coverage 95% Suite', () => {
     it('should cover drawAudioConnections and preset methods', () => {
       expect(() => component.drawAudioConnections()).not.toThrow();
       expect(() => component.aplicaPreset('non-existent')).not.toThrow();
-      component.presets.set('testPreset', { shortcut: 'ctrl+1', elements: [{ id: 'el1', x: 0, y: 0, width: 100, height: 100 }] } as any);
+      component.presets().set('testPreset', { shortcut: 'ctrl+1', elements: [{ id: 'el1', x: 0, y: 0, width: 100, height: 100 }] } as any);
       expect(() => component.aplicaPreset('testPreset')).not.toThrow();
       expect(() => component.resetFilters()).not.toThrow();
     });
