@@ -2,7 +2,6 @@ import { createCustomElement } from '@angular/elements';
 import { bootstrapApplication } from '@angular/platform-browser';
 import { WebOBS } from './editor-webcam/web-obs';
 
-import 'zone.js';
 const bootstrap = async () => {
   try {
     // Bootstrap la aplicación y obtener el injector

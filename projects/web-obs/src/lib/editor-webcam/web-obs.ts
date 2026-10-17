@@ -308,7 +308,7 @@ export class WebOBS implements OnInit, AfterViewInit, OnDestroy, OnChanges {
 
     if (this.savedFiles()) {
       this.staticContent.set(this.savedFiles()!);
-      this.loadFiles(this.staticContent()).catch((error) => console.error('Error cargando archivos guardados:', error));
+      requestAnimationFrame(() => this.loadFiles(this.staticContent()).catch((error) => console.error('Error cargando archivos guardados:', error)));
     }
 
     if (this.savedPresets()) {

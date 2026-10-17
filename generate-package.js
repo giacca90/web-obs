@@ -24,7 +24,7 @@ const wcPkg = {
   files: ["*"],
 
   peerDependencies: {
-    "zone.js": rootPkg.peerDependencies["zone.js"], // solo lo necesario
+    //"zone.js": rootPkg.peerDependencies["zone.js"], // solo lo necesario
   },
 };
 

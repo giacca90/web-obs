@@ -5,7 +5,7 @@
   "compilerOptions": {
     "outDir": "../../out-tsc/spec",
     "rootDir": "./src",
-    "types": ["jasmine", "zone.js"]
+    "types": ["jasmine"]
   },
   "include": ["src/**/*.ts"],
   "angularCompilerOptions": {
