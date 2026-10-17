@@ -1,6 +1,6 @@
 {
   "name": "web-obs",
-  "version": "0.1.3",
+  "version": "0.1.4",
   "license": "MIT",
   "private": false,
   "description": "Web-OBS es una librería de Angular 20 y un WebComponent que permite crear broadcasts de video y audio directamente ne el navegador.",
