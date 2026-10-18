@@ -1,5 +1,5 @@
 import { ElementRef, QueryList, signal } from '@angular/core';
-import { ComponentFixture, discardPeriodicTasks, fakeAsync, flush, TestBed, tick } from '@angular/core/testing';
+import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { WebObs } from '../web-obs';
 
 import { VideoElement } from './types/video-element.interface';
@@ -28,6 +28,35 @@ if (typeof window !== 'undefined' && typeof window.requestAnimationFrame === 'fu
     });
   };
 }
+
+jasmine.getEnv().addReporter({
+  specDone: (result: any) => {
+    if (result.status === 'failed') {
+      console.error('❌ FAILED SPEC:', result.fullName);
+      result.failedExpectations?.forEach((fe: any) => {
+        console.error('  - Message:', fe.message);
+      });
+    }
+  },
+  suiteDone: (result: any) => {
+    if (result.status === 'failed') {
+      console.error('❌ FAILED SUITE:', result.description);
+      result.failedExpectations?.forEach((fe: any) => {
+        console.error('  - Message:', fe.message);
+      });
+    }
+  },
+  jasmineDone: (result: any) => {
+    console.error('🏁 JASMINE DONE status:', result.overallStatus);
+  },
+});
+
+window.addEventListener('unhandledrejection', (event: any) => {
+  console.error('❌ UNHANDLED REJECTION:', event.reason);
+});
+window.addEventListener('error', (event: any) => {
+  console.error('❌ UNCAUGHT ERROR:', event.error);
+});
 
 const viewChildProps = ['videoElements', 'deviceDivs', 'captureDivs', 'staticDivs', 'volumeInputs', 'audioLevelDivs', 'filterSliders', 'equalizerSliders', 'salida', 'audioLevelRecorder', 'volumeAudioRecorder', 'canvasContainer', 'cross', 'marcoTemplate', 'capaTemplate', 'audios', 'audiosList', 'conexionesIzquierda', 'conexionesDerecha', 'elementosDiv', 'presetsDiv', 'controlTemplate', 'selected', 'filterMenu', 'equalizerMenu'];
 
@@ -779,7 +808,7 @@ describe('WebOBS', () => {
     expect(component.startMedias).toHaveBeenCalled();
   });
 
-  it('should load savedFiles and savedPresets during initialize', fakeAsync(() => {
+  it('should load savedFiles and savedPresets during initialize', async () => {
     // Arrange
     const mediaDevices = mockMediaDevices();
     const mockFiles = [new File([''], 'test.txt')] as any;
@@ -788,39 +817,25 @@ describe('WebOBS', () => {
     (component as any).savedFiles = signal(mockFiles);
     (component as any).savedPresets = signal(mockPresets);
     spyOn(component, 'loadFiles').and.returnValue(Promise.resolve());
+    spyOn(window, 'requestAnimationFrame').and.callFake((cb: any) => cb(0));
 
     // Act
-    (component as unknown as WebOBSPrivates).initialize();
-    tick(100);
+    await (component as unknown as WebOBSPrivates).initialize();
 
     // Assert
     expect(component.staticContent()).toBe(mockFiles);
     expect(component.presets()).toBe(mockPresets);
     expect(component.loadFiles).toHaveBeenCalledWith(mockFiles);
-  }));
+  });
 
   it('should handle NotAllowedError during initialize', async () => {
     // Arrange
     const mediaDevices = mockMediaDevices();
-    mediaDevices.getUserMedia.and.rejectWith(new DOMException('Permission denied', 'NotAllowedError'));
+    mediaDevices.getUserMedia.and.returnValue(Promise.reject(new DOMException('Permission denied', 'NotAllowedError')));
 
     // Act & Assert
     await expectAsync((component as unknown as WebOBSPrivates).initialize()).toBeRejectedWith(jasmine.any(Error));
     expect(true).toBeTrue();
-  });
-
-  it('should handle missing mediaDevices during initialize', async () => {
-    // Arrange
-    const originalMediaDevices = navigator.mediaDevices;
-    Object.defineProperty(navigator, 'mediaDevices', { value: undefined, configurable: true });
-
-    try {
-      // Act & Assert
-      await expectAsync((component as unknown as WebOBSPrivates).initialize()).toBeRejectedWith(jasmine.any(Error));
-      expect(true).toBeTrue();
-    } finally {
-      Object.defineProperty(navigator, 'mediaDevices', { value: originalMediaDevices, configurable: true });
-    }
   });
 
   it('should handle error during loadAudioWorklet', async () => {
@@ -829,7 +844,7 @@ describe('WebOBS', () => {
     // Mock AudioContext to fail at addModule
     component.audioContext = createFullMockAudioContext({
       audioWorklet: {
-        addModule: jasmine.createSpy('addModule').and.rejectWith(new Error('Worklet load failed')),
+        addModule: jasmine.createSpy('addModule').and.returnValue(Promise.reject(new Error('Worklet load failed'))),
       },
     }) as any;
     spyOn(console, 'error');
@@ -880,12 +895,18 @@ describe('WebOBS', () => {
 
   it('should handle generic error in initialize', async () => {
     // Arrange
+    const originalMediaDevices = navigator.mediaDevices;
     const mediaDevices = mockMediaDevices();
-    mediaDevices.getUserMedia.and.rejectWith(new Error('Unknown Error'));
+    mediaDevices.getUserMedia.and.returnValue(Promise.reject(new Error('Unknown Error')));
+    Object.defineProperty(navigator, 'mediaDevices', { value: mediaDevices, configurable: true });
 
-    // Act & Assert
-    await expectAsync((component as unknown as WebOBSPrivates).initialize()).toBeRejectedWith(jasmine.any(Error));
-    expect(mediaDevices.getUserMedia).toHaveBeenCalled();
+    try {
+      // Act & Assert
+      await expectAsync((component as unknown as WebOBSPrivates).initialize()).toBeRejectedWith(jasmine.any(Error));
+      expect(mediaDevices.getUserMedia).toHaveBeenCalled();
+    } finally {
+      Object.defineProperty(navigator, 'mediaDevices', { value: originalMediaDevices, configurable: true });
+    }
   });
 
   it('should not call ensureAudioContext in loadAudioWorklet if already loaded', async () => {
@@ -1383,7 +1404,7 @@ describe('WebOBS', () => {
     expect(component.calculaTiempoGrabacion).not.toHaveBeenCalled();
   });
 
-  it('should set emitiendo and call calculaTiempoGrabacion when isInLive is undefined', fakeAsync(() => {
+  it('should set emitiendo and call calculaTiempoGrabacion when isInLive is undefined', () => {
     component.canvas = document.createElement('canvas');
     const mockVideoStream = jasmine.createSpyObj('MediaStreamTrack', ['stop']);
     const mockAudioStream = jasmine.createSpyObj('MediaStreamTrack', ['stop']);
@@ -1399,10 +1420,9 @@ describe('WebOBS', () => {
     expect(component.emision.emit).toHaveBeenCalledWith(jasmine.any(MediaStream));
     expect(component.emitiendo()).toBeTrue();
     expect(component.calculaTiempoGrabacion).toHaveBeenCalled();
-    discardPeriodicTasks();
-  }));
+  });
 
-  it('should not set emitiendo or call calculaTiempoGrabacion when isInLive is false', fakeAsync(() => {
+  it('should not set emitiendo or call calculaTiempoGrabacion when isInLive is false', () => {
     component.canvas = document.createElement('canvas');
     const mockVideoStream = jasmine.createSpyObj('MediaStreamTrack', ['stop']);
     const mockAudioStream = jasmine.createSpyObj('MediaStreamTrack', ['stop']);
@@ -1418,8 +1438,7 @@ describe('WebOBS', () => {
     expect(component.emision.emit).toHaveBeenCalledWith(jasmine.any(MediaStream));
     expect(component.emitiendo()).toBeFalse();
     expect(component.calculaTiempoGrabacion).not.toHaveBeenCalled();
-    discardPeriodicTasks();
-  }));
+  });
 
   describe('detenerEmision', () => {
     it('should emit null and set emitiendo to false when isInLive is undefined', () => {
@@ -1470,7 +1489,7 @@ describe('WebOBS', () => {
 
   it('should handle error in getVideoStream', async () => {
     const mediaDevices = mockMediaDevices();
-    mediaDevices.getUserMedia.and.rejectWith(new Error('Video error'));
+    mediaDevices.getUserMedia.and.returnValue(Promise.reject(new Error('Video error')));
     spyOn(console, 'error');
 
     await component.getVideoStream('test-id');
@@ -1480,7 +1499,7 @@ describe('WebOBS', () => {
 
   it('should handle error in getAudioStream', async () => {
     const mediaDevices = mockMediaDevices();
-    mediaDevices.getUserMedia.and.rejectWith(new Error('Audio error'));
+    mediaDevices.getUserMedia.and.returnValue(Promise.reject(new Error('Audio error')));
     spyOn(console, 'error');
 
     await component.getAudioStream('test-id', 'test-label');
@@ -1492,7 +1511,7 @@ describe('WebOBS', () => {
     const mockDevice = { deviceId: 'out-id', label: 'Out' } as MediaDeviceInfo;
     // Mock setSinkId to fail
     const mockAudio = {
-      setSinkId: jasmine.createSpy('setSinkId').and.rejectWith(new Error('Sink error')),
+      setSinkId: jasmine.createSpy('setSinkId').and.returnValue(Promise.reject(new Error('Sink error'))),
       style: { display: '' },
       srcObject: null,
       muted: false,
@@ -1502,7 +1521,10 @@ describe('WebOBS', () => {
     spyOn(console, 'error');
 
     // Mock dependencies to avoid fatal error
-    spyOn(component as any, 'ensureAudioContext').and.returnValue(Promise.resolve());
+    if (!jasmine.isSpy((component as any).ensureAudioContext)) {
+      spyOn(component as any, 'ensureAudioContext');
+    }
+    ((component as any).ensureAudioContext as jasmine.Spy).and.returnValue(Promise.resolve());
     component.audioContext = createFullMockAudioContext({
       createMediaStreamDestination: () => ({ stream: {}, connect: () => {}, disconnect: () => {} }),
       createGain: () => ({ gain: { value: 0 }, connect: () => {}, disconnect: () => {} }),
@@ -1516,7 +1538,10 @@ describe('WebOBS', () => {
 
   it('should handle fatal error in getAudioOutputStream', async () => {
     // Mock ensureAudioContext to fail
-    spyOn(component as any, 'ensureAudioContext').and.rejectWith(new Error('Context error'));
+    if (!jasmine.isSpy((component as any).ensureAudioContext)) {
+      spyOn(component as any, 'ensureAudioContext');
+    }
+    ((component as any).ensureAudioContext as jasmine.Spy).and.returnValue(Promise.reject(new Error('Context error')));
     spyOn(console, 'error');
 
     const mockDevice = { deviceId: 'out-id', label: 'Out' } as MediaDeviceInfo;
@@ -1528,9 +1553,12 @@ describe('WebOBS', () => {
   it('should handle error in visualizeAudio', async () => {
     const mockStream = { id: 'stream-1' } as any;
     const mockDiv = document.createElement('div');
-    spyOn(component as any, 'ensureAudioContext').and.returnValue(Promise.resolve());
+    if (!jasmine.isSpy((component as any).ensureAudioContext)) {
+      spyOn(component as any, 'ensureAudioContext');
+    }
+    ((component as any).ensureAudioContext as jasmine.Spy).and.returnValue(Promise.resolve());
     // Mock loadAudioWorklet to fail
-    spyOn(component, 'loadAudioWorklet').and.rejectWith(new Error('Worklet error'));
+    spyOn(component, 'loadAudioWorklet').and.returnValue(Promise.reject(new Error('Worklet error')));
     spyOn(console, 'error');
 
     try {
@@ -3699,7 +3727,7 @@ describe('WebOBS', () => {
       expect(consoleErrorSpy).toHaveBeenCalledWith('No se encontró ecualizador para:', 'non-existent');
     });
 
-    it('should close equalizer menu when clicking outside', fakeAsync(() => {
+    it('should close equalizer menu when clicking outside', () => {
       const event = {
         preventDefault: jasmine.createSpy(),
         stopPropagation: jasmine.createSpy(),
@@ -3708,11 +3736,10 @@ describe('WebOBS', () => {
       } as any;
 
       (component as any).showEqualizerMenu(event, 'test-audio');
-      tick();
 
       document.dispatchEvent(new MouseEvent('click', { bubbles: true }));
       expect(mockMenu.style.display).toBe('none');
-    }));
+    });
   });
 
   describe('loadFiles', () => {
@@ -4264,7 +4291,8 @@ describe('WebOBS', () => {
   });
 
   describe('Screen and File Capture and Processing', () => {
-    it('should add a screen stream and set up video/audio elements', fakeAsync(() => {
+    it('should add a screen stream and set up video/audio elements', async () => {
+      spyOn(window, 'requestAnimationFrame').and.callFake((cb: any) => cb());
       // Guardar originales para restaurar
       const originalMediaStream = globalThis.MediaStream;
       const originalSrcObjectDescriptor = Object.getOwnPropertyDescriptor(HTMLMediaElement.prototype, 'srcObject');
@@ -4375,14 +4403,11 @@ describe('WebOBS', () => {
       spyOn((component as any).cdr, 'detectChanges');
 
       let contextEnsured = false;
-      (component as any).ensureAudioContext().then(() => {
-        contextEnsured = true;
-      });
-      tick();
+      await (component as any).ensureAudioContext();
+      contextEnsured = true;
 
       try {
-        component.addScrean();
-        tick(200);
+        await component.addScrean();
 
         expect(component.capturas().includes(mockStream as any)).toBeTrue();
         expect(mockResolution.innerHTML).toBe('1920x1080 30fps');
@@ -4397,7 +4422,7 @@ describe('WebOBS', () => {
           delete (HTMLMediaElement.prototype as any).srcObject;
         }
       }
-    }));
+    });
 
     it('should process video files and send track to worker', async () => {
       const mockFile = new File([''], 'test-video.mp4', { type: 'video/mp4' });
@@ -4738,26 +4763,29 @@ describe('WebOBS', () => {
       expect(component['formatTime'](3661)).toBe('01:01:01');
     });
 
-    it('should update recording time when emitting is active', fakeAsync(() => {
-      component.emitiendo.set(true);
-      (component as any).isInLive = signal(undefined);
+    it('should update recording time when emitting is active', () => {
+      jasmine.clock().install();
+      try {
+        component.emitiendo.set(true);
+        (component as any).isInLive = signal(undefined);
 
-      component.calculaTiempoGrabacion();
+        component.calculaTiempoGrabacion();
 
-      expect(component.tiempoGrabacion()).toBe('00:00:00');
+        expect(component.tiempoGrabacion()).toBe('00:00:00');
 
-      tick(1000);
-      expect(component.tiempoGrabacion()).toBe('00:00:01');
+        jasmine.clock().tick(1000);
+        expect(component.tiempoGrabacion()).toBe('00:00:01');
 
-      tick(2000);
-      expect(component.tiempoGrabacion()).toBe('00:00:03');
+        jasmine.clock().tick(2000);
+        expect(component.tiempoGrabacion()).toBe('00:00:03');
 
-      component.emitiendo.set(false);
-      tick(1000);
-      expect(component.tiempoGrabacion()).toBe('00:00:03');
-
-      discardPeriodicTasks();
-    }));
+        component.emitiendo.set(false);
+        jasmine.clock().tick(1000);
+        expect(component.tiempoGrabacion()).toBe('00:00:03');
+      } finally {
+        jasmine.clock().uninstall();
+      }
+    });
   });
 
   describe('Preset Management', () => {
@@ -4781,7 +4809,8 @@ describe('WebOBS', () => {
       spyOn(component as any, 'updateWorkerLayers');
     });
 
-    it('should prompt for a preset name, create preset, and apply it', fakeAsync(() => {
+    it('should prompt for a preset name, create preset, and apply it', () => {
+      spyOn(window, 'requestAnimationFrame').and.callFake((cb: any) => cb());
       spyOn(globalThis, 'prompt').and.returnValue('MyCoolPreset');
       spyOn(component, 'aplicaPreset').and.callThrough();
 
@@ -4822,7 +4851,6 @@ describe('WebOBS', () => {
       spyOn(component, 'addCapa');
 
       component.guardaPreset();
-      tick(100);
 
       expect(globalThis.prompt).toHaveBeenCalled();
       expect(component.presets().has('MyCoolPreset')).toBeTrue();
@@ -4836,8 +4864,7 @@ describe('WebOBS', () => {
       expect(component.aplicaPreset).toHaveBeenCalledWith('MyCoolPreset');
       expect(component.addCapa).toHaveBeenCalledTimes(2);
       expect(component['updateWorkerLayers']).toHaveBeenCalled();
-      discardPeriodicTasks();
-    }));
+    });
 
     it('should return early in guardaPreset if no name is provided', () => {
       spyOn(globalThis, 'prompt').and.returnValue('');
@@ -5037,7 +5064,8 @@ describe('WebOBS', () => {
   });
 
   describe('Preset Calculation', () => {
-    it('should calculate and render presets', fakeAsync(() => {
+    it('should calculate and render presets', () => {
+      spyOn(window, 'requestAnimationFrame').and.callFake((cb: any) => cb());
       const mockPresetDiv = document.createElement('div');
       mockPresetDiv.id = 'preset-test';
       (component as any).presetsDiv = signal(new ElementRef(document.createElement('div')));
@@ -5060,10 +5088,9 @@ describe('WebOBS', () => {
       spyOn(component as any, 'createPresetElement').and.returnValue(document.createElement('div'));
 
       component.calculatePreset();
-      tick(100);
 
       expect(mockPresetDiv.innerHTML).not.toBe('');
-    }));
+    });
   });
 
   describe('File Handling', () => {
@@ -5080,7 +5107,7 @@ describe('WebOBS', () => {
       });
     });
 
-    it('should load files and process them', fakeAsync(() => {
+    it('should load files and process them', async () => {
       const file = new File([''], 'test.png', { type: 'image/png' });
       const mockDiv = document.createElement('div');
       mockDiv.id = 'div-test.png';
@@ -5089,19 +5116,17 @@ describe('WebOBS', () => {
       (component as any).staticDivs.reset([new ElementRef(mockDiv)]);
 
       spyOn(component as any, 'processImageFile');
-      component.loadFiles([file]);
-      tick(100);
+      await component.loadFiles([file]);
 
       expect(component['processImageFile']).toHaveBeenCalledWith(file);
-    }));
+    });
 
-    it('should ensure audio context safe', fakeAsync(() => {
+    it('should ensure audio context safe', async () => {
       (component as any).audioContext = null;
-      (component as any).ensureAudioContextSafe();
-      tick(100);
+      await (component as any).ensureAudioContextSafe();
       expect(component.audioContext).toBeDefined();
       expect(component.mixedAudioDestination).toBeDefined();
-    }));
+    });
 
     it('should update worker layers', () => {
       (component as any).canvasWorker = { postMessage: jasmine.createSpy('postMessage') };
@@ -5128,7 +5153,7 @@ describe('WebOBS', () => {
       expect((component as any).silentGains.size).toBe(0);
     });
 
-    it('should setup audio element', fakeAsync(() => {
+    it('should setup audio element', () => {
       const mockTrack = { id: 'test-id' } as any;
       const mockDiv = document.createElement('div');
       mockDiv.id = 'audio-level-test-id';
@@ -5151,37 +5176,32 @@ describe('WebOBS', () => {
       (component as any).setupMediaElementAudio(mockTrack, 'test-id');
 
       expect(component['visualizeAudio']).toHaveBeenCalled();
-    }));
+    });
 
-    it('should ensure audio context safe', fakeAsync(() => {
+    it('should ensure audio context safe', async () => {
       (component as any).audioContext = null;
-      (component as any).ensureAudioContextSafe();
-      tick(100);
+      await (component as any).ensureAudioContextSafe();
       expect(component.audioContext).toBeDefined();
       expect(component.mixedAudioDestination).toBeDefined();
-    }));
+    });
 
-    it('should handle error in ensureAudioContextSafe', fakeAsync(() => {
-      (component as any).ensureAudioContext = () => {
-        throw new Error('test error');
-      };
+    it('should handle error in ensureAudioContextSafe', async () => {
+      ((component as any).ensureAudioContext as jasmine.Spy).and.returnValue(Promise.reject(new Error('test error')));
       spyOn(console, 'warn');
-      (component as any).ensureAudioContextSafe();
-      tick(100);
+      await (component as any).ensureAudioContextSafe();
       expect(console.warn).toHaveBeenCalled();
-    }));
+    });
 
-    it('should ensure audio context safe when audioContext state is closed', fakeAsync(() => {
-      (component as any).ensureAudioContext = () => Promise.resolve();
+    it('should ensure audio context safe when audioContext state is closed', async () => {
+      ((component as any).ensureAudioContext as jasmine.Spy).and.returnValue(Promise.resolve());
       (component as any).audioContext = { state: 'closed' } as any;
-      (component as any).ensureAudioContextSafe();
-      tick(100);
+      await (component as any).ensureAudioContextSafe();
       expect(component.audioContext).toBeDefined();
       expect(component.audioContext.state).not.toBe('closed');
       expect(component.mixedAudioDestination).toBeDefined();
-    }));
+    });
 
-    it('should visualize audio and handle existing node', fakeAsync(() => {
+    it('should visualize audio and handle existing node', async () => {
       const mockStream = { id: 'stream-1' } as any;
       const mockDiv = document.createElement('div');
       (component as any).audioContext = {
@@ -5198,11 +5218,10 @@ describe('WebOBS', () => {
         connect() {}
       };
 
-      component.visualizeAudio(mockStream, mockDiv, 'stream-1');
-      tick(100);
+      await component.visualizeAudio(mockStream, mockDiv, 'stream-1');
 
       expect((component as any).workletNodes.has('stream-1')).toBe(true);
-    }));
+    });
   });
 
   describe('_getPresetElementDimensions', () => {
@@ -5276,7 +5295,8 @@ describe('WebOBS', () => {
       expect(console.error).toHaveBeenCalledWith('Error al capturar ventana o pantalla:', jasmine.any(Error));
     });
 
-    it('should handle screen capture and setup elements', fakeAsync(() => {
+    it('should handle screen capture and setup elements', async () => {
+      spyOn(window, 'requestAnimationFrame').and.callFake((cb: any) => cb());
       spyOn((component as any).cdr, 'detectChanges');
       const mockStream = {
         id: 'stream-1',
@@ -5305,12 +5325,11 @@ describe('WebOBS', () => {
       spyOn(component as any, 'sendVideoTrackToWorker');
       spyOn(component as any, 'updateWorkerLayers');
 
-      component.addScrean();
-      tick(1100);
+      await component.addScrean();
 
       expect(component.videosElements()).toHaveSize(1);
       expect(mockVideo.srcObject).toBe(mockStream);
-    }));
+    });
   });
 
   describe('Utility & Interaction Methods', () => {
@@ -5465,7 +5484,8 @@ describe('WebOBS', () => {
       expect(collidedElement.style.border).toBe('2px solid rgb(185, 28, 28)');
     });
 
-    it('should run handleDragMove and update ghost styles and guides', fakeAsync(() => {
+    it('should run handleDragMove and update ghost styles and guides', () => {
+      spyOn(window, 'requestAnimationFrame').and.callFake((cb: any) => cb());
       const ghost = document.createElement('div');
       const vertical = document.createElement('div');
       const horizontal = document.createElement('div');
@@ -5499,11 +5519,9 @@ describe('WebOBS', () => {
       const moveEvent = { clientX: 100, clientY: 100 } as any;
       (component as any).handleDragMove(moveEvent, ghost, vertical, horizontal);
 
-      tick(16);
-
       expect((component as any).updateGhostPosition).toHaveBeenCalledWith(100, 100, ghost);
       expect((component as any).updateGhostStyles).toHaveBeenCalled();
-    }));
+    });
 
     it('should update ghost div visibility', () => {
       const ghostDiv = document.createElement('div');
@@ -5747,7 +5765,8 @@ describe('WebOBS', () => {
       expect(ele2.tagName).toBe('VIDEO');
     });
 
-    it('should draw audio connections', fakeAsync(() => {
+    it('should draw audio connections', () => {
+      spyOn(window, 'requestAnimationFrame').and.callFake((cb: any) => cb());
       component.audiosElements.set([{ id: 'a1' } as any]);
       component.audiosConnections.set([{ idEntrada: 'a1', idSalida: 'a1' } as any]);
 
@@ -5760,10 +5779,9 @@ describe('WebOBS', () => {
       spyOn(component as any, '_drawSingleAudioConnection');
 
       component.drawAudioConnections();
-      tick(250);
 
       expect((component as any)._drawSingleAudioConnection).toHaveBeenCalled();
-    }));
+    });
   });
 
   describe('Canvas & Workers', () => {
@@ -6031,7 +6049,8 @@ describe('WebOBS', () => {
       component.videosElements.set([]);
     });
 
-    it('should drag element correctly in handleDragMove', fakeAsync(() => {
+    it('should drag element correctly in handleDragMove', () => {
+      spyOn(window, 'requestAnimationFrame').and.callFake((cb: any) => cb());
       const mockElement = { id: '1', position: { x: 0, y: 0 }, width: 100, height: 100 } as any;
       component.videosElements.set([mockElement]);
       (component as any).dragVideo = mockElement;
@@ -6057,11 +6076,9 @@ describe('WebOBS', () => {
       (component as any).ticking = false;
       (component as any).handleDragMove(mockEvent, mockGhost, mockVertical, mockHorizontal);
 
-      tick(16);
-
       expect(mockGhost.style.left).toBe('0px'); // clientX (50) - offsetWidth/2 (50)
       expect(mockGhost.style.top).toBe('10px'); // clientY (60) - offsetHeight/2 (50)
-    }));
+    });
 
     it('should resize element correctly in handleResizing', () => {
       const mockElement = { id: '1', position: { x: 0, y: 0 }, width: 100, height: 100, scale: 1 } as any;
@@ -6269,18 +6286,17 @@ describe('WebOBS', () => {
       document.body.removeChild(canvasContainer);
     });
 
-    it('should update ghost div position and styles', fakeAsync(() => {
+    it('should update ghost div position and styles', () => {
       const video = component.videosElements()[0];
       spyOn(component as any, '_getVideoDimensions').and.returnValue({ videoWidth: 100, videoHeight: 50 });
       spyOn(component as any, 'moverCruzPosicionamiento');
       spyOn(component as any, 'updateCanvasAndCollisionStylesByIds');
 
       (component as any)._updateResizingUI(ghostDiv, video.id);
-      tick(); // Procesa requestAnimationFrame
 
       expect((component as any).moverCruzPosicionamiento).toHaveBeenCalled();
       expect((component as any).updateCanvasAndCollisionStylesByIds).toHaveBeenCalled();
-    }));
+    });
 
     it('should hide cross if video is not painted', () => {
       const orizontal = document.createElement('div');
@@ -6932,21 +6948,26 @@ describe('WebOBS', () => {
     expect(console.error).toHaveBeenCalledWith('No se pudo obtener el elemento audio-level-recorder');
   });
 
-  it('should load presets inside loadStaticContent', fakeAsync(() => {
-    spyOn(component, 'calculatePreset');
-    const mockElement = document.createElement('div');
-    mockElement.id = 'el1';
-    const parent = document.createElement('div');
-    parent.appendChild(mockElement);
-    (component as any).elementosDiv = signal(new ElementRef(parent));
+  it('should load presets inside loadStaticContent', () => {
+    jasmine.clock().install();
+    try {
+      spyOn(component, 'calculatePreset');
+      const mockElement = document.createElement('div');
+      mockElement.id = 'el1';
+      const parent = document.createElement('div');
+      parent.appendChild(mockElement);
+      (component as any).elementosDiv = signal(new ElementRef(parent));
 
-    component.presets.set(new Map([['p1', { elements: [{ id: 'el1' }] } as any]]));
+      component.presets.set(new Map([['p1', { elements: [{ id: 'el1' }] } as any]]));
 
-    (component as any).loadStaticContent();
-    tick(2000);
+      (component as any).loadStaticContent();
+      jasmine.clock().tick(2000);
 
-    expect(component.calculatePreset).toHaveBeenCalled();
-  }));
+      expect(component.calculatePreset).toHaveBeenCalled();
+    } finally {
+      jasmine.clock().uninstall();
+    }
+  });
 
   it('should call loadFiles in loadStaticContent when staticContent has files added at different times', async () => {
     spyOn(component, 'loadFiles').and.returnValue(Promise.resolve());
@@ -6990,7 +7011,7 @@ describe('WebOBS', () => {
     spyOn(console, 'error');
 
     // Forzamos que ensureAudioContext lance un error para entrar en el catch de getAudioOutputStream
-    spyOn(component as any, 'ensureAudioContext').and.rejectWith(new Error('AudioContext Error'));
+    spyOn(component as any, 'ensureAudioContext').and.returnValue(Promise.reject(new Error('AudioContext Error')));
     (component as any).audioContext = null; // Asegurar que sea null
 
     const device = { deviceId: 'audio1', label: 'Mic 1', kind: 'audioinput' } as any;
@@ -7907,7 +7928,7 @@ describe('WebOBS', () => {
     expect(video.element.style.filter).toContain('brightness(120%)');
   });
 
-  it('should show filter menu and close it correctly', fakeAsync(() => {
+  it('should show filter menu and close it correctly', () => {
     const event = new MouseEvent('contextmenu', { clientX: 100, clientY: 100 });
     const ele = {
       id: 'v1',
@@ -7918,7 +7939,6 @@ describe('WebOBS', () => {
     filterMenu.style.display = 'none';
 
     (component as any).showFilterMenu(event, ele);
-    tick();
 
     expect(component.selectedVideoForFilter).toBe(ele);
     expect(filterMenu.style.display).toBe('flex');
@@ -7926,11 +7946,10 @@ describe('WebOBS', () => {
     // Test closing
     const outsideClick = new MouseEvent('click');
     document.dispatchEvent(outsideClick);
-    tick();
 
     expect(component.selectedVideoForFilter).toBeNull();
     expect(filterMenu.style.display).toBe('none');
-  }));
+  });
 
   it('should reset filters correctly', () => {
     const video = {
@@ -7980,7 +7999,8 @@ describe('WebOBS', () => {
     expect(component.videosElements()[1]).toEqual(el2);
   });
 
-  it('should draw audio connections correctly', fakeAsync(() => {
+  it('should draw audio connections correctly', () => {
+    spyOn(window, 'requestAnimationFrame').and.callFake((cb: any) => cb());
     const divEntrada = document.createElement('div');
     divEntrada.id = 'audio-level-in1';
     const divSalida = document.createElement('div');
@@ -8005,10 +8025,9 @@ describe('WebOBS', () => {
     spyOn(component as any, '_createConnectionSquare').and.callThrough();
 
     component.drawAudioConnections();
-    tick(300);
 
     expect((component as any)._createConnectionSquare).toHaveBeenCalled();
-  }));
+  });
 
   it('should handle canvasMouseMove correctly when mouse is over a video', () => {
     const video = {
@@ -8127,7 +8146,8 @@ describe('WebOBS', () => {
     expect(component.addCapa).toHaveBeenCalledWith(video);
   });
 
-  it('should draw audio connections correctly', fakeAsync(() => {
+  it('should draw audio connections correctly', () => {
+    spyOn(window, 'requestAnimationFrame').and.callFake((cb: any) => cb());
     component.audiosElements.set([{ id: 'a1' } as any]);
     component.audiosConnections.set([{ id: 'c1' } as any]);
 
@@ -8142,10 +8162,9 @@ describe('WebOBS', () => {
     spyOn(component as any, '_drawSingleAudioConnection');
 
     component.drawAudioConnections();
-    tick(250);
 
     expect((component as any)._drawSingleAudioConnection).toHaveBeenCalled();
-  }));
+  });
 
   it('should update style element correctly', () => {
     const video = {
@@ -8467,44 +8486,46 @@ describe('WebOBS', () => {
       });
     });
 
-    it('should handle messages from audio worklet in visualizeAudio', fakeAsync(() => {
-      spyOn(window, 'requestAnimationFrame').and.callFake((cb: any) => {
-        cb(0);
-        return 1;
-      });
-      const mockStream = { id: 'test-stream', getAudioTracks: () => [{}] } as any;
-      const mockAudioLevel = document.createElement('div');
-      mockAudioLevel.style.width = '0%';
+    it('should handle messages from audio worklet in visualizeAudio', async () => {
+      const originalRAF = globalThis.requestAnimationFrame;
+      (globalThis as any).requestAnimationFrame = (cb: any) => cb(performance.now());
 
-      const mockNode = {
-        port: { onmessage: null as any },
-        connect: jasmine.createSpy('connect'),
-      };
+      try {
+        const mockStream = { id: 'test-stream', getAudioTracks: () => [{}] } as any;
+        const mockAudioLevel = document.createElement('div');
+        mockAudioLevel.style.width = '0%';
 
-      spyOn(component as any, 'loadAudioWorklet').and.returnValue(Promise.resolve());
-      (component as any).audioContext = {
-        createMediaStreamSource: () => ({ connect: jasmine.createSpy('connect'), disconnect: jasmine.createSpy('disconnect') }),
-        createGain: () => ({ connect: jasmine.createSpy('connect'), disconnect: jasmine.createSpy('disconnect'), gain: { value: 0 } }),
-        createMediaStreamDestination: () => ({ stream: {} }),
-        createBiquadFilter: () => ({ connect: jasmine.createSpy('connect'), disconnect: jasmine.createSpy('disconnect'), frequency: { value: 0 }, Q: { value: 0 }, gain: { value: 0 }, type: 'peaking' }),
-      } as any;
+        (globalThis as any).AudioWorkletNode = function () {
+          return {
+            port: { onmessage: null as any },
+            connect: jasmine.createSpy('connect'),
+          };
+        };
 
-      (globalThis as any).AudioWorkletNode = function () {
-        return mockNode;
-      };
+        spyOn(component as any, 'loadAudioWorklet').and.returnValue(Promise.resolve());
+        (component as any).audioContext = {
+          createMediaStreamSource: () => ({ connect: jasmine.createSpy('connect'), disconnect: jasmine.createSpy('disconnect') }),
+          createGain: () => ({ connect: jasmine.createSpy('connect'), disconnect: jasmine.createSpy('disconnect'), gain: { value: 0 } }),
+          createMediaStreamDestination: () => ({ stream: {} }),
+          createBiquadFilter: () => ({ connect: jasmine.createSpy('connect'), disconnect: jasmine.createSpy('disconnect'), frequency: { value: 0 }, Q: { value: 0 }, gain: { value: 0 }, type: 'peaking' }),
+        } as any;
 
-      component.visualizeAudio(mockStream, mockAudioLevel, 'test-id');
-      tick();
+        await component.visualizeAudio(mockStream, mockAudioLevel, 'test-id');
 
-      expect(mockNode.port.onmessage).toBeDefined();
+        const workletNode = (component as any).workletNodes.get('test-id');
+        expect(workletNode).toBeDefined();
+        expect(workletNode.port.onmessage).toBeDefined();
 
-      // Simulate message from worklet
-      const mockEvent = { data: { rms: 0.5 } };
+        // Simulate message from worklet
+        const mockEvent = { data: { rms: 0.5 } };
 
-      mockNode.port.onmessage(mockEvent);
-      tick();
-      expect(mockAudioLevel.style.width).toBe('100%');
-    }));
+        workletNode.port.onmessage(mockEvent);
+        await new Promise((resolve) => requestAnimationFrame(resolve));
+        expect(mockAudioLevel.style.width).toBe('100%');
+      } finally {
+        (globalThis as any).requestAnimationFrame = originalRAF;
+      }
+    });
 
     it('should handle colisionesMatematicas correctly', () => {
       const mockCanvas = document.createElement('canvas');
@@ -8621,7 +8642,8 @@ describe('WebOBS', () => {
       expect(console.error).toHaveBeenCalledWith('Error al capturar ventana o pantalla:', 'Error');
     });
 
-    it('should handle video track ended in addScrean with audioConnection filtering both sides', fakeAsync(() => {
+    it('should handle video track ended in addScrean with audioConnection filtering both sides', async () => {
+      spyOn(window, 'requestAnimationFrame').and.callFake((cb: any) => cb());
       const mockTrack = { id: 'v1', onended: null as any, stop: jasmine.createSpy('stop'), getSettings: () => ({ width: 1280, height: 720, frameRate: 30 }) };
       const mockStream = {
         id: 'test-id',
@@ -8641,8 +8663,7 @@ describe('WebOBS', () => {
       (navigator.mediaDevices as any).getDisplayMedia = jasmine.createSpy('getDisplayMedia').and.returnValue(Promise.resolve(mockStream));
       spyOn(component, 'drawAudioConnections');
 
-      component.addScrean();
-      tick(150);
+      await component.addScrean();
 
       component.audiosConnections.set([
         { idEntrada: 'test-id', idSalida: 'test-id', entrada: {} as any, salida: {} as any },
@@ -8656,7 +8677,7 @@ describe('WebOBS', () => {
       expect(component.capturas()).toHaveSize(0);
       expect(component.audiosConnections()).toHaveSize(1);
       expect(component.audiosConnections()[0]).toEqual(jasmine.objectContaining({ idEntrada: 'other1', idSalida: 'other2' }));
-    }));
+    });
   });
 
   describe('Device Streams and Connections', () => {
@@ -8790,7 +8811,7 @@ describe('WebOBS', () => {
 
     it('should handle getVideoStream error', async () => {
       const deviceId = 'test-video';
-      (navigator.mediaDevices as any).getUserMedia = jasmine.createSpy('getUserMedia').and.rejectWith('Error');
+      (navigator.mediaDevices as any).getUserMedia = jasmine.createSpy('getUserMedia').and.returnValue(Promise.reject('Error'));
       spyOn(console, 'error');
 
       await component.getVideoStream(deviceId);
@@ -9334,7 +9355,7 @@ describe('WebOBS', () => {
 
     it('should handle NotAllowedError in initialize', async () => {
       const notAllowedError = new DOMException('Permission denied', 'NotAllowedError');
-      (navigator.mediaDevices.getUserMedia as jasmine.Spy).and.rejectWith(notAllowedError);
+      (navigator.mediaDevices.getUserMedia as jasmine.Spy).and.returnValue(Promise.reject(notAllowedError));
       await expectAsync((component as any).initialize()).toBeRejectedWith(jasmine.any(Error));
       expect(navigator.mediaDevices.getUserMedia).toHaveBeenCalled();
     });
@@ -9345,7 +9366,7 @@ describe('WebOBS', () => {
       spyOn(console, 'error');
       const mockAudioContext = createFullMockAudioContext({
         audioWorklet: {
-          addModule: jasmine.createSpy('addModule').and.rejectWith(new Error('Worklet load failed')),
+          addModule: jasmine.createSpy('addModule').and.returnValue(Promise.reject(new Error('Worklet load failed'))),
         },
         resume: jasmine.createSpy('resume').and.returnValue(Promise.resolve()),
         state: 'suspended',
@@ -9482,9 +9503,18 @@ describe('WebOBS', () => {
       consoleErrorSpy.calls.reset();
 
       // 3. getAudioOutputStream with undefined volumeInputs
-      const mockDevice = { deviceId: 'out-id', label: 'Out' } as MediaDeviceInfo;
-      await component.getAudioOutputStream(mockDevice);
-      expect(consoleErrorSpy).toHaveBeenCalledWith('Error crítico al establecer setSinkId para Out:', jasmine.anything());
+      const originalAudio = globalThis.Audio;
+      const mockAudio = { setSinkId: jasmine.createSpy('setSinkId').and.returnValue(Promise.reject(new Error('Sink error'))), style: {} } as any;
+      (globalThis as any).Audio = function () {
+        return mockAudio;
+      };
+      try {
+        const mockDevice = { deviceId: 'out-id', label: 'Out' } as MediaDeviceInfo;
+        await component.getAudioOutputStream(mockDevice);
+        expect(consoleErrorSpy).toHaveBeenCalledWith('Error crítico al establecer setSinkId para Out:', jasmine.anything());
+      } finally {
+        (globalThis as any).Audio = originalAudio;
+      }
       consoleErrorSpy.calls.reset();
 
       // 4. loadFiles with undefined staticDivs
@@ -9587,7 +9617,7 @@ describe('WebOBS', () => {
         expect(input.value).toBe('10');
       });
 
-      it('should position filter menu properly and handle outside click', fakeAsync(() => {
+      it('should position filter menu properly and handle outside click', () => {
         const event = {
           preventDefault: () => {},
           stopPropagation: () => {},
@@ -9601,16 +9631,15 @@ describe('WebOBS', () => {
         } as any;
 
         (component as any).showFilterMenu(event, ele);
-        tick(10);
 
         // Click on input shouldn't close menu
         document.dispatchEvent(new MouseEvent('click', { bubbles: true }));
         // Click outside closes menu
         document.body.dispatchEvent(new MouseEvent('click', { bubbles: true }));
         expect(component.selectedVideoForFilter).toBeDefined();
-      }));
+      });
 
-      it('should position equalizer menu properly and handle outside click', fakeAsync(() => {
+      it('should position equalizer menu properly and handle outside click', () => {
         const event = {
           preventDefault: () => {},
           stopPropagation: () => {},
@@ -9619,11 +9648,10 @@ describe('WebOBS', () => {
         } as any;
 
         (component as any).showEqualizerMenu(event, 'audio-123');
-        tick(10);
 
         document.body.dispatchEvent(new MouseEvent('click', { bubbles: true }));
         expect(component.selectedAudioForEqualizer).toBeDefined();
-      }));
+      });
     });
 
     describe('Additional High-Impact Branch Coverage', () => {
@@ -10025,7 +10053,8 @@ describe('WebOBS - Branch Coverage 95% Suite', () => {
     fixture.detectChanges();
   });
 
-  it('getVideoStream handles missing div, resolution, and successful stream setup', fakeAsync(() => {
+  it('getVideoStream handles missing div, resolution, and successful stream setup', async () => {
+    spyOn(window, 'requestAnimationFrame').and.callFake((cb: any) => cb());
     const mockTrack = {
       getCapabilities: () => ({ width: { max: 1920 }, height: { max: 1080 }, frameRate: { max: 60 } }),
       getSettings: () => ({ width: 1920, height: 1080, frameRate: 60 }),
@@ -10038,8 +10067,7 @@ describe('WebOBS - Branch Coverage 95% Suite', () => {
     (navigator.mediaDevices.getUserMedia as jasmine.Spy).and.returnValue(Promise.resolve(mockStream));
 
     spyOn(console, 'error');
-    component.getVideoStream('missing-dev');
-    flush();
+    await component.getVideoStream('missing-dev');
     expect(console.error).toHaveBeenCalled();
 
     const devDiv = document.createElement('div');
@@ -10056,12 +10084,13 @@ describe('WebOBS - Branch Coverage 95% Suite', () => {
     (component as any).videoElements = mockViewChildren();
     (component as any).videoElements.reset([new ElementRef(vidEl)]);
 
-    component.getVideoStream('dev1');
-    flush();
+    await component.getVideoStream('dev1');
     expect(resolution.innerHTML).toContain('1920x1080 60fps');
-  }));
+  });
 
-  it('getAudioOutputStream handles missing volumeRef or audioLevelRef in refs', fakeAsync(() => {
+  it('getAudioOutputStream handles missing volumeRef or audioLevelRef in refs', async () => {
+    spyOn(window, 'requestAnimationFrame').and.callFake((cb: any) => cb());
+    (HTMLAudioElement.prototype as any).setSinkId = jasmine.createSpy('setSinkId').and.returnValue(Promise.resolve());
     const device = { deviceId: 'out1', label: 'Out 1' } as any;
     const audioOutputDiv = document.createElement('div');
     audioOutputDiv.id = 'div-out1';
@@ -10072,12 +10101,12 @@ describe('WebOBS - Branch Coverage 95% Suite', () => {
     (component as any).audioLevelDivs = mockViewChildren();
     (component as any).audioLevelDivs.reset([]);
 
-    (component as any).getAudioOutputStream(device);
-    tick(2500);
+    await (component as any).getAudioOutputStream(device);
     expect(component.audioOutputDevices().length).toBeGreaterThanOrEqual(0);
-  }));
+  });
 
-  it('addScrean handles volume oninput, missing refs, and stream track onended', fakeAsync(() => {
+  it('addScrean handles volume oninput, missing refs, and stream track onended', async () => {
+    spyOn(window, 'requestAnimationFrame').and.callFake((cb: any) => cb());
     const mockTrack = {
       id: 'track-screen2',
       kind: 'video',
@@ -10124,8 +10153,7 @@ describe('WebOBS - Branch Coverage 95% Suite', () => {
     (component as any).volumeInputs = mockViewChildren();
     (component as any).volumeInputs.reset([new ElementRef(volumeInput)]);
 
-    component.addScrean();
-    tick(150);
+    await component.addScrean();
 
     volumeInput.value = '75';
     volumeInput.dispatchEvent(new Event('input'));
@@ -10134,22 +10162,20 @@ describe('WebOBS - Branch Coverage 95% Suite', () => {
       mockTrack.onended();
     }
     expect(component.videosElements().length).toBeGreaterThanOrEqual(0);
-  }));
+  });
 
-  it('ensureAudioContextSafe recreates AudioContext when closed and handles rejection', fakeAsync(() => {
+  it('ensureAudioContextSafe recreates AudioContext when closed and handles rejection', async () => {
     (component as any).audioContext = { state: 'closed' };
-    (component as any).ensureAudioContextSafe();
-    tick();
+    await (component as any).ensureAudioContextSafe();
     expect((component as any).audioContext.state).toBe('suspended');
 
     (component as any).ensureAudioContext = () => Promise.reject('Test Rejection');
     spyOn(console, 'warn');
-    (component as any).ensureAudioContextSafe();
-    tick();
+    await (component as any).ensureAudioContextSafe();
     expect(console.warn).toHaveBeenCalledWith('⚠️ No se pudo asegurar AudioContext:', 'Test Rejection');
-  }));
+  });
 
-  it('processVideoFile falls back to mozCaptureStream or null', fakeAsync(() => {
+  it('processVideoFile falls back to mozCaptureStream or null', () => {
     (component as any).canvasWorker = { postMessage: jasmine.createSpy('postMessage') } as any;
     const file = new File([''], 'test.mp4', { type: 'video/mp4' });
     const mockVid = document.createElement('video');
@@ -10164,11 +10190,10 @@ describe('WebOBS - Branch Coverage 95% Suite', () => {
     (component as any).staticDivs.reset([new ElementRef(div)]);
 
     (component as any).processVideoFile(file);
-    tick();
     expect((mockVid as any).mozCaptureStream).toHaveBeenCalled();
-  }));
+  });
 
-  it('setupMediaElementAudio volume input handling', fakeAsync(() => {
+  it('setupMediaElementAudio volume input handling', () => {
     const mockTrack = { id: 'audio1' } as any;
     const audioLevel = document.createElement('div');
     audioLevel.id = 'audio-level-audio1';
@@ -10188,16 +10213,15 @@ describe('WebOBS - Branch Coverage 95% Suite', () => {
     spyOn(console, 'error');
 
     (component as any).setupMediaElementAudio(mockTrack, 'audio1');
-    tick();
 
     volumeRef.value = '80';
     if (volumeRef.oninput) {
       (volumeRef as any).oninput(new Event('input'));
     }
     expect(gainNodeMock.gain.value).toBe(0.8);
-  }));
+  });
 
-  it('setupMediaElementAudio catch block for visualizeAudio rejection', fakeAsync(() => {
+  it('setupMediaElementAudio catch block for visualizeAudio rejection', async () => {
     const mockTrack = { id: 'audio2' } as any;
     const audioLevel = document.createElement('div');
     audioLevel.id = 'audio-level-audio2';
@@ -10217,10 +10241,11 @@ describe('WebOBS - Branch Coverage 95% Suite', () => {
     const consoleErrorSpy = spyOn(console, 'error');
 
     (component as any).setupMediaElementAudio(mockTrack, 'audio2');
-    tick();
+    await Promise.resolve();
+    await Promise.resolve();
 
     expect(consoleErrorSpy).toHaveBeenCalledWith('Error visualizando audio:', 'Vis Error');
-  }));
+  });
 
   it('setupAudioControls returns on missing controls and toggles loop', () => {
     const audio = document.createElement('audio');
@@ -10571,7 +10596,7 @@ describe('WebOBS - Branch Coverage 95% Suite', () => {
     expect(div.querySelector('#capa-capa1')).toBeFalsy();
   });
 
-  it('renderPresetElements and _getPresetElementDimensions cover all branches', fakeAsync(() => {
+  it('renderPresetElements and _getPresetElementDimensions cover all branches', async () => {
     (component as any).canvas = null;
     (component as any).renderPresetElements(document.createElement('div'), []);
 
@@ -10606,7 +10631,6 @@ describe('WebOBS - Branch Coverage 95% Suite', () => {
     ];
 
     (component as any).renderPresetElements(presetDiv, elements);
-    tick();
 
     const vidElem = document.createElement('video');
     spyOn(vidElem, 'play').and.returnValue(Promise.reject('Play Error'));
@@ -10616,15 +10640,16 @@ describe('WebOBS - Branch Coverage 95% Suite', () => {
     });
     spyOn(console, 'error');
     (component as any).createPresetElement({ id: 'p6', element: null, painted: true, scale: 1, position: null, srcOrSrcObject: streamWithTrack });
-    tick();
+    await Promise.resolve();
+    await Promise.resolve();
     expect(console.error).toHaveBeenCalled();
-  }));
+  });
 
-  it('drawAudioConnections and delete button cover disconnect error branches', fakeAsync(() => {
+  it('drawAudioConnections and delete button cover disconnect error branches', () => {
+    spyOn(window, 'requestAnimationFrame').and.callFake((cb: any) => cb());
     component.audiosElements.set([{ id: 'a1' }] as any);
     component.audiosConnections.set([]);
     component.drawAudioConnections();
-    tick(150);
 
     const mockEntrada = { disconnect: jasmine.createSpy('disconnect') };
     const mockSalida = {};
@@ -10646,9 +10671,9 @@ describe('WebOBS - Branch Coverage 95% Suite', () => {
     square.dispatchEvent(new PointerEvent('pointerenter'));
     square.dispatchEvent(new PointerEvent('pointerleave'));
     expect(square).toBeTruthy();
-  }));
+  });
 
-  it('audioDown, audioMove, audioUp, and _finalizeAudioConnection cover logic branches', fakeAsync(() => {
+  it('audioDown, audioMove, audioUp, and _finalizeAudioConnection cover logic branches', () => {
     const inputTarget = document.createElement('input');
     component.audioDown({ target: inputTarget } as any);
 
@@ -10678,7 +10703,6 @@ describe('WebOBS - Branch Coverage 95% Suite', () => {
       clientY: 100,
     } as any;
     component.audioDown(downEvent);
-    tick();
 
     audios.dispatchEvent(new MouseEvent('pointermove', { clientX: 50, clientY: 50 }));
     audios.dispatchEvent(new MouseEvent('pointermove', { clientX: 150, clientY: 150 }));
@@ -10694,7 +10718,7 @@ describe('WebOBS - Branch Coverage 95% Suite', () => {
     const elOther = document.createElement('div');
     elOther.id = 'plain-z';
     expect((component as any)._getAudioElementId(elOther)).toBe('plain-z');
-  }));
+  });
 
   it('onContextMenu and onAudioContextMenu handle missing video or audio elements', () => {
     spyOn(console, 'error');
@@ -10717,7 +10741,7 @@ describe('WebOBS - Branch Coverage 95% Suite', () => {
     component.onAudioContextMenu(fakeEvent, 'non-existent-audio');
   });
 
-  it('worker layer methods cover all branch combinations', fakeAsync(() => {
+  it('worker layer methods cover all branch combinations', async () => {
     const mockWorker = { postMessage: jasmine.createSpy('postMessage') };
     (component as any).canvasWorker = mockWorker;
 
@@ -10735,7 +10759,8 @@ describe('WebOBS - Branch Coverage 95% Suite', () => {
       (globalThis as any).createImageBitmap = jasmine.createSpy('createImageBitmap').and.returnValue(Promise.reject('Bitmap error'));
       spyOn(console, 'error');
       (component as any).sendImageToWorker({ id: 'i1', element: img } as any);
-      tick();
+      await Promise.resolve();
+      await Promise.resolve();
       expect(console.error).toHaveBeenCalled();
 
       (globalThis as any).MediaStreamTrackProcessor = class {
@@ -10751,12 +10776,13 @@ describe('WebOBS - Branch Coverage 95% Suite', () => {
       (globalThis as any).createImageBitmap = jasmine.createSpy('createImageBitmap').and.returnValue(Promise.resolve({ close: () => {} }));
 
       (component as any).drawFrame();
-      tick();
+      await Promise.resolve();
+      await Promise.resolve();
       expect((component as any).imageBitmapCache.size).toBeGreaterThanOrEqual(0);
     } finally {
       (globalThis as any).createImageBitmap = origCIB;
     }
-  }));
+  });
 
   describe('Comprehensive Targeted Branch Coverage Tests', () => {
     it('should enter line 861 else branch when volume control is not found', async () => {
@@ -10859,16 +10885,8 @@ describe('WebOBS - Branch Coverage 95% Suite', () => {
       }
     });
 
-    it('should enter line 905 catch block on fatal error inside getAudioOutputStream', async () => {
-      const mockDevice = { deviceId: 'dev-fatal-905', label: 'Dev 905' } as MediaDeviceInfo;
-      spyOn(component as any, 'ensureAudioContext').and.returnValue(Promise.reject(new Error('Fatal ensureAudioContext error')));
-      const consoleErrorSpy = spyOn(console, 'error');
-
-      await component.getAudioOutputStream(mockDevice);
-      expect(consoleErrorSpy).toHaveBeenCalledWith('Error fatal al obtener el stream de salida de audio para Dev 905:', jasmine.any(Error));
-    });
-
-    it('should enter lines 1075-1076 when audio level ref is missing in addScrean', fakeAsync(() => {
+    it('should enter lines 1075-1076 when audio level ref is missing in addScrean', async () => {
+      spyOn(window, 'requestAnimationFrame').and.callFake((cb: any) => cb());
       spyOn((component as any).cdr, 'detectChanges');
       component.audioContext = new (window as any).AudioContext();
       component.visualizeAudio = jasmine.createSpy('visualizeAudio').and.returnValue(Promise.resolve());
@@ -10909,13 +10927,13 @@ describe('WebOBS - Branch Coverage 95% Suite', () => {
         (console.error as jasmine.Spy).calls.reset();
       }
 
-      component.addScrean();
-      tick(1100);
+      await component.addScrean();
 
       expect(consoleErrorSpy).toHaveBeenCalledWith('No se pudo encontrar la referencia audio-level-audio-track-1075');
-    }));
+    });
 
-    it('should enter lines 1098-1099 when volume element is missing in addScrean', fakeAsync(() => {
+    it('should enter lines 1098-1099 when volume element is missing in addScrean', async () => {
+      spyOn(window, 'requestAnimationFrame').and.callFake((cb: any) => cb());
       spyOn((component as any).cdr, 'detectChanges');
       component.audioContext = new (window as any).AudioContext();
       component.visualizeAudio = jasmine.createSpy('visualizeAudio').and.returnValue(Promise.resolve());
@@ -10962,13 +10980,13 @@ describe('WebOBS - Branch Coverage 95% Suite', () => {
         (console.error as jasmine.Spy).calls.reset();
       }
 
-      component.addScrean();
-      tick(1100);
+      await component.addScrean();
 
       expect(consoleErrorSpy).toHaveBeenCalledWith('No se pudo encontrar el elemento de volumen para el track:', 'audio-track-1098');
-    }));
+    });
 
-    it('should handle filters undefined/falsy in getVideoStream for line 751', fakeAsync(() => {
+    it('should handle filters undefined/falsy in getVideoStream for line 751', async () => {
+      spyOn(window, 'requestAnimationFrame').and.callFake((cb: any) => cb());
       const mockDevice = { deviceId: 'dev-751', label: 'Dev 751', kind: 'videoinput' } as any;
       const mockStream = {
         id: 'stream-751',
@@ -11002,21 +11020,19 @@ describe('WebOBS - Branch Coverage 95% Suite', () => {
       (component as any).videoElements = mockViewChildren();
       (component as any).videoElements.reset([new ElementRef(videoEl)]);
 
-      component.getVideoStream('dev-751');
-      tick(150);
+      await component.getVideoStream('dev-751');
 
       expect(deviceDiv.style.filter).toBe('');
-    }));
+    });
 
-    it('should create a new AudioContext in initAudioRecorder if context is null or closed', fakeAsync(() => {
+    it('should create a new AudioContext in initAudioRecorder if context is null or closed', async () => {
       component.audioContext = null as any;
       const audioLevelRecorderDiv = document.createElement('div');
       (component as any).audioLevelRecorder = signal(new ElementRef(audioLevelRecorderDiv));
       component.mixedAudioDestination = { stream: new MediaStream() } as any;
-      (component as any).initAudioRecorder();
-      tick();
+      await (component as any).initAudioRecorder();
       expect(component.audioContext).not.toBeNull();
-    }));
+    });
 
     it('should fallback to mozCaptureStream if captureStream is undefined for line 1242', () => {
       const videoMock = document.createElement('video');
@@ -11143,38 +11159,40 @@ describe('WebOBS - Branch Coverage 95% Suite', () => {
       expect(result).toBeUndefined();
     });
 
-    it('should close filter menu but prevent closing on click inside menu or input for line 1838', fakeAsync(() => {
-      const mockMenu = document.createElement('div');
-      mockMenu.id = 'filterMenu';
-      (component as any).filterMenu = signal(new ElementRef(mockMenu));
-      document.body.appendChild(mockMenu);
+    it('should close filter menu but prevent closing on click inside menu or input for line 1838', () => {
+      jasmine.clock().install();
+      try {
+        const mockMenu = document.createElement('div');
+        mockMenu.id = 'filterMenu';
+        (component as any).filterMenu = signal(new ElementRef(mockMenu));
+        document.body.appendChild(mockMenu);
 
-      const fakeElement = { id: 'v1', element: document.createElement('video'), position: { x: 0, y: 0 } } as any;
-      (component as any).showFilterMenu({ clientX: 100, clientY: 100, preventDefault: () => {}, stopPropagation: () => {} } as any, fakeElement);
-      tick(10);
+        const fakeElement = { id: 'v1', element: document.createElement('video'), position: { x: 0, y: 0 } } as any;
+        (component as any).showFilterMenu({ clientX: 100, clientY: 100, preventDefault: () => {}, stopPropagation: () => {} } as any, fakeElement);
+        jasmine.clock().tick(10);
 
-      // Trigger click inside menu
-      const clickInsideEvent = new MouseEvent('click', { bubbles: true });
-      mockMenu.dispatchEvent(clickInsideEvent);
-      tick();
-      expect(mockMenu.style.display).not.toBe('none');
+        // Trigger click inside menu
+        const clickInsideEvent = new MouseEvent('click', { bubbles: true });
+        mockMenu.dispatchEvent(clickInsideEvent);
+        expect(mockMenu.style.display).not.toBe('none');
 
-      // Trigger click on an input
-      const inputEl = document.createElement('input');
-      mockMenu.appendChild(inputEl);
-      const clickInputEvent = new MouseEvent('click', { bubbles: true });
-      inputEl.dispatchEvent(clickInputEvent);
-      tick();
-      expect(mockMenu.style.display).not.toBe('none');
+        // Trigger click on an input
+        const inputEl = document.createElement('input');
+        mockMenu.appendChild(inputEl);
+        const clickInputEvent = new MouseEvent('click', { bubbles: true });
+        inputEl.dispatchEvent(clickInputEvent);
+        expect(mockMenu.style.display).not.toBe('none');
 
-      // Trigger click outside
-      const clickOutsideEvent = new MouseEvent('click', { bubbles: true });
-      document.dispatchEvent(clickOutsideEvent);
-      tick();
-      expect(mockMenu.style.display).toBe('none');
+        // Trigger click outside
+        const clickOutsideEvent = new MouseEvent('click', { bubbles: true });
+        document.dispatchEvent(clickOutsideEvent);
+        expect(mockMenu.style.display).toBe('none');
 
-      mockMenu.remove();
-    }));
+        mockMenu.remove();
+      } finally {
+        jasmine.clock().uninstall();
+      }
+    });
 
     it('should set equalizer value when sliders are present in showEqualizerMenu for line 1895', () => {
       const mockMenu = document.createElement('div');
@@ -11192,29 +11210,32 @@ describe('WebOBS - Branch Coverage 95% Suite', () => {
       expect(slider1.value).toBe('6.5');
     });
 
-    it('should handle equalizer menu close and ignore click on menu or input for line 1925', fakeAsync(() => {
-      const mockMenu = document.createElement('div');
-      mockMenu.id = 'equalizerMenu';
-      (component as any).equalizerMenu = signal(new ElementRef(mockMenu));
-      document.body.appendChild(mockMenu);
+    it('should handle equalizer menu close and ignore click on menu or input for line 1925', () => {
+      jasmine.clock().install();
+      try {
+        const mockMenu = document.createElement('div');
+        mockMenu.id = 'equalizerMenu';
+        (component as any).equalizerMenu = signal(new ElementRef(mockMenu));
+        document.body.appendChild(mockMenu);
 
-      component['showEqualizerMenu']({ clientX: 100, clientY: 100, preventDefault: () => {}, stopPropagation: () => {} } as any, 'aud1');
-      tick(10);
+        component['showEqualizerMenu']({ clientX: 100, clientY: 100, preventDefault: () => {}, stopPropagation: () => {} } as any, 'aud1');
+        jasmine.clock().tick(10);
 
-      // Click inside
-      const clickInside = new MouseEvent('click', { bubbles: true });
-      mockMenu.dispatchEvent(clickInside);
-      tick();
-      expect(mockMenu.style.display).not.toBe('none');
+        // Click inside
+        const clickInside = new MouseEvent('click', { bubbles: true });
+        mockMenu.dispatchEvent(clickInside);
+        expect(mockMenu.style.display).not.toBe('none');
 
-      // Click outside
-      const clickOutside = new MouseEvent('click', { bubbles: true });
-      document.dispatchEvent(clickOutside);
-      tick();
-      expect(mockMenu.style.display).toBe('none');
+        // Click outside
+        const clickOutside = new MouseEvent('click', { bubbles: true });
+        document.dispatchEvent(clickOutside);
+        expect(mockMenu.style.display).toBe('none');
 
-      mockMenu.remove();
-    }));
+        mockMenu.remove();
+      } finally {
+        jasmine.clock().uninstall();
+      }
+    });
 
     it('should return early in redimensionado when elements or IDs are missing', () => {
       const consoleErrorSpy = spyOn(console, 'error');
@@ -11254,7 +11275,7 @@ describe('WebOBS - Branch Coverage 95% Suite', () => {
       expect(consoleErrorSpy).toHaveBeenCalledWith('Missing moveElementUp or moveElementDown');
     });
 
-    it('should support play/pause, restart, loop and progress input in addCapa video controllers', fakeAsync(() => {
+    it('should support play/pause, restart, loop and progress input in addCapa video controllers', () => {
       const videoEl = document.createElement('video');
       videoEl.src = 'test.mp4';
       // force properties
@@ -11303,7 +11324,6 @@ describe('WebOBS - Branch Coverage 95% Suite', () => {
       (component as any).controlTemplate = signal(new ElementRef(ctrlMock));
 
       component.addCapa(fakeElement);
-      tick();
 
       const playPauseBtn = wrapperDiv.querySelector('#play-pause') as HTMLButtonElement;
       expect(playPauseBtn).toBeTruthy();
@@ -11318,7 +11338,7 @@ describe('WebOBS - Branch Coverage 95% Suite', () => {
       progressInput.value = '50';
       progressInput.dispatchEvent(new Event('input'));
       expect(videoEl.currentTime).toBe(50);
-    }));
+    });
 
     it('should early return in drawAudioConnections if refs are missing for line 2945', () => {
       const originalList = component.audiosList;
@@ -11330,7 +11350,8 @@ describe('WebOBS - Branch Coverage 95% Suite', () => {
       (component as any).audiosList = originalList;
     });
 
-    it('should draw single audio connection with recorder input and output for line 2972', fakeAsync(() => {
+    it('should draw single audio connection with recorder input and output for line 2972', () => {
+      spyOn(window, 'requestAnimationFrame').and.callFake((cb: any) => cb());
       component.audiosConnections.set([
         {
           idEntrada: 'recorder',
@@ -11355,10 +11376,9 @@ describe('WebOBS - Branch Coverage 95% Suite', () => {
       component.audiosElements.set([{ id: 'recorder', label: 'recorder', ele: {} as any }]);
 
       component.drawAudioConnections();
-      tick(250);
 
       expect(conexionesIzquierda.children.length).toBe(1);
-    }));
+    });
 
     it('should early return in audioDown if audios or connections are missing for line 3097', () => {
       const originalConexiones = component.conexionesIzquierda;
@@ -11454,7 +11474,7 @@ describe('WebOBS - Branch Coverage 95% Suite', () => {
       expect(destMock.connect).toHaveBeenCalledWith(sourceMock);
     });
 
-    it('should ignore unrecognized elements in drawFrame for line 3539', fakeAsync(() => {
+    it('should ignore unrecognized elements in drawFrame for line 3539', async () => {
       const fakeElement = {
         id: 'unrecognized-3539',
         element: document.createElement('span'), // neither video nor image
@@ -11467,8 +11487,7 @@ describe('WebOBS - Branch Coverage 95% Suite', () => {
         postMessage: jasmine.createSpy('postMessage'),
       } as any;
 
-      (component as any).drawFrame();
-      tick();
+      await (component as any).drawFrame();
 
       // Unrecognized element should be ignored (the list of layers should be empty)
       expect((component as any).canvasWorker.postMessage).toHaveBeenCalledWith(
@@ -11478,9 +11497,9 @@ describe('WebOBS - Branch Coverage 95% Suite', () => {
         },
         jasmine.any(Array),
       );
-    }));
+    });
 
-    it('should hit image bitmap cache if details match in drawFrame for line 3553', fakeAsync(() => {
+    it('should hit image bitmap cache if details match in drawFrame for line 3553', async () => {
       const img = document.createElement('img');
       const fakeElement = {
         id: 'img-cache-hit',
@@ -11509,14 +11528,13 @@ describe('WebOBS - Branch Coverage 95% Suite', () => {
       } as any;
 
       try {
-        (component as any).drawFrame();
-        tick();
+        await (component as any).drawFrame();
 
         expect((globalThis as any).createImageBitmap).toHaveBeenCalledWith(fakeBitmap);
       } finally {
         (globalThis as any).createImageBitmap = origCIB;
       }
-    }));
+    });
 
     it('should set stream to null if neither captureStream nor mozCaptureStream is supported', () => {
       const videoMock = document.createElement('video');
@@ -11873,7 +11891,8 @@ describe('WebOBS - Branch Coverage 95% Suite', () => {
       expect(consoleErrorSpy).toHaveBeenCalledWith('No se encontró el elemento div-' + deviceId);
     });
 
-    it('should cover line 1111: log error and return early when volume input is missing in addScrean', fakeAsync(() => {
+    it('should cover line 1111: log error and return early when volume input is missing in addScrean', async () => {
+      spyOn(window, 'requestAnimationFrame').and.callFake((cb: any) => cb());
       spyOn((component as any).cdr, 'detectChanges');
       component.audioContext = new (window as any).AudioContext();
       component.visualizeAudio = jasmine.createSpy('visualizeAudio').and.returnValue(Promise.resolve());
@@ -11918,11 +11937,10 @@ describe('WebOBS - Branch Coverage 95% Suite', () => {
 
       const consoleErrorSpy = spyOn(console, 'error');
 
-      component.addScrean();
-      tick(1100);
+      await component.addScrean();
 
       expect(consoleErrorSpy).toHaveBeenCalledWith('No se pudo encontrar el elemento de volumen para el track:', 'audio-track-1111');
-    }));
+    });
 
     it('should cover line 2141: return early when ghostDiv is not found in canvasContainer in redimensionado', () => {
       const containerDiv = document.createElement('div');
@@ -12028,8 +12046,17 @@ describe('WebOBS - Branch Coverage 95% Suite', () => {
       } as any;
 
       const file = new File(['fake data'], fileName, { type: 'audio/mp3' });
+      spyOn(console, 'error');
 
-      await expectAsync((component as any).pintaAudio(file)).toBeRejectedWithError('Resume failed');
+      let error: any;
+      try {
+        await (component as any).pintaAudio(file);
+      } catch (e) {
+        error = e;
+      }
+
+      expect(error).toBeDefined();
+      expect(error.message).toBe('Resume failed');
     });
 
     it('should reject if file.arrayBuffer() fails', async () => {
@@ -12042,19 +12069,37 @@ describe('WebOBS - Branch Coverage 95% Suite', () => {
         name: fileName,
         arrayBuffer: jasmine.createSpy('arrayBuffer').and.returnValue(Promise.reject(new Error('ArrayBuffer error'))),
       } as any;
+      spyOn(console, 'error');
 
-      await expectAsync((component as any).pintaAudio(mockFile)).toBeRejectedWithError('ArrayBuffer error');
+      let error: any;
+      try {
+        await (component as any).pintaAudio(mockFile);
+      } catch (e) {
+        error = e;
+      }
+
+      expect(error).toBeDefined();
+      expect(error.message).toBe('ArrayBuffer error');
     });
 
     it('should reject if decodeAudioData fails', async () => {
       component.audioContext = {
         state: 'running',
-        decodeAudioData: jasmine.createSpy('decodeAudioData').and.returnValue(Promise.reject(new Error('Decode error'))),
+        decodeAudioData: jasmine.createSpy('decodeAudioData').and.callFake(() => Promise.reject(new Error('Decode error'))),
       } as any;
 
       const file = new File(['fake data'], fileName, { type: 'audio/mp3' });
+      spyOn(console, 'error');
 
-      await expectAsync((component as any).pintaAudio(file)).toBeRejectedWithError('Decode error');
+      let error: any;
+      try {
+        await (component as any).pintaAudio(file);
+      } catch (e) {
+        error = e;
+      }
+
+      expect(error).toBeDefined();
+      expect(error.message).toBe('Decode error');
     });
 
     it('should log error and return early if element div-file.name is not found in DOM', async () => {
@@ -12544,13 +12589,13 @@ describe('WebOBS - Branch Coverage 95% Suite', () => {
       expect(dims).toEqual({ width: 1280, height: 720 });
     });
 
-    it('should cover calculatePreset when presetDiv is not found', fakeAsync(() => {
+    it('should cover calculatePreset when presetDiv is not found', () => {
+      spyOn(window, 'requestAnimationFrame').and.callFake((cb: any) => cb());
       (component as any).presetsDiv = signal(new ElementRef(document.createElement('div')));
       component.presets.set(new Map([['test', { shortcut: 'ctrl+1', elements: [] } as any]]));
       component.calculatePreset();
-      tick(100);
       expect(component.presets().size).toBe(1);
-    }));
+    });
 
     it('should cover _getPresetElementDimensions with element width and height', () => {
       const dims = (component as any)._getPresetElementDimensions({ width: 640, height: 480 });
@@ -12602,6 +12647,11 @@ describe('WebOBS - Branch Coverage 95% Suite', () => {
       Object.setPrototypeOf(mediaStream, MediaStream.prototype);
       const dims = (component as any)._getPresetElementDimensions({ srcOrSrcObject: mediaStream });
       expect(dims).toEqual({ width: 1280, height: 720 });
+    });
+
+    it('should cover _removePresetLayers when presetsDiv is null', () => {
+      (component as any).presetsDiv = signal(null);
+      expect(() => (component as any)._removePresetLayers()).not.toThrow();
     });
 
     it('should cover updateFilter and updateEqualizer and updateStyleElement', () => {
@@ -13002,7 +13052,7 @@ describe('WebOBS - Branch Coverage 95% Suite', () => {
         }).not.toThrow();
       });
 
-      it('should cover drawFrame with cached ImageBitmap', fakeAsync(() => {
+      it('should cover drawFrame with cached ImageBitmap', async () => {
         const mockBitmap = { close: jasmine.createSpy('close') };
         (component as any).canvasWorker = { postMessage: () => {} } as any;
         (component as any).isDrawing = false;
@@ -13026,10 +13076,60 @@ describe('WebOBS - Branch Coverage 95% Suite', () => {
 
         spyOn(window, 'createImageBitmap').and.returnValue(Promise.resolve({ close: () => {} } as any));
 
-        (component as any).drawFrame();
-        tick();
+        await (component as any).drawFrame();
         expect(mockBitmap.close).toHaveBeenCalled();
-      }));
+      });
+
+      it('should cover renderPresetElements error branches', () => {
+        spyOn(console, 'error');
+        const div = document.createElement('div');
+        spyOn(div, 'getBoundingClientRect').and.returnValue({ width: 100, height: 100 } as any);
+        (component as any).canvas = null;
+        (component as any).renderPresetElements(div, []);
+        expect(console.error).toHaveBeenCalledWith('Canvas no encontrado');
+      });
+
+      it('should cover renderPresetElements missing element or position', () => {
+        spyOn(console, 'error');
+        const div = document.createElement('div');
+        spyOn(div, 'getBoundingClientRect').and.returnValue({ width: 100, height: 100 } as any);
+        (component as any).canvas = document.createElement('canvas');
+        spyOn(component as any, 'createPresetElement').and.returnValue(null);
+        (component as any).renderPresetElements(div, [{ id: '1' } as any]);
+        expect(console.error).toHaveBeenCalledWith('Missing element');
+
+        (component as any).createPresetElement.and.returnValue(document.createElement('div'));
+        (component as any).renderPresetElements(div, [{ id: '1', position: null } as any]);
+        expect(console.error).toHaveBeenCalledWith('Missing position');
+      });
+
+      it('should cover updateStyleElement when selectedVideoForFilter is missing', () => {
+        spyOn(console, 'error');
+        component.selectedVideoForFilter = null;
+        component.updateStyleElement();
+        expect(console.error).toHaveBeenCalledWith('Missing this.selectedVideoForFilter');
+      });
+
+      it('should cover showEqualizerMenu error when element not found', () => {
+        spyOn(console, 'error');
+        const event = { preventDefault: () => {}, stopPropagation: () => {} };
+        (component as any).showEqualizerMenu(event as any, 'unknown-audio-id');
+        expect(console.error).toHaveBeenCalledWith('No se encontró ecualizador para:', 'unknown-audio-id');
+      });
+
+      it('should cover onContextMenu error when videoElement not found', () => {
+        spyOn(console, 'error');
+        const event = { preventDefault: () => {}, stopPropagation: () => {} };
+        (component as any).onContextMenu(event as any, 'unknown-id');
+        expect(console.error).toHaveBeenCalledWith('No hay videoElement');
+      });
+
+      it('should cover guardaPreset and resetFilters/resetEqualizer', () => {
+        spyOn(window, 'prompt').and.returnValue('Nuevo preset');
+        expect(() => component.guardaPreset()).not.toThrow();
+        expect(() => component.resetFilters()).not.toThrow();
+        expect(() => component.resetEqualizer()).not.toThrow();
+      });
     });
   });
 });

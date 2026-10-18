@@ -149,6 +149,7 @@ export class WebOBS implements OnInit, AfterViewInit, OnDestroy, OnChanges {
       requestAnimationFrame(() => {
         // 2. Usamos la variable capturada de forma síncrona
         for (const [key, preset] of currentPresets.entries()) {
+          console.log('calculatePreset ', key);
           const presetDiv = this.presetsDiv()?.nativeElement.querySelector(`[id="preset-${key}"]`);
           if (!presetDiv) {
             console.error('calculatePreset presetDiv not found');
@@ -333,6 +334,7 @@ export class WebOBS implements OnInit, AfterViewInit, OnDestroy, OnChanges {
    */
   private initAudioRecorder() {
     this.ensureAudioContext().then(() => {
+      if (!this.audioContext) return;
       // Inicia a mostrar el audio de grabación
       const audioGrabacion = this.audioLevelRecorder()?.nativeElement;
       if (!audioGrabacion) {
@@ -560,6 +562,7 @@ export class WebOBS implements OnInit, AfterViewInit, OnDestroy, OnChanges {
       if (ele) {
         ele.scale = element.scale;
         ele.position = element.position;
+        ele.filters = element.filters;
         ele.painted = true;
       } else {
         console.error(`Element ${element.id} not found`);
@@ -685,6 +688,7 @@ export class WebOBS implements OnInit, AfterViewInit, OnDestroy, OnChanges {
 
     // Espera a que todas las promesas hayan terminado
     await Promise.all([...videoPromises, ...audioInputPromises, ...audioOutputPromises]);
+    this.windowResizeTrigger.update((v) => v + 1);
   }
 
   /**
@@ -1058,7 +1062,9 @@ export class WebOBS implements OnInit, AfterViewInit, OnDestroy, OnChanges {
       if (typeof data.rms === 'number') {
         const percentage = Math.min(data.rms * 300, 100);
         requestAnimationFrame(() => {
-          audioLevel.style.width = `${percentage}%`;
+          if (audioLevel) {
+            audioLevel.style.width = `${percentage}%`;
+          }
         });
       }
     };
@@ -1955,6 +1961,7 @@ export class WebOBS implements OnInit, AfterViewInit, OnDestroy, OnChanges {
     const ele = this.selectedVideoForFilter;
     if (ele.element) {
       ele.element.style.filter = `brightness(${ele.filters!.brightness}%) contrast(${ele.filters!.contrast}%) saturate(${ele.filters!.saturation}%)`;
+      this.updateWorkerLayers();
     }
   }
 
@@ -2999,8 +3006,13 @@ export class WebOBS implements OnInit, AfterViewInit, OnDestroy, OnChanges {
    * @param {VideoElement[]} elements Elementos a renderizar.
    */
   private renderPresetElements(presetDiv: HTMLElement, elements: VideoElement[]) {
+    console.log('renderPresetElements');
+    console.log(' elements ', elements);
     const divRect = presetDiv.getBoundingClientRect();
-    if (!this.canvas) return;
+    if (!this.canvas) {
+      console.error('Canvas no encontrado');
+      return;
+    }
 
     const canvasWidth = this.canvas.width || 1920;
     const canvasHeight = this.canvas.height || 1080;
@@ -3010,7 +3022,14 @@ export class WebOBS implements OnInit, AfterViewInit, OnDestroy, OnChanges {
 
     for (const element of elements) {
       const ele = this.createPresetElement(element);
-      if (!ele || !element.position) continue;
+      if (!ele) {
+        console.error('Missing element');
+        continue;
+      }
+      if (!element.position) {
+        console.error('Missing position');
+        continue;
+      }
 
       const { width, height } = this._getPresetElementDimensions(element);
 
@@ -3061,6 +3080,17 @@ export class WebOBS implements OnInit, AfterViewInit, OnDestroy, OnChanges {
    * @returns {HTMLElement | null} El elemento creado o null.
    */
   private createPresetElement(element: VideoElement): HTMLElement | null {
+    if (!element.srcOrSrcObject) {
+      const e = document.getElementById(element.id);
+
+      if (e instanceof HTMLVideoElement) {
+        element.srcOrSrcObject = (e.srcObject as MediaStream) || e.currentSrc || e.src;
+      }
+      if (e instanceof HTMLImageElement) {
+        element.srcOrSrcObject = e.src;
+      }
+    }
+
     if (element.srcOrSrcObject instanceof MediaStream) {
       const ele = document.createElement('video');
       ele.srcObject = element.srcOrSrcObject.clone();
@@ -3068,12 +3098,14 @@ export class WebOBS implements OnInit, AfterViewInit, OnDestroy, OnChanges {
       ele.muted = true;
       ele.playsInline = true;
       ele.style.pointerEvents = 'none';
+      ele.style.filter = element.filters ? `brightness(${element.filters.brightness}%) contrast(${element.filters.contrast}%) saturate(${element.filters.saturation}%)` : '';
       ele.play().catch((e) => console.error('Error al reproducir el video del preset:', e));
       return ele;
     } else if (typeof element.srcOrSrcObject === 'string') {
       const ele = document.createElement('img');
       ele.src = element.srcOrSrcObject;
       ele.style.pointerEvents = 'none';
+      ele.style.filter = element.filters ? `brightness(${element.filters.brightness}%) contrast(${element.filters.contrast}%) saturate(${element.filters.saturation}%)` : '';
       return ele;
     }
     return null;
@@ -3240,7 +3272,7 @@ export class WebOBS implements OnInit, AfterViewInit, OnDestroy, OnChanges {
    */
   audioDown($event: MouseEvent): void {
     this.ensureAudioContext().then(() => {
-      if (this.audioContext.state === 'suspended') this.audioContext.resume();
+      if (this.audioContext?.state === 'suspended') this.audioContext.resume();
     });
 
     if ($event.target instanceof HTMLInputElement) return;
@@ -3674,67 +3706,72 @@ export class WebOBS implements OnInit, AfterViewInit, OnDestroy, OnChanges {
    * @param file Archivo de audio (File)
    */
   private async pintaAudio(file: File) {
-    if (this.audioContext.state === 'suspended') {
-      await this.audioContext.resume();
-    }
-    const arrayBuffer = await file.arrayBuffer();
-    const audioBuffer = await this.audioContext.decodeAudioData(arrayBuffer);
-    const div = document.getElementById('div-' + file.name);
-
-    if (!div) {
-      console.error('No se encontró el elemento div-' + file.name);
-      return;
-    }
-    const container: HTMLDivElement | null | undefined = div.querySelector('#audio-stream');
-    if (!container) {
-      console.error('No se encontró el elemento con id div-' + file.name);
-      return;
-    }
-    const canvasWidth = container.offsetWidth;
-    const canvasHeight = container.offsetHeight;
-    const sampleDataLeft = audioBuffer.getChannelData(0); // Canal izquierdo
-    const sampleStepLeft = Math.floor(sampleDataLeft.length / canvasWidth);
-    let sampleDataRight = null;
-    let sampleStepRight = null;
-    if (audioBuffer.numberOfChannels > 1) {
-      sampleDataRight = audioBuffer.getChannelData(1); // Canal derecho
-      sampleStepRight = Math.floor(sampleDataRight.length / canvasWidth);
-    }
-
-    for (let i = 0; i < canvasWidth; i++) {
-      const sampleIndexLeft = i * sampleStepLeft;
-      const amplitudeLeft = Math.abs(sampleDataLeft[sampleIndexLeft]);
-      const barHeightLeft = amplitudeLeft * canvasHeight;
-
-      const barLeft = document.createElement('div');
-      barLeft.style.position = 'absolute';
-      barLeft.style.left = `${i}px`;
-      barLeft.style.width = '1px';
-      barLeft.id = 'barLeft-' + file.name;
-      if (audioBuffer.numberOfChannels === 1) {
-        barLeft.style.height = `${barHeightLeft}px`;
-        barLeft.style.bottom = '0px';
-      } else {
-        barLeft.style.height = `${barHeightLeft / 2}px`;
-        barLeft.style.bottom = '50%';
+    try {
+      if (this.audioContext.state === 'suspended') {
+        await this.audioContext.resume();
       }
-      barLeft.style.backgroundColor = '#1d4ed8';
-      container.appendChild(barLeft);
+      const arrayBuffer = await file.arrayBuffer();
+      const audioBuffer = await this.audioContext.decodeAudioData(arrayBuffer);
+      const div = document.getElementById('div-' + file.name);
 
-      if (sampleDataRight && sampleStepRight) {
-        const sampleIndexRight = i * sampleStepRight;
-        const amplitudeRight = Math.abs(sampleDataRight[sampleIndexRight]);
-        const barHeightRight = amplitudeRight * canvasHeight;
-        const barRight = document.createElement('div');
-        barRight.id = 'barRight-' + file.name;
-        barRight.style.position = 'absolute';
-        barRight.style.left = `${i}px`;
-        barRight.style.width = '1px';
-        barRight.style.height = `${barHeightRight / 2}px`;
-        barRight.style.top = '50%';
-        barRight.style.backgroundColor = '#1d4ed8';
-        container.appendChild(barRight);
+      if (!div) {
+        console.error('No se encontró el elemento div-' + file.name);
+        return;
       }
+      const container: HTMLDivElement | null | undefined = div.querySelector('#audio-stream');
+      if (!container) {
+        console.error('No se encontró el elemento con id div-' + file.name);
+        return;
+      }
+      const canvasWidth = container.offsetWidth;
+      const canvasHeight = container.offsetHeight;
+      const sampleDataLeft = audioBuffer.getChannelData(0); // Canal izquierdo
+      const sampleStepLeft = Math.floor(sampleDataLeft.length / canvasWidth);
+      let sampleDataRight = null;
+      let sampleStepRight = null;
+      if (audioBuffer.numberOfChannels > 1) {
+        sampleDataRight = audioBuffer.getChannelData(1); // Canal derecho
+        sampleStepRight = Math.floor(sampleDataRight.length / canvasWidth);
+      }
+
+      for (let i = 0; i < canvasWidth; i++) {
+        const sampleIndexLeft = i * sampleStepLeft;
+        const amplitudeLeft = Math.abs(sampleDataLeft[sampleIndexLeft]);
+        const barHeightLeft = amplitudeLeft * canvasHeight;
+
+        const barLeft = document.createElement('div');
+        barLeft.style.position = 'absolute';
+        barLeft.style.left = `${i}px`;
+        barLeft.style.width = '1px';
+        barLeft.id = 'barLeft-' + file.name;
+        if (audioBuffer.numberOfChannels === 1) {
+          barLeft.style.height = `${barHeightLeft}px`;
+          barLeft.style.bottom = '0px';
+        } else {
+          barLeft.style.height = `${barHeightLeft / 2}px`;
+          barLeft.style.bottom = '50%';
+        }
+        barLeft.style.backgroundColor = '#1d4ed8';
+        container.appendChild(barLeft);
+
+        if (sampleDataRight && sampleStepRight) {
+          const sampleIndexRight = i * sampleStepRight;
+          const amplitudeRight = Math.abs(sampleDataRight[sampleIndexRight]);
+          const barHeightRight = amplitudeRight * canvasHeight;
+          const barRight = document.createElement('div');
+          barRight.id = 'barRight-' + file.name;
+          barRight.style.position = 'absolute';
+          barRight.style.left = `${i}px`;
+          barRight.style.width = '1px';
+          barRight.style.height = `${barHeightRight / 2}px`;
+          barRight.style.top = '50%';
+          barRight.style.backgroundColor = '#1d4ed8';
+          container.appendChild(barRight);
+        }
+      }
+    } catch (error) {
+      console.error('Error pintando audio:', error);
+      throw error;
     }
   }
 
