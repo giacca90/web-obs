@@ -527,6 +527,12 @@ export class WebOBS implements OnInit, AfterViewInit, OnDestroy, OnChanges {
     this.updateWorkerLayers();
   }
 
+  eliminaPreset(name: string) {
+    const confirm = globalThis.confirm('¿Estás seguro de eliminar el preset?');
+    if (!confirm) return;
+    this.presets().delete(name);
+  }
+
   private _removeExistingLayers() {
     const elementosDiv = this.elementosDiv()?.nativeElement;
     if (!elementosDiv) return;
@@ -603,7 +609,12 @@ export class WebOBS implements OnInit, AfterViewInit, OnDestroy, OnChanges {
     capa.querySelector('#buttonxcapa')?.addEventListener('click', () => capa.remove());
     capa.classList.remove('hidden');
     capa.style.zIndex = '10';
-    (presetDiv.parentElement as HTMLDivElement).appendChild(capa);
+    capa.style.pointerEvents = 'auto';
+    console.log('presetDiv ', presetDiv);
+    console.log('presetDiv.parent ', presetDiv.parentElement);
+    console.log('presetDiv.parent.parent ', presetDiv.parentElement?.parentElement);
+    console.log('presetDiv.parent.parent.parent ', presetDiv.parentElement?.parentElement?.parentElement);
+    (presetDiv.parentElement?.parentElement as HTMLDivElement).appendChild(capa);
   }
 
   private _addLayersToPaintedElements() {
@@ -2910,7 +2921,7 @@ export class WebOBS implements OnInit, AfterViewInit, OnDestroy, OnChanges {
         this.showFilterMenu(event, elemento);
       });
 
-      div.appendChild(capa);
+      div.parentElement?.appendChild(capa);
       this.updateWorkerLayers();
     }
   }
